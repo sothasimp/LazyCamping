@@ -2,9 +2,9 @@ Scriptname CSK_CampFollowersScript extends Quest
 {Runs while the camp is set up. The Followers aliases fill with nearby
 followers when the quest starts. Each follower has two alias packages:
 - sit at their Seats alias while CSK_CampActivity == 1 (the player is
-  sitting in their own seat by the fire)
+  sitting at the fire)
 - sleep in their Bedrolls alias while CSK_CampActivity == 2 (the player is
-  in their own bedroll)
+  sleeping at camp)
 The rest of the time they follow the player as normal. A follower without a
 seat or bedroll has an empty alias, so that package simply doesn't run.}
 
@@ -16,12 +16,12 @@ ReferenceAlias[] Property Bedrolls Auto
 ReferenceAlias[] Property Seats Auto
 {Seat1-3, filled by Assign.}
 GlobalVariable Property CSK_CampActivity Auto
-{0 = normal, 1 = player in their seat, 2 = player in their bedroll.}
+{0 = normal, 1 = player sitting at the fire, 2 = player sleeping at camp.}
+Float Property CampRadius = 1024.0 Auto
+{Sleeping within this distance of the campfire counts as sleeping at camp.}
 
+ObjectReference Property CampAnchor Auto Hidden
 ObjectReference Property PlayerSeat Auto Hidden
-ObjectReference Property PlayerBedroll Auto Hidden
-
-Float Property kInBedDistance = 128.0 AutoReadOnly
 
 Int Property kNormal = 0 AutoReadOnly
 Int Property kSitting = 1 AutoReadOnly
@@ -32,9 +32,9 @@ Bool Function HasFollower(Int index)
 EndFunction
 
 ; Called by the camp script once everything is placed.
-Function Assign(ObjectReference akPlayerSeat, ObjectReference akPlayerBedroll, ObjectReference[] beds, ObjectReference[] seats)
+Function Assign(ObjectReference akCampfire, ObjectReference akPlayerSeat, ObjectReference[] beds, ObjectReference[] seats)
+	CampAnchor = akCampfire
 	PlayerSeat = akPlayerSeat
-	PlayerBedroll = akPlayerBedroll
 	ForceAll(Bedrolls, beds)
 	ForceAll(Seats, seats)
 	RegisterForSleep()
@@ -77,33 +77,21 @@ Function SetActivity(Int activity)
 	EndWhile
 EndFunction
 
-; Called by CSK_CampPlayerAliasScript. Followers sit when the player sits in
-; their own seat, and go to bed when the player gets into their own bedroll.
+; Called by CSK_CampPlayerAliasScript.
 Function OnPlayerSat(ObjectReference akFurniture)
-	If !akFurniture
-		Return
-	EndIf
-	If akFurniture == PlayerBedroll
-		SetActivity(kSleeping)
-	ElseIf akFurniture == PlayerSeat && CSK_CampActivity.GetValueInt() != kSleeping
+	If akFurniture && akFurniture == PlayerSeat && CSK_CampActivity.GetValueInt() != kSleeping
 		SetActivity(kSitting)
 	EndIf
 EndFunction
 
 Function OnPlayerGotUp(ObjectReference akFurniture)
-	If !akFurniture
-		Return
-	EndIf
-	Int activity = CSK_CampActivity.GetValueInt()
-	If (akFurniture == PlayerSeat && activity == kSitting) || (akFurniture == PlayerBedroll && activity == kSleeping)
+	If akFurniture && akFurniture == PlayerSeat && CSK_CampActivity.GetValueInt() == kSitting
 		SetActivity(kNormal)
 	EndIf
 EndFunction
 
-; Backup in case getting into a bed doesn't send OnSit: sleeping counts if
-; the player is lying in their own bedroll.
 Event OnSleepStart(Float afSleepStartTime, Float afDesiredSleepEndTime)
-	If PlayerBedroll && PlayerRef.GetDistance(PlayerBedroll) <= kInBedDistance
+	If CampAnchor && PlayerRef.GetDistance(CampAnchor) <= CampRadius
 		SetActivity(kSleeping)
 	EndIf
 EndEvent

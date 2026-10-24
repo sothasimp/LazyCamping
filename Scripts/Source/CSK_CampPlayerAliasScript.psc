@@ -1,7 +1,6 @@
 Scriptname CSK_CampPlayerAliasScript extends ReferenceAlias
 {On the Player alias of CSK_CampFollowersQuest. Tells the quest when the
-player sits in, or gets up from, any furniture; the quest reacts to their own
-seat and bedroll.}
+player sits down at, or gets up from, their seat by the fire.}
 
 Event OnSit(ObjectReference akFurniture)
 	(GetOwningQuest() as CSK_CampFollowersScript).OnPlayerSat(akFurniture)
