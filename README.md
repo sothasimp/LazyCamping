@@ -35,7 +35,7 @@ Scripts/Source/
   CSK_CampsiteQuestScript.psc   main logic: checks, placement, tent menu, pack-up, state
   CSK_SetUpCampEffect.psc       on the magic effect; calls the quest
   CSK_TentActivatorScript.psc   on every tent; sneak-activating it from outside packs up the camp
-  CSK_BedrollScript.psc         on the bedroll; sneak-activating it packs up a camp without tents
+  CSK_BedrollAliasScript.psc    on the RingBedroll aliases; sneak-activating a bedroll packs up a camp without tents
   CSK_CampFollowersScript.psc   followers' seats and bedrolls; sit/sleep with the player
   CSK_CampPlayerAliasScript.psc on the follower quest's Player alias; notices the player sitting
   CSK_Native.psc                declarations of the SKSE plugin's functions
@@ -81,16 +81,16 @@ To use custom meshes, put them in `Data/Meshes/CampsiteKit/` and point the Model
 
 ### 2b. Objects placed in the world
 
-Duplicate vanilla objects for these. Right-click a vanilla object, choose *Duplicate*, and give the copy a new ID. You can find candidates by filtering the Object Window with the search term shown.
+**Use vanilla objects directly where you can.** The campfire, light, cooking pot, bedroll and follower sit marker need nothing added to them, so fill their properties (step 2d) with the vanilla objects themselves rather than duplicates. That way, mods that change those vanilla objects also change the camp's. In particular, **Base Object Swapper (BOS) variance mods**, which swap vanilla objects for varied versions, also vary the camp's campfire and bedrolls. Find the objects by filtering the Object Window with the search term shown.
 
-| EditorID | Type | Duplicate from (search term) | Notes |
+| Property | Type | Vanilla object (search term) | Notes |
 |---|---|---|---|
 | `CSK_CampfirePlaced` | Static | `campfire` (a *burning* one) | |
 | `CSK_CampfireLight` | Light | `fire` (any flickering fire light) | |
-| `CSK_CookingStation` | Furniture | `CookingPot` | Keeps the `CraftingCookingPot` keyword, so cooking works. Optional. |
-| `CSK_BedrollPlaced` | Furniture | `bedroll` (the ground bedroll furniture) | Duplicating it keeps the sleep marker, so Sleep and Wait work. Attach `CSK_BedrollScript` and set its `CampQuest` property to `CSK_CampsiteQuest`. |
+| `CSK_CookingStation` | Furniture | `CookingPot` | Has the `CraftingCookingPot` keyword, so cooking works. Optional. |
+| `CSK_BedrollPlaced` | Furniture | `bedroll` (the ground bedroll furniture) | Its sleep marker makes Sleep and Wait work. |
 | `CSK_SitMarkerFollower` | Furniture | `CrossLegged` (a cross-legged sit marker) | Followers use these. Invisible is fine. |
-| `CSK_SitMarkerPlayer` | Furniture | the same marker | See below: it needs a **visible model** so the player can activate it. |
+| `CSK_SitMarkerPlayer` | Furniture | **duplicate** the same marker | The only one that has to be a new record: it needs a **visible model** so the player can activate it (see below). |
 
 **The player's seat.** The player can only activate furniture they can point the crosshair at, and plain sit markers have no visible model or collision. So after duplicating the cross-legged marker:
 1. Set its model to something to sit on, such as a fur pelt, a folded bedroll or a log.
@@ -140,7 +140,8 @@ Brown can stay as the mesh's original texture.
 | `CSK_SmallTentKits`, `CSK_LargeTentKits` | the five tent kits of each size, **in the order brown, blue, green, red, white** |
 | `CSK_SmallTents`, `CSK_LargeTents` | the five tents of each size, **in the same order** as the kits. Each kit pitches the tent at the same position in its list. |
 | `CSK_BedrollKit`, `CSK_CampfireKit` | the other kits |
-| `CSK_BedrollPlaced`, `CSK_CampfirePlaced` | the placed objects |
+| `CSK_BedrollPlaced`, `CSK_CampfirePlaced` | the vanilla bedroll and burning campfire (step 2b) |
+| `RingBedrollAliases` | the aliases `RingBedroll1`–`4`, in order (below) |
 | `CSK_CampfireLight`, `CSK_CookingStation` | optional; leave empty to skip |
 | `CSK_SitMarkerPlayer`, `CSK_SitMarkerFollower` | the seats; leave either empty to skip it |
 | `LocTypeCity`, `LocTypeTown` | vanilla keywords (use auto-fill); blocks camping in settlements |
@@ -155,6 +156,13 @@ Brown can stay as the mesh's original texture.
 | `MaxSlope`, `MaxTilt`, `MaxStep`, `CampfireHalfSize` | steepest ground allowed, most an object will tilt, how uneven the tent footprint may be, and the fire's footprint |
 | `CSK_CampFollowersQuest` | the follower quest from step 2e; leave empty to skip follower seats and behaviour |
 | `AllowPackUpFromPower`, `MaxPackUpDistance` | off by default, so only a sneak-activated tent packs up the camp, or a sneak-activated bedroll in a camp without tents. Turn it on to let casting the power pack up the camp too, for example to retrieve a camp left far away. |
+
+**Quest Aliases** tab: create `RingBedroll1` to `RingBedroll4`, each with:
+- Fill Type: *Specific Reference*, left empty
+- Check *Optional*
+- Attach `CSK_BedrollAliasScript`
+
+In a camp without tents, the script puts the bedrolls in these aliases, so sneaking and activating one packs up the camp. Using aliases instead of a script on the bedroll means the bedroll can stay the vanilla object.
 
 When the quest starts, it gives the player the power.
 
@@ -265,7 +273,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
    Scripts/CSK_CampsiteQuestScript.pex
    Scripts/CSK_SetUpCampEffect.pex
    Scripts/CSK_TentActivatorScript.pex
-   Scripts/CSK_BedrollScript.pex
+   Scripts/CSK_BedrollAliasScript.pex
    Scripts/CSK_Native.pex
    Scripts/CSK_CampFollowersScript.pex
    Scripts/CSK_CampPlayerAliasScript.pex
@@ -283,7 +291,8 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 - **Footprint check**: the check samples 5 points (the centre and four corners). Something small that sits between those points can still poke through the tent. You can add more sample points in `IsAreaClear` if needed.
 - **One camp at a time**: this is by design. Casting the power while a camp is up says so, unless `AllowPackUpFromPower` is on.
 - **Bedroll ring**: neighbouring bedrolls in a tentless camp are at least 90° apart (4 bedrolls). If your bedroll model is long enough that they overlap end to end, raise `BedrollRingRadius`.
-- **Sneak to pack up**: in a camp without tents, the bedrolls' normal activation is blocked and `CSK_BedrollScript` passes it on itself. Followers should be unaffected, because anyone else's activation is passed straight through. If followers ever stop using the ring bedrolls, check this first.
+- **Sneak to pack up**: in a camp without tents, the bedrolls' normal activation is blocked and `CSK_BedrollAliasScript` passes it on itself. Followers should be unaffected, because anyone else's activation is passed straight through. If followers ever stop using the ring bedrolls, check this first.
+- **Base Object Swapper**: BOS swaps a reference's base object when the reference loads. That should include references the camp places, but test it: with a campfire or bedroll variance mod installed, set up camp a few times and check that the campfire and bedrolls vary. The camp's scripts don't depend on the base object, so a swapped bedroll still sleeps, gets followers, and packs up.
 - **Tent inside check**: "inside" means within the tent's `HalfWidth` × `HalfDepth` footprint. If activating the tent from just outside its entrance does nothing, shrink those values a little.
 - **Follower count**: followers are counted when the camp goes up, up to 3. Someone who joins or leaves afterwards keeps their old status until the next camp.
 - **Expansion ideas**:

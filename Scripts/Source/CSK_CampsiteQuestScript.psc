@@ -35,11 +35,10 @@ CSK_TentActivatorScript.}
 Form[] Property CSK_LargeTents Auto
 {Large tent Activators, same colour order as CSK_SmallTents.}
 Form Property CSK_BedrollPlaced Auto
-{Furniture with a sleep marker, so the player can sleep / wait in it. Needs
-CSK_BedrollScript: in a camp without tents, sneaking and activating a
-bedroll packs up the camp.}
+{Furniture with a sleep marker, so the player can sleep / wait in it. Can be
+the vanilla bedroll: this script needs nothing on it.}
 Form Property CSK_CampfirePlaced Auto
-{Static or Activator: the burning campfire.}
+{Static or Activator: the burning campfire. Can be the vanilla one.}
 Light Property CSK_CampfireLight Auto
 {Optional. Flickering firelight placed above the campfire.}
 Form Property CSK_CookingStation Auto
@@ -84,6 +83,11 @@ axis isn't its forward axis.}
 ; ---------------------------------------------------------------------------
 ; Followers
 ; ---------------------------------------------------------------------------
+ReferenceAlias[] Property RingBedrollAliases Auto
+{RingBedroll1-4 on this quest: optional, empty Specific Reference aliases with
+CSK_BedrollAliasScript. In a camp without tents they hold the bedrolls, so
+sneaking and activating one packs up the camp.}
+
 Quest Property CSK_CampFollowersQuest Auto
 {Optional. Seats followers by the fire and puts them to bed with the player.
 Leave empty to place only the player's seat and the bedrolls.}
@@ -207,7 +211,7 @@ Function OnTentActivated(ObjectReference akTent)
 	EndWhile
 EndFunction
 
-; Called by CSK_BedrollScript. In a camp without tents, the bedrolls'
+; Called by CSK_BedrollAliasScript. In a camp without tents, the bedrolls'
 ; activation is blocked so this runs first: sneaking packs up the camp, and
 ; anything else is passed through to the bedroll as normal.
 Function OnBedrollActivated(ObjectReference akBedroll, ObjectReference akActionRef)
@@ -526,13 +530,23 @@ Function SetUpCamp()
 	i = 0
 	While i < kSlotCount
 		placedRefs[i] = PlaceAt(forms[i], posX[i], posY[i], posZ[i], angX[i], angY[i], angZ[i])
-		; Without tents, the bedrolls' scripts handle activation first, so
-		; sneaking and activating one can pack up the camp.
-		If tents == 0 && i >= kFirstBedroll && placedRefs[i]
-			placedRefs[i].BlockActivation(True)
-		EndIf
 		i += 1
 	EndWhile
+
+	; Without tents, the bedrolls go into the RingBedroll aliases, whose
+	; script handles activation first, so sneaking and activating one can
+	; pack up the camp.
+	If tents == 0
+		i = 0
+		While i < bedrolls && i < RingBedrollAliases.Length
+			ObjectReference bed = placedRefs[kFirstBedroll + i]
+			If bed
+				bed.BlockActivation(True)
+				RingBedrollAliases[i].ForceRefTo(bed)
+			EndIf
+			i += 1
+		EndWhile
+	EndIf
 
 	t = 0
 	While t < tents
@@ -576,6 +590,12 @@ Function PackUpCamp()
 	EndIf
 
 	Int i = 0
+	While i < RingBedrollAliases.Length
+		RingBedrollAliases[i].Clear()
+		i += 1
+	EndWhile
+
+	i = 0
 	While i < placedRefs.Length
 		If placedRefs[i]
 			placedRefs[i].Disable()
