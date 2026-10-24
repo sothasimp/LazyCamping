@@ -4,8 +4,8 @@ The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **
 
 - a burning campfire with flickering light and an optional cooking pot
 - cross-legged seats in a ring around the fire, facing it:
-  - one for the player, which the player can sit in. It lands right where the player is standing, facing the way they're facing, because the fire goes one seat-distance in front of them.
-  - one for each follower who's with the player
+  - one for the player, which the player can sit in. It's across the fire from where they stood to cast the power, in front of their tent's entrance.
+  - one for each follower who's with the player, spaced evenly around the ring from the player's seat
 - **tents in a ring around the fire**, outside the seats, with their entrances facing the fire:
   - every tent kit the player carries is pitched, duplicates included, up to 4 tents
   - each tent's size and colour come from its kit. There are small and large tents, each in brown, blue, green, red and white: 10 tent kits in all.
@@ -16,7 +16,7 @@ The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **
   - spare bedrolls then fill the tents in turn, up to each tent's capacity: 2 for a small tent, 4 for a large one
 - **the main tent**, the one with the most bedrolls (or the only tent), stands straight across the fire from the player, entrance facing them. The player's bedroll is in it.
 - **the other tents** are spaced evenly around the ring: 2 tents face each other across the fire, 3 form a triangle, and 4 form a square. The player stands on the ring of seats, inside the ring of tents, so a tent on the near side stands behind them.
-- **with no tent kits**, there are no tents. The bedrolls (up to 4) lie sideways in a circle around the fire, just outside the seats, each behind its owner's seat.
+- **with no tent kits**, there are no tents. The bedrolls (up to 4) lie sideways, spaced evenly in a circle just outside the seats, starting behind the player's seat. With one bedroll per person, each lies behind its owner's seat.
 
 Followers sit at the fire when the player sits in their seat, and sleep in the spare bedrolls when the player sleeps at camp.
 
@@ -149,7 +149,7 @@ Brown can stay as the mesh's original texture.
 | `SmallTentHalfWidth`, `SmallTentHalfDepth`, `LargeTentHalfWidth`, `LargeTentHalfDepth` | half of each size's footprint; match these to your meshes. They place the tents in the ring, drive the flat-ground check, and decide what counts as inside a tent. |
 | `TentRingGap` | all tents share one ring, `SeatRadius + TentRingGap + the largest HalfDepth among them` from the fire (gap default 60) |
 | `BedrollSpacing` | side-to-side gap between bedrolls; check that 4 bedrolls fit in the large tent |
-| `SeatRadius`, `LightHeight` | how far the seats are from the fire (default 110), and the light's height. The fire goes `SeatRadius` in front of the player, so the player's seat lands where they're standing. |
+| `SeatRadius`, `LightHeight` | how far the seats are from the fire (default 110), and the light's height. The fire goes `SeatRadius` in front of the player, so they stand at the near edge of the seat ring. |
 | `BedrollRingRadius`, `BedrollRingYaw` | without tents: how far the bedrolls are from the fire (default 230, just outside the seats), and the turn that lays them sideways (default 90; use 270 to swap head and foot) |
 | `UseNativePlacement`, `AlignToSlope` | turn the SKSE features on or off (both default to on) |
 | `MaxSlope`, `MaxTilt`, `MaxStep`, `CampfireHalfSize` | steepest ground allowed, most an object will tilt, how uneven the tent footprint may be, and the fire's footprint |
@@ -282,7 +282,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 - **Testing the tilt**: the slope math matches the game's `EulerAnglesToAxesZXY` rotation, and I checked it numerically. It still needs an in-game check on a hillside. If objects lean the wrong way, set `AlignToSlope` to false while you report or fix it; ground snapping and the site checks don't depend on it.
 - **Footprint check**: the check samples 5 points (the centre and four corners). Something small that sits between those points can still poke through the tent. You can add more sample points in `IsAreaClear` if needed.
 - **One camp at a time**: this is by design. Casting the power while a camp is up says so, unless `AllowPackUpFromPower` is on.
-- **Bedroll ring**: neighbouring bedrolls in a tentless camp are 60° apart. If your bedroll model is long enough that they overlap end to end, raise `BedrollRingRadius`.
+- **Bedroll ring**: neighbouring bedrolls in a tentless camp are at least 90° apart (4 bedrolls). If your bedroll model is long enough that they overlap end to end, raise `BedrollRingRadius`.
 - **Sneak to pack up**: in a camp without tents, the bedrolls' normal activation is blocked and `CSK_BedrollScript` passes it on itself. Followers should be unaffected, because anyone else's activation is passed straight through. If followers ever stop using the ring bedrolls, check this first.
 - **Tent inside check**: "inside" means within the tent's `HalfWidth` × `HalfDepth` footprint. If activating the tent from just outside its entrance does nothing, shrink those values a little.
 - **Follower count**: followers are counted when the camp goes up, up to 3. Someone who joins or leaves afterwards keeps their old status until the next camp.

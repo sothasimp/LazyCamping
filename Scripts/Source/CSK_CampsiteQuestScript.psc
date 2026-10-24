@@ -56,7 +56,8 @@ Form Property CSK_SitMarkerFollower Auto
 Float Property LightHeight = 40.0 Auto
 Float Property SeatRadius = 110.0 Auto
 {Distance of the seats from the centre of the fire. The fire goes this far in
-front of the player, so the player's seat lands where they stand.}
+front of the player, so they stand at the near edge of the seat ring; their
+own seat is across the fire, in front of their tent.}
 
 Float Property TentRingGap = 60.0 Auto
 {Gap between the seats and the front of the deepest tent. All tents share one
@@ -423,13 +424,25 @@ Function SetUpCamp()
 	forms[kCooking] = CSK_CookingStation
 	fwd[kCooking] = FireForward()
 
-	; Seats ring the fire and face it.
-	SetSeat(forms, fwd, side, turn, kPlayerSeat, CSK_SitMarkerPlayer, SeatBearing(-1))
+	; Seats ring the fire and face it. The player's is at 0, across the fire
+	; in front of their tent; followers' seats are spaced evenly from there.
+	SetSeat(forms, fwd, side, turn, kPlayerSeat, CSK_SitMarkerPlayer, 0.0)
 	If followers && CSK_SitMarkerFollower
+		Int present = 0
 		Int f = 0
 		While f < kMaxFollowers
 			If followers.HasFollower(f)
-				SetSeat(forms, fwd, side, turn, kFirstFollowerSeat + f, CSK_SitMarkerFollower, SeatBearing(f))
+				present += 1
+			EndIf
+			f += 1
+		EndWhile
+
+		Int rank = 0
+		f = 0
+		While f < kMaxFollowers
+			If followers.HasFollower(f)
+				rank += 1
+				SetSeat(forms, fwd, side, turn, kFirstFollowerSeat + f, CSK_SitMarkerFollower, rank * 360.0 / (present + 1))
 			EndIf
 			f += 1
 		EndWhile
@@ -465,11 +478,11 @@ Function SetUpCamp()
 			t += 1
 		EndWhile
 	Else
-		; Without tents, each bedroll lies sideways along a circle just outside
-		; the seats, behind its owner's seat.
+		; Without tents, the bedrolls lie sideways, spaced evenly along a circle
+		; just outside the seats, starting behind the player's seat.
 		Int r = 0
 		While r < bedrolls
-			Float ringBearing = SeatBearing(r - 1)
+			Float ringBearing = r * 360.0 / bedrolls
 			forms[kFirstBedroll + r] = CSK_BedrollPlaced
 			fwd[kFirstBedroll + r] = FireForward() + BedrollRingRadius * Math.Cos(ringBearing)
 			side[kFirstBedroll + r] = BedrollRingRadius * Math.Sin(ringBearing)
@@ -589,7 +602,7 @@ Function PackUpCamp()
 EndFunction
 
 ; How far in front of the player the fire goes: one seat radius, so the
-; player's seat (on the near side of the ring) lands where they're standing.
+; player stands at the near edge of the seat ring.
 Float Function FireForward()
 	Return SeatRadius
 EndFunction
@@ -600,20 +613,6 @@ EndFunction
 ; simply stands behind them.
 Float Function TentBearing(Int index, Int count)
 	Return index * 360.0 / count
-EndFunction
-
-; Bearing of a seat around the fire, in degrees clockwise from the player's
-; facing when the camp was set up. -1 is the player, on the near side;
-; followers 0-2 sit to either side.
-Float Function SeatBearing(Int follower)
-	If follower == 0
-		Return 120.0
-	ElseIf follower == 1
-		Return 240.0
-	ElseIf follower == 2
-		Return 60.0
-	EndIf
-	Return 180.0
 EndFunction
 
 ; Puts a seat in a slot, SeatRadius from the fire at the given bearing, facing it.
