@@ -149,7 +149,7 @@ The full Visual Studio IDE isn't required. The free **Build Tools for Visual Stu
 
 ### Building without a Windows PC
 
-Every push runs `.github/workflows/build.yml` on GitHub's Windows machines. To get the DLL:
+Every push to `main`, and every pull request, runs `.github/workflows/build.yml` on GitHub's Windows machines. To get the DLL:
 1. Open the **Actions** tab on GitHub and select a run.
 2. Download the **CampsiteKit** artifact from the run's page.
 
