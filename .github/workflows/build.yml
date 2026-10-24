@@ -1,0 +1,44 @@
+name: Build SKSE plugin
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: SKSE
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Cache xmake packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/xmake-packages
+          key: xmake-${{ runner.os }}-${{ hashFiles('SKSE/xmake.lua', '.gitmodules') }}
+
+      - name: Configure
+        env:
+          XMAKE_PKG_INSTALLDIR: ${{ runner.temp }}/xmake-packages
+        run: xmake config -m release -y
+
+      - name: Build
+        env:
+          XMAKE_PKG_INSTALLDIR: ${{ runner.temp }}/xmake-packages
+        run: xmake build -y -v
+
+      - name: Upload plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: CampsiteKit
+          path: SKSE/dist/
+          if-no-files-found: error

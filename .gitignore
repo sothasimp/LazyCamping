@@ -1,0 +1,12 @@
+# xmake
+SKSE/.xmake/
+SKSE/build/
+SKSE/dist/
+SKSE/vsxmake*/
+
+# Editors
+.vs/
+.vscode/
+
+# Compiled Papyrus
+*.pex
