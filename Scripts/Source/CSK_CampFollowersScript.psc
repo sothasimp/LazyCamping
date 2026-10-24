@@ -5,7 +5,8 @@ followers when the quest starts. Each follower has two alias packages:
   sitting at the fire)
 - sleep in their Bedrolls alias while CSK_CampActivity == 2 (the player is
   sleeping at camp). The bedrolls are handed out when the player goes to
-  sleep, skipping whichever camp bedroll the player is lying in.
+  sleep, skipping whichever camp bedroll the player is lying in. A spouse or
+  lover gets the free bedroll nearest the player's.
 The rest of the time they follow the player as normal. A follower without a
 seat or bedroll has an empty alias, so that package simply doesn't run.}
 
@@ -20,6 +21,10 @@ GlobalVariable Property CSK_CampActivity Auto
 {0 = normal, 1 = player sitting at the fire, 2 = player sleeping at camp.}
 Float Property CampRadius = 1024.0 Auto
 {Sleeping within this distance of the campfire counts as sleeping at camp.}
+Faction Property PartnerFaction Auto
+{Optional, such as PlayerMarriedFaction. Followers in it count as the player's
+partner, as well as any follower whose relationship rank with the player is
+Lover (4), which covers vanilla spouses and most romance mods.}
 
 ObjectReference Property CampAnchor Auto Hidden
 ObjectReference Property PlayerSeat Auto Hidden
@@ -100,13 +105,62 @@ EndFunction
 
 Event OnSleepStart(Float afSleepStartTime, Float afDesiredSleepEndTime)
 	If CampAnchor && PlayerRef.GetDistance(CampAnchor) <= CampRadius
-		ForceAll(Bedrolls, FreeBedrolls())
+		AssignBedrolls()
 		SetActivity(kSleeping)
 	EndIf
 EndEvent
 
-; The camp's bedrolls in camp order, minus the one the player is lying in.
-ObjectReference[] Function FreeBedrolls()
+; Gives each follower a camp bedroll the player isn't lying in. Partners
+; choose first, taking the free bedrolls nearest the player's; everyone
+; else takes the rest in camp order, so followers spread across the tents.
+Function AssignBedrolls()
+	ObjectReference playerBed = BedrollUnderPlayer()
+
+	ObjectReference[] free = new ObjectReference[16]
+	Int i = 0
+	While i < campBedrolls.Length && i < free.Length
+		If campBedrolls[i] != playerBed
+			free[i] = campBedrolls[i]
+		EndIf
+		i += 1
+	EndWhile
+
+	ObjectReference[] chosen = new ObjectReference[3]
+	If playerBed
+		i = 0
+		While i < Followers.Length && i < chosen.Length
+			Actor follower = Followers[i].GetActorRef()
+			If follower && IsPartner(follower)
+				Int k = NearestFree(free, playerBed)
+				If k >= 0
+					chosen[i] = free[k]
+					free[k] = None
+				EndIf
+			EndIf
+			i += 1
+		EndWhile
+	EndIf
+
+	Int next = 0
+	i = 0
+	While i < Followers.Length && i < chosen.Length
+		If !chosen[i] && Followers[i].GetReference()
+			While next < free.Length && !free[next]
+				next += 1
+			EndWhile
+			If next < free.Length
+				chosen[i] = free[next]
+				next += 1
+			EndIf
+		EndIf
+		i += 1
+	EndWhile
+
+	ForceAll(Bedrolls, chosen)
+EndFunction
+
+; The camp bedroll the player is lying in, or None.
+ObjectReference Function BedrollUnderPlayer()
 	ObjectReference playerBed = None
 	Float nearest = kInBedDistance
 	Int i = 0
@@ -117,25 +171,33 @@ ObjectReference[] Function FreeBedrolls()
 		EndIf
 		i += 1
 	EndWhile
+	Return playerBed
+EndFunction
 
-	ObjectReference[] free = new ObjectReference[3]
-	Int count = 0
-	i = 0
-	While i < campBedrolls.Length && count < free.Length
-		If campBedrolls[i] && campBedrolls[i] != playerBed
-			free[count] = campBedrolls[i]
-			count += 1
+; Index of the free bedroll nearest akRef, or -1 if none are free.
+Int Function NearestFree(ObjectReference[] free, ObjectReference akRef)
+	Int best = -1
+	Float bestDistance = 0.0
+	Int i = 0
+	While i < free.Length
+		If free[i]
+			Float distance = free[i].GetDistance(akRef)
+			If best < 0 || distance < bestDistance
+				best = i
+				bestDistance = distance
+			EndIf
 		EndIf
 		i += 1
 	EndWhile
-	Return free
+	Return best
 EndFunction
 
-Event OnSleepStop(Bool abInterrupted)
-	If CSK_CampActivity.GetValueInt() == kSleeping
-		SetActivity(kNormal)
+Bool Function IsPartner(Actor akActor)
+	If PartnerFaction && akActor.IsInFaction(PartnerFaction)
+		Return True
 	EndIf
-EndEvent
+	Return akActor.GetRelationshipRank(PlayerRef) >= 4
+EndFunction
 
 Function ClearAll(ReferenceAlias[] aliases)
 	Int i = 0
