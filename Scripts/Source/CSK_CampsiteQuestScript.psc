@@ -48,6 +48,20 @@ Float Property BedrollRight = 0.0 Auto
 Float Property LightHeight = 40.0 Auto
 
 ; ---------------------------------------------------------------------------
+; Followers. Extra bedrolls the player carries are laid out beside theirs.
+; ---------------------------------------------------------------------------
+Int Property MaxExtraBedrolls = 2 Auto
+{Extra bedrolls placed for followers when the player carries more than one
+(0-3).}
+Float Property BedrollSpacing = 75.0 Auto
+{Side-to-side distance between bedrolls in the tent.}
+Quest Property CSK_CampFollowersQuest Auto
+{Optional. Sends followers to the extra bedrolls while the player sleeps at
+camp. Leave empty to only place the bedrolls.}
+Float Property CampRadius = 1024.0 Auto
+{The player counts as sleeping "at camp" within this distance of their bedroll.}
+
+; ---------------------------------------------------------------------------
 ; Native placement (CampsiteKit.dll). Ignored if the SKSE plugin isn't loaded.
 ; ---------------------------------------------------------------------------
 Bool Property UseNativePlacement = True Auto
@@ -90,6 +104,12 @@ Message Property CSK_PackUpMsg Auto
 ; State
 ; ---------------------------------------------------------------------------
 Bool Property CampDeployed = False Auto Hidden
+Int Property ExtraBedrollsPlaced = 0 Auto Hidden
+
+; Slots in placedRefs: 0 campfire, 1 light, 2 cooking station, 3 tent,
+; 4 player's bedroll, 5-7 follower bedrolls.
+Int Property kFirstExtraBedroll = 5 AutoReadOnly
+Int Property kMaxExtraBedrolls = 3 AutoReadOnly
 
 ObjectReference[] placedRefs
 Bool busy = False
@@ -182,12 +202,12 @@ Bool Function HasAllKits()
 EndFunction
 
 Function SetUpCamp()
-	; Slot layout. Index 0 is the campfire; it's used as the camp's anchor point.
-	Form[] forms = new Form[5]
-	Float[] fwd = new Float[5]
-	Float[] side = new Float[5]
-	Float[] lift = new Float[5]
-	Float[] turn = new Float[5]
+	; Slot layout (see placedRefs). Index 0, the campfire, is the camp's anchor.
+	Form[] forms = new Form[8]
+	Float[] fwd = new Float[8]
+	Float[] side = new Float[8]
+	Float[] lift = new Float[8]
+	Float[] turn = new Float[8]
 
 	forms[0] = CSK_CampfirePlaced
 	fwd[0] = CampfireForward
@@ -201,10 +221,34 @@ Function SetUpCamp()
 	fwd[3] = TentForward
 	side[3] = TentRight
 	turn[3] = 180.0
-	forms[4] = CSK_BedrollPlaced
-	fwd[4] = BedrollForward
-	side[4] = BedrollRight
-	turn[4] = 180.0
+
+	; Bedrolls sit side by side, centred in the tent. The player's is slot 4;
+	; any extra bedrolls the player carries go to followers.
+	Int extras = PlayerRef.GetItemCount(CSK_BedrollKit) - 1
+	Int maxExtras = MaxExtraBedrolls
+	If maxExtras > kMaxExtraBedrolls
+		maxExtras = kMaxExtraBedrolls
+	EndIf
+	If extras > maxExtras
+		extras = maxExtras
+	EndIf
+	If extras < 0
+		extras = 0
+	EndIf
+
+	Float firstOffset = BedrollRight - extras * BedrollSpacing / 2.0
+	Int b = 0
+	While b <= extras
+		Int slot = 4
+		If b > 0
+			slot = kFirstExtraBedroll + b - 1
+		EndIf
+		forms[slot] = CSK_BedrollPlaced
+		fwd[slot] = BedrollForward
+		side[slot] = firstOffset + b * BedrollSpacing
+		turn[slot] = 180.0
+		b += 1
+	EndWhile
 
 	Float heading = PlayerRef.GetAngleZ()
 	Bool native = UseNativePlacement && CSK_Native.GetVersion() > 0
@@ -215,12 +259,12 @@ Function SetUpCamp()
 
 	; Phase 1: work out every position before placing anything, so the
 	; bedroll's ground check can't hit the tent standing over it.
-	Float[] posX = new Float[5]
-	Float[] posY = new Float[5]
-	Float[] posZ = new Float[5]
-	Float[] angX = new Float[5]
-	Float[] angY = new Float[5]
-	Float[] angZ = new Float[5]
+	Float[] posX = new Float[8]
+	Float[] posY = new Float[8]
+	Float[] posZ = new Float[8]
+	Float[] angX = new Float[8]
+	Float[] angY = new Float[8]
+	Float[] angZ = new Float[8]
 
 	Int i = 0
 	While i < forms.Length
@@ -244,7 +288,7 @@ Function SetUpCamp()
 	EndWhile
 
 	; Phase 2: place.
-	placedRefs = new ObjectReference[5]
+	placedRefs = new ObjectReference[8]
 	i = 0
 	While i < forms.Length
 		placedRefs[i] = PlaceAt(forms[i], posX[i], posY[i], posZ[i], angX[i], angY[i], angZ[i])
@@ -252,13 +296,17 @@ Function SetUpCamp()
 	EndWhile
 
 	PlayerRef.RemoveItem(CSK_TentKit, 1, True)
-	PlayerRef.RemoveItem(CSK_BedrollKit, 1, True)
+	PlayerRef.RemoveItem(CSK_BedrollKit, 1 + extras, True)
 	PlayerRef.RemoveItem(CSK_CampfireKit, 1, True)
 	If FirewoodRequired > 0 && Firewood01
 		PlayerRef.RemoveItem(Firewood01, FirewoodRequired, True)
 	EndIf
 
+	ExtraBedrollsPlaced = extras
 	CampDeployed = True
+	If extras > 0 && CSK_CampFollowersQuest
+		RegisterForSleep()
+	EndIf
 	Debug.Notification("You set up camp.")
 EndFunction
 
@@ -266,6 +314,11 @@ Function PackUpCamp()
 	If PlayerRef.GetSitState() != 0
 		Debug.Notification("You must get up before packing up camp.")
 		Return
+	EndIf
+
+	UnregisterForSleep()
+	If CSK_CampFollowersQuest && CSK_CampFollowersQuest.IsRunning()
+		CSK_CampFollowersQuest.Stop()
 	EndIf
 
 	Int i = 0
@@ -279,12 +332,40 @@ Function PackUpCamp()
 	EndWhile
 
 	PlayerRef.AddItem(CSK_TentKit, 1, True)
-	PlayerRef.AddItem(CSK_BedrollKit, 1, True)
+	PlayerRef.AddItem(CSK_BedrollKit, 1 + ExtraBedrollsPlaced, True)
 	PlayerRef.AddItem(CSK_CampfireKit, 1, True)
 
+	ExtraBedrollsPlaced = 0
 	CampDeployed = False
 	Debug.Notification("You pack up your camp.")
 EndFunction
+
+; Followers bed down in the extra bedrolls while the player sleeps near camp.
+Event OnSleepStart(Float afSleepStartTime, Float afDesiredSleepEndTime)
+	If !CampDeployed || ExtraBedrollsPlaced < 1 || !CSK_CampFollowersQuest
+		Return
+	EndIf
+	If !placedRefs[4] || PlayerRef.GetDistance(placedRefs[4]) > CampRadius
+		Return
+	EndIf
+
+	ObjectReference[] beds = new ObjectReference[3]
+	Int i = 0
+	While i < ExtraBedrollsPlaced
+		beds[i] = placedRefs[kFirstExtraBedroll + i]
+		i += 1
+	EndWhile
+
+	If CSK_CampFollowersQuest.IsRunning() || CSK_CampFollowersQuest.Start()
+		(CSK_CampFollowersQuest as CSK_CampFollowersScript).AssignBedrolls(beds)
+	EndIf
+EndEvent
+
+Event OnSleepStop(Bool abInterrupted)
+	If CSK_CampFollowersQuest && CSK_CampFollowersQuest.IsRunning()
+		CSK_CampFollowersQuest.Stop()
+	EndIf
+EndEvent
 
 ; Checks the ground under the campfire and tent with the SKSE plugin.
 Bool Function IsSiteClear(Float heading)

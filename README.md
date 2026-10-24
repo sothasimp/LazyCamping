@@ -5,6 +5,7 @@ The mod adds a **Set Up Camp** Lesser Power. When the player has a **Tent Kit**,
 - a burning campfire with flickering light and an optional cooking pot
 - a tent facing the fire
 - a bedroll inside the tent that the player can sleep in
+- an extra bedroll beside it for each spare one the player carries (up to 3), so followers can sleep at camp too
 
 To pack up, the player either casts the power again or activates the tent. The kits go back into the inventory.
 
@@ -20,6 +21,7 @@ SkyrimCampsite/
     CSK_CampsiteQuestScript.psc   main logic: checks, placement, pack-up, state
     CSK_SetUpCampEffect.psc       on the magic effect; calls the quest
     CSK_TentActivatorScript.psc   on the tent; activating it offers to pack up
+    CSK_CampFollowersScript.psc   sends followers to the extra bedrolls while you sleep
     CSK_Native.psc                declarations of the SKSE plugin's functions
   SKSE/                           optional C++ plugin (CampsiteKit.dll)
     xmake.lua
@@ -46,7 +48,7 @@ Compiled `.pex` files go in `Data/Scripts/`.
 
 ## 2. Creation Kit setup
 
-Open the Creation Kit with `Skyrim.esm` loaded. Before you compile anything, extract `Data/Scripts.zip` once. Copy the four `.psc` files into `Data/Source/Scripts/` (the SE CK uses this folder).
+Open the Creation Kit with `Skyrim.esm` loaded. Before you compile anything, extract `Data/Scripts.zip` once. Copy the five `.psc` files into `Data/Source/Scripts/` (the SE CK uses this folder).
 
 ### 2a. Inventory kits (Items > MiscItem)
 
@@ -109,12 +111,45 @@ Duplicate vanilla objects for these. Right-click a vanilla object, choose *Dupli
 | `UseNativePlacement`, `AlignToSlope` | turn the SKSE features on or off (both default to on) |
 | `MaxSlope`, `MaxTilt`, `MaxStep` | steepest ground allowed, most an object will tilt, and how uneven the tent footprint may be |
 | `TentHalfWidth`, `TentHalfDepth`, `CampfireHalfSize` | footprints used by the flat-ground check; match these to your tent mesh |
+| `MaxExtraBedrolls`, `BedrollSpacing` | how many follower bedrolls to place (0–3, default 2) and how far apart; make sure they fit inside your tent |
+| `CSK_CampFollowersQuest`, `CampRadius` | the follower quest from step 2f (leave empty to only place the bedrolls), and how close to the camp the player must be when sleeping |
 
 When the quest starts, it gives the player the power.
 
 The tent Activator from step 2b also needs its `CampQuest` property set to `CSK_CampsiteQuest`.
 
-### 2f. How players get the kits
+### 2f. Followers sleeping at camp (optional)
+
+When the player sets up camp carrying more than one bedroll, the extras (up to `MaxExtraBedrolls`) are laid out side by side in the tent, centred on the player's. Packing up returns all of them. The bedrolls work without this step; followers just won't be told to use them.
+
+If the player sleeps within `CampRadius` of the camp, this quest sends nearby followers to the extra bedrolls. When the player wakes, the quest stops and the followers get up and follow again.
+
+**Quest** `CSK_CampFollowersQuest`
+- Leave *Start Game Enabled* **unchecked**; the camp script starts and stops it
+- **Quest Aliases** tab, create:
+  - `Follower1`, `Follower2`, `Follower3`, each with:
+    - Fill Type: *Find Matching Reference*, *In Loaded Area*, *Closest*
+    - Check *Optional* and *Allow Reserved*
+    - Conditions: `IsPlayerTeammate == 1` AND `GetDistance` (Reference: `PlayerRef`) `< 2048`
+    - On `Follower2` and `Follower3`, add conditions that keep them from picking the same actor twice. One way is `GetIsAliasRef Follower1 == 0` (and `Follower2 == 0` on `Follower3`).
+  - `Bedroll1`, `Bedroll2`, `Bedroll3`, each with:
+    - Fill Type: *Specific Reference*, left empty
+    - Check *Optional*
+    - The script fills these by calling `ForceRefTo`
+- **Packages:** give each `FollowerN` alias a package `CSK_FollowerSleepN`:
+  - Template: *Sleep*
+  - Location: *Near Reference Alias* `BedrollN`, radius about 64. Keep the radius small so the follower picks that bedroll.
+  - If the template also has a bed or target field, point it at `BedrollN` too
+  - Schedule: any time, with no duration limit
+- **Scripts** tab: add `CSK_CampFollowersScript`, and fill:
+  - `Followers` with `Follower1`–`3`, in order
+  - `Bedrolls` with `Bedroll1`–`3`, in order
+
+Then set `CSK_CampFollowersQuest` on the main quest's script (step 2e).
+
+A follower without a bedroll keeps their normal behaviour, because their package's `BedrollN` alias is empty. This also covers having more followers than extra bedrolls.
+
+### 2g. How players get the kits
 
 Pick one or more of these:
 
@@ -163,7 +198,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 
 ## 4. Compile scripts and package
 
-1. In the CK, compile all four scripts (*Gameplay > Papyrus Script Manager*). `CSK_Native` compiles without the DLL; its functions are only bound at runtime.
+1. In the CK, compile all five scripts (*Gameplay > Papyrus Script Manager*). `CSK_Native` compiles without the DLL; its functions are only bound at runtime.
 2. Save the plugin as `CampsiteKit.esp`. It adds only new records, so you can flag it as ESL with xEdit.
 3. Package these files:
    ```
@@ -172,6 +207,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
    Scripts/CSK_SetUpCampEffect.pex
    Scripts/CSK_TentActivatorScript.pex
    Scripts/CSK_Native.pex
+   Scripts/CSK_CampFollowersScript.pex
    SKSE/Plugins/CampsiteKit.dll
    Source/Scripts/*.psc            (optional but polite)
    Meshes/CampsiteKit/...          (if you made custom meshes)
