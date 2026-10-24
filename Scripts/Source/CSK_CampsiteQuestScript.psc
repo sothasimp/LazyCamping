@@ -13,7 +13,11 @@ Spell Property CSK_SetUpCampPower Auto
 ; ---------------------------------------------------------------------------
 ; Inventory kits (MiscObjects the player must carry)
 ; ---------------------------------------------------------------------------
-MiscObject Property CSK_TentKit Auto
+MiscObject[] Property CSK_SmallTentKits Auto
+{Small tent kits by colour: 0 brown, 1 blue, 2 green, 3 red, 4 white. Every
+tent kit the player carries is pitched (up to 4 tents).}
+MiscObject[] Property CSK_LargeTentKits Auto
+{Large tent kits, same colour order as CSK_SmallTentKits.}
 MiscObject Property CSK_BedrollKit Auto
 MiscObject Property CSK_CampfireKit Auto
 
@@ -25,41 +29,63 @@ Int Property FirewoodRequired = 0 Auto
 ; ---------------------------------------------------------------------------
 ; World objects placed when the camp is set up
 ; ---------------------------------------------------------------------------
-Form Property CSK_TentPlaced Auto
-{Activator (recommended, so the tent can be used to pack up) or Static.}
+Form[] Property CSK_SmallTents Auto
+{Small tent Activators, same colour order as CSK_SmallTentKits. Each needs
+CSK_TentActivatorScript.}
+Form[] Property CSK_LargeTents Auto
+{Large tent Activators, same colour order as CSK_SmallTents.}
 Form Property CSK_BedrollPlaced Auto
-{Furniture with a sleep marker, so the player can sleep / wait in it.}
+{Furniture with a sleep marker, so the player can sleep / wait in it. Needs
+CSK_BedrollScript: in a camp without tents, sneaking and activating a
+bedroll packs up the camp.}
 Form Property CSK_CampfirePlaced Auto
 {Static or Activator: the burning campfire.}
 Light Property CSK_CampfireLight Auto
 {Optional. Flickering firelight placed above the campfire.}
 Form Property CSK_CookingStation Auto
 {Optional. Cooking pot / spit furniture placed over the fire.}
+Form Property CSK_SitMarkerPlayer Auto
+{Optional. Visible cross-legged seat by the fire that the player can use.}
+Form Property CSK_SitMarkerFollower Auto
+{Optional. Cross-legged sit marker by the fire, one per follower.}
 
 ; ---------------------------------------------------------------------------
-; Layout, in game units relative to the player (fwd = in front, right = to the
-; player's right). ~70 units is roughly one metre. Tweak to fit your meshes.
+; Layout, in game units. ~70 units is roughly one metre. Everything is
+; arranged around the fire; tweak to fit your meshes.
 ; ---------------------------------------------------------------------------
-Float Property CampfireForward = 160.0 Auto
-Float Property TentForward = 420.0 Auto
-Float Property TentRight = 0.0 Auto
-Float Property BedrollForward = 420.0 Auto
-Float Property BedrollRight = 0.0 Auto
 Float Property LightHeight = 40.0 Auto
+Float Property SeatRadius = 110.0 Auto
+{Distance of the seats from the centre of the fire. The fire goes this far in
+front of the player, so the player's seat lands where they stand.}
+
+Float Property TentRingGap = 60.0 Auto
+{Gap between the seats and the front of the deepest tent. All tents share one
+ring: SeatRadius + TentRingGap + the largest HalfDepth among them.}
+Float Property SmallTentHalfWidth = 90.0 Auto
+Float Property SmallTentHalfDepth = 120.0 Auto
+Int Property SmallTentCapacity = 2 Auto
+{Most bedrolls a small tent holds (1-4).}
+Float Property LargeTentHalfWidth = 150.0 Auto
+Float Property LargeTentHalfDepth = 170.0 Auto
+Int Property LargeTentCapacity = 4 Auto
+{Most bedrolls a large tent holds (1-4).}
+Float Property BedrollSpacing = 70.0 Auto
+{Side-to-side distance between bedrolls in a tent.}
+
+Float Property BedrollRingRadius = 230.0 Auto
+{Without tents: distance of the bedrolls from the centre of the fire, just
+outside the seats.}
+Float Property BedrollRingYaw = 90.0 Auto
+{Without tents: added to each bedroll's facing so it lies sideways along the
+circle. Use 270 to flip head and foot, or adjust if your bedroll model's long
+axis isn't its forward axis.}
 
 ; ---------------------------------------------------------------------------
-; Followers. Extra bedrolls the player carries are laid out beside theirs.
+; Followers
 ; ---------------------------------------------------------------------------
-Int Property MaxExtraBedrolls = 2 Auto
-{Extra bedrolls placed for followers when the player carries more than one
-(0-3).}
-Float Property BedrollSpacing = 75.0 Auto
-{Side-to-side distance between bedrolls in the tent.}
 Quest Property CSK_CampFollowersQuest Auto
-{Optional. Sends followers to the extra bedrolls while the player sleeps at
-camp. Leave empty to only place the bedrolls.}
-Float Property CampRadius = 1024.0 Auto
-{The player counts as sleeping "at camp" within this distance of their bedroll.}
+{Optional. Seats followers by the fire and puts them to bed with the player.
+Leave empty to place only the player's seat and the bedrolls.}
 
 ; ---------------------------------------------------------------------------
 ; Native placement (CampsiteKit.dll). Ignored if the SKSE plugin isn't loaded.
@@ -67,17 +93,14 @@ Float Property CampRadius = 1024.0 Auto
 Bool Property UseNativePlacement = True Auto
 {Use the SKSE plugin to snap the camp to the ground when it is available.}
 Bool Property AlignToSlope = True Auto
-{Tilt the tent, bedroll and fire to match the ground.}
+{Tilt the tents, bedrolls, seats and fire to match the ground.}
 Float Property MaxTilt = 20.0 Auto
 {Objects never tilt more than this many degrees, even on steeper ground.}
 Float Property MaxSlope = 25.0 Auto
 {Refuse to camp where the ground is steeper than this (degrees).}
 Float Property MaxStep = 48.0 Auto
-{Refuse to camp if the ground under the tent varies by more than this
+{Refuse to camp if the ground under a tent varies by more than this
 (catches rocks, logs and ledges).}
-Float Property TentHalfWidth = 110.0 Auto
-Float Property TentHalfDepth = 140.0 Auto
-{Half the tent's footprint, used for the flat-ground check.}
 Float Property CampfireHalfSize = 50.0 Auto
 Float Property SearchUp = 256.0 Auto
 Float Property SearchDown = 1024.0 Auto
@@ -90,28 +113,41 @@ Keyword Property LocTypeCity Auto
 {Optional. Camping is blocked in locations with this keyword.}
 Keyword Property LocTypeTown Auto
 {Optional. Camping is blocked in locations with this keyword.}
+Bool Property AllowPackUpFromPower = False Auto
+{If true, casting the power while a camp is up packs it up, so a camp left
+far away can still be retrieved. Otherwise only sneaking and activating a
+tent (or, without tents, a bedroll) does.}
 Float Property MaxPackUpDistance = 0.0 Auto
-{If > 0, the player must be this close to the camp to pack it up remotely
-with the power. 0 = pack up from anywhere (kits are never lost).}
-
-; ---------------------------------------------------------------------------
-; Messages
-; ---------------------------------------------------------------------------
-Message Property CSK_PackUpMsg Auto
-{Message box. Button 0 = "Pack up camp", Button 1 = "Leave it".}
+{With AllowPackUpFromPower: if > 0, the player must be this close to the camp.}
 
 ; ---------------------------------------------------------------------------
 ; State
 ; ---------------------------------------------------------------------------
 Bool Property CampDeployed = False Auto Hidden
-Int Property ExtraBedrollsPlaced = 0 Auto Hidden
+Int Property TentCount = 0 Auto Hidden
+Int Property BedrollsPlaced = 0 Auto Hidden
 
-; Slots in placedRefs: 0 campfire, 1 light, 2 cooking station, 3 tent,
-; 4 player's bedroll, 5-7 follower bedrolls.
-Int Property kFirstExtraBedroll = 5 AutoReadOnly
-Int Property kMaxExtraBedrolls = 3 AutoReadOnly
+; Slots in placedRefs.
+Int Property kCampfire = 0 AutoReadOnly
+Int Property kLight = 1 AutoReadOnly
+Int Property kCooking = 2 AutoReadOnly
+Int Property kPlayerSeat = 3 AutoReadOnly
+Int Property kFirstFollowerSeat = 4 AutoReadOnly   ; 4-6
+Int Property kFirstTent = 7 AutoReadOnly           ; 7-10
+Int Property kFirstBedroll = 11 AutoReadOnly       ; 11-26, the player's first
+Int Property kSlotCount = 27 AutoReadOnly
+
+Int Property kMaxFollowers = 3 AutoReadOnly
+Int Property kMaxTents = 4 AutoReadOnly
+Int Property kMaxBedrolls = 16 AutoReadOnly
+Int Property kRingBedrolls = 4 AutoReadOnly        ; without tents
+Int Property kSmall = 0 AutoReadOnly
+Int Property kLarge = 1 AutoReadOnly
+Int Property kColors = 5 AutoReadOnly
 
 ObjectReference[] placedRefs
+MiscObject[] tentKitsUsed   ; refunded on pack-up
+Int[] tentSizesUsed
 Bool busy = False
 
 Event OnInit()
@@ -120,36 +156,84 @@ EndEvent
 
 ; Called by the power's magic effect.
 Function HandlePowerCast()
+	If CampDeployed
+		If !AllowPackUpFromPower
+			If TentCount == 0
+				Debug.Notification("You already have a camp set up. Sneak and use a bedroll to pack it up.")
+			Else
+				Debug.Notification("You already have a camp set up. Sneak and use a tent to pack it up.")
+			EndIf
+		ElseIf MaxPackUpDistance > 0.0 && PlayerRef.GetDistance(placedRefs[kCampfire]) > MaxPackUpDistance
+			Debug.Notification("You are too far from your camp to pack it up.")
+		ElseIf !busy
+			busy = True
+			PackUpCamp()
+			busy = False
+		EndIf
+		Return
+	EndIf
+
 	If busy
 		Return
 	EndIf
 	busy = True
-
-	If CampDeployed
-		PromptPackUp(True)
-	ElseIf CanCampHere() && HasAllKits()
+	If CanCampHere() && HasAllKits()
 		SetUpCamp()
 	EndIf
-
 	busy = False
 EndFunction
 
-; Called by the power (remote = True) or by activating the tent (remote = False).
-Function PromptPackUp(Bool remote = False)
-	If !CampDeployed
+; Called by CSK_TentActivatorScript. Sneaking and activating any of the camp's
+; tents from outside packs up the camp. Anything else does nothing; in
+; particular the player can't pack up by accident from inside a tent.
+Function OnTentActivated(ObjectReference akTent)
+	If !CampDeployed || busy || !PlayerRef.IsSneaking()
 		Return
 	EndIf
 
-	If remote && MaxPackUpDistance > 0.0 && placedRefs[0]
-		If PlayerRef.GetDistance(placedRefs[0]) > MaxPackUpDistance
-			Debug.Notification("You are too far from your camp to pack it up.")
+	Int t = 0
+	While t < TentCount
+		If placedRefs[kFirstTent + t] == akTent
+			If IsInsideTent(PlayerRef, akTent, tentSizesUsed[t])
+				Return
+			EndIf
+			busy = True
+			PackUpCamp()
+			busy = False
 			Return
 		EndIf
+		t += 1
+	EndWhile
+EndFunction
+
+; Called by CSK_BedrollScript. In a camp without tents, the bedrolls'
+; activation is blocked so this runs first: sneaking packs up the camp, and
+; anything else is passed through to the bedroll as normal.
+Function OnBedrollActivated(ObjectReference akBedroll, ObjectReference akActionRef)
+	If !CampDeployed || TentCount > 0 || !IsCampBedroll(akBedroll)
+		Return  ; not blocked, so the bedroll has already done its normal thing
 	EndIf
 
-	If CSK_PackUpMsg.Show() == 0
-		PackUpCamp()
+	If akActionRef == PlayerRef && PlayerRef.IsSneaking()
+		If !busy
+			busy = True
+			PackUpCamp()
+			busy = False
+		EndIf
+	Else
+		akBedroll.Activate(akActionRef, True)
 	EndIf
+EndFunction
+
+Bool Function IsCampBedroll(ObjectReference akRef)
+	Int i = kFirstBedroll
+	While i < kFirstBedroll + kMaxBedrolls
+		If placedRefs[i] && placedRefs[i] == akRef
+			Return True
+		EndIf
+		i += 1
+	EndWhile
+	Return False
 EndFunction
 
 Bool Function CanCampHere()
@@ -181,9 +265,6 @@ EndFunction
 
 Bool Function HasAllKits()
 	String missing = ""
-	If PlayerRef.GetItemCount(CSK_TentKit) < 1
-		missing += CSK_TentKit.GetName() + ", "
-	EndIf
 	If PlayerRef.GetItemCount(CSK_BedrollKit) < 1
 		missing += CSK_BedrollKit.GetName() + ", "
 	EndIf
@@ -202,72 +283,212 @@ Bool Function HasAllKits()
 EndFunction
 
 Function SetUpCamp()
-	; Slot layout (see placedRefs). Index 0, the campfire, is the camp's anchor.
-	Form[] forms = new Form[8]
-	Float[] fwd = new Float[8]
-	Float[] side = new Float[8]
-	Float[] lift = new Float[8]
-	Float[] turn = new Float[8]
-
-	forms[0] = CSK_CampfirePlaced
-	fwd[0] = CampfireForward
-	forms[1] = CSK_CampfireLight
-	fwd[1] = CampfireForward
-	lift[1] = LightHeight
-	forms[2] = CSK_CookingStation
-	fwd[2] = CampfireForward
-	; Tent and bedroll face back toward the fire.
-	forms[3] = CSK_TentPlaced
-	fwd[3] = TentForward
-	side[3] = TentRight
-	turn[3] = 180.0
-
-	; Bedrolls sit side by side, centred in the tent. The player's is slot 4;
-	; any extra bedrolls the player carries go to followers.
-	Int extras = PlayerRef.GetItemCount(CSK_BedrollKit) - 1
-	Int maxExtras = MaxExtraBedrolls
-	If maxExtras > kMaxExtraBedrolls
-		maxExtras = kMaxExtraBedrolls
-	EndIf
-	If extras > maxExtras
-		extras = maxExtras
-	EndIf
-	If extras < 0
-		extras = 0
-	EndIf
-
-	Float firstOffset = BedrollRight - extras * BedrollSpacing / 2.0
-	Int b = 0
-	While b <= extras
-		Int slot = 4
-		If b > 0
-			slot = kFirstExtraBedroll + b - 1
-		EndIf
-		forms[slot] = CSK_BedrollPlaced
-		fwd[slot] = BedrollForward
-		side[slot] = firstOffset + b * BedrollSpacing
-		turn[slot] = 180.0
-		b += 1
-	EndWhile
-
 	Float heading = PlayerRef.GetAngleZ()
 	Bool native = UseNativePlacement && CSK_Native.GetVersion() > 0
+	Int bedrollsCarried = PlayerRef.GetItemCount(CSK_BedrollKit)
 
-	If native && !IsSiteClear(heading)
+	; Tents: every tent kit the player carries, in kit order (small brown ...
+	; white, then large), up to kMaxTents. Each tent needs at least one
+	; bedroll, so there are never more tents than bedrolls.
+	MiscObject[] kits = new MiscObject[4]
+	Int[] sizes = new Int[4]
+	Int[] colors = new Int[4]
+	Int tents = 0
+	Int kit = 0
+	While kit < 2 * kColors && tents < kMaxTents && tents < bedrollsCarried
+		MiscObject k = TentKit(kit / kColors, kit % kColors)
+		If k
+			Int have = PlayerRef.GetItemCount(k)
+			While have > 0 && tents < kMaxTents && tents < bedrollsCarried
+				kits[tents] = k
+				sizes[tents] = kit / kColors
+				colors[tents] = kit % kColors
+				tents += 1
+				have -= 1
+			EndWhile
+		EndIf
+		kit += 1
+	EndWhile
+
+	; Bedrolls: one in each tent, then the rest in turn up to each tent's
+	; capacity. Without tents, up to kRingBedrolls ring the fire.
+	Int[] bedsInTent = new Int[4]
+	Int bedrolls = 0
+	Int t = 0
+	If tents > 0
+		While t < tents
+			bedsInTent[t] = 1
+			t += 1
+		EndWhile
+		bedrolls = tents
+		Bool added = True
+		While added && bedrolls < bedrollsCarried
+			added = False
+			t = 0
+			While t < tents && bedrolls < bedrollsCarried
+				If bedsInTent[t] < TentCapacity(sizes[t])
+					bedsInTent[t] = bedsInTent[t] + 1
+					bedrolls += 1
+					added = True
+				EndIf
+				t += 1
+			EndWhile
+		EndWhile
+
+		; The tent with the most bedrolls becomes the first tent: it stands
+		; across the fire from the player, entrance facing them, and holds the
+		; player's bedroll.
+		Int main = 0
+		t = 1
+		While t < tents
+			If bedsInTent[t] > bedsInTent[main]
+				main = t
+			EndIf
+			t += 1
+		EndWhile
+		If main != 0
+			MiscObject swapKit = kits[0]
+			kits[0] = kits[main]
+			kits[main] = swapKit
+			Int swap = sizes[0]
+			sizes[0] = sizes[main]
+			sizes[main] = swap
+			swap = colors[0]
+			colors[0] = colors[main]
+			colors[main] = swap
+			swap = bedsInTent[0]
+			bedsInTent[0] = bedsInTent[main]
+			bedsInTent[main] = swap
+		EndIf
+	Else
+		bedrolls = bedrollsCarried
+		If bedrolls > kRingBedrolls
+			bedrolls = kRingBedrolls
+		EndIf
+	EndIf
+
+	; Tents stand on one ring outside the seats, entrances facing the fire.
+	; Bearings are degrees clockwise from the player's facing, seen from the fire.
+	Float radius = SeatRadius + TentRingGap
+	Float deepest = 0.0
+	t = 0
+	While t < tents
+		If TentHalfDepth(sizes[t]) > deepest
+			deepest = TentHalfDepth(sizes[t])
+		EndIf
+		t += 1
+	EndWhile
+	radius += deepest
+
+	Float[] tentFwd = new Float[4]
+	Float[] tentSide = new Float[4]
+	Float[] tentTurn = new Float[4]
+	t = 0
+	While t < tents
+		Float bearing = TentBearing(t, tents)
+		tentFwd[t] = FireForward() + radius * Math.Cos(bearing)
+		tentSide[t] = radius * Math.Sin(bearing)
+		tentTurn[t] = bearing + 180.0
+		t += 1
+	EndWhile
+
+	If native && !IsSiteClear(heading, tents, sizes, tentFwd, tentSide, tentTurn)
 		Return
 	EndIf
 
-	; Phase 1: work out every position before placing anything, so the
+	; Start the follower quest: its aliases find the followers who are with
+	; the player, and each one gets a seat by the fire.
+	CSK_CampFollowersScript followers = None
+	If CSK_CampFollowersQuest
+		If CSK_CampFollowersQuest.IsRunning()
+			CSK_CampFollowersQuest.Stop()
+		EndIf
+		If CSK_CampFollowersQuest.Start()
+			followers = CSK_CampFollowersQuest as CSK_CampFollowersScript
+		EndIf
+	EndIf
+
+	; Slot layout (see placedRefs). Index 0, the campfire, is the camp's anchor.
+	Form[] forms = new Form[27]
+	Float[] fwd = new Float[27]
+	Float[] side = new Float[27]
+	Float[] lift = new Float[27]
+	Float[] turn = new Float[27]
+
+	forms[kCampfire] = CSK_CampfirePlaced
+	fwd[kCampfire] = FireForward()
+	forms[kLight] = CSK_CampfireLight
+	fwd[kLight] = FireForward()
+	lift[kLight] = LightHeight
+	forms[kCooking] = CSK_CookingStation
+	fwd[kCooking] = FireForward()
+
+	; Seats ring the fire and face it.
+	SetSeat(forms, fwd, side, turn, kPlayerSeat, CSK_SitMarkerPlayer, SeatBearing(-1))
+	If followers && CSK_SitMarkerFollower
+		Int f = 0
+		While f < kMaxFollowers
+			If followers.HasFollower(f)
+				SetSeat(forms, fwd, side, turn, kFirstFollowerSeat + f, CSK_SitMarkerFollower, SeatBearing(f))
+			EndIf
+			f += 1
+		EndWhile
+	EndIf
+
+	If tents > 0
+		t = 0
+		While t < tents
+			forms[kFirstTent + t] = TentForm(sizes[t], colors[t])
+			fwd[kFirstTent + t] = tentFwd[t]
+			side[kFirstTent + t] = tentSide[t]
+			turn[kFirstTent + t] = tentTurn[t]
+			t += 1
+		EndWhile
+
+		; Bedroll slots: first each tent's first bedroll (the player's is in the
+		; first tent, followers' first beds in the others), then the rest.
+		Int nextSlot = kFirstBedroll
+		t = 0
+		While t < tents
+			SetTentBedroll(forms, fwd, side, turn, nextSlot, tentFwd[t], tentSide[t], tentTurn[t], 0, bedsInTent[t])
+			nextSlot += 1
+			t += 1
+		EndWhile
+		t = 0
+		While t < tents
+			Int b = 1
+			While b < bedsInTent[t]
+				SetTentBedroll(forms, fwd, side, turn, nextSlot, tentFwd[t], tentSide[t], tentTurn[t], b, bedsInTent[t])
+				nextSlot += 1
+				b += 1
+			EndWhile
+			t += 1
+		EndWhile
+	Else
+		; Without tents, each bedroll lies sideways along a circle just outside
+		; the seats, behind its owner's seat.
+		Int r = 0
+		While r < bedrolls
+			Float ringBearing = SeatBearing(r - 1)
+			forms[kFirstBedroll + r] = CSK_BedrollPlaced
+			fwd[kFirstBedroll + r] = FireForward() + BedrollRingRadius * Math.Cos(ringBearing)
+			side[kFirstBedroll + r] = BedrollRingRadius * Math.Sin(ringBearing)
+			turn[kFirstBedroll + r] = ringBearing + BedrollRingYaw
+			r += 1
+		EndWhile
+	EndIf
+
+	; Phase 1: work out every position before placing anything, so a
 	; bedroll's ground check can't hit the tent standing over it.
-	Float[] posX = new Float[8]
-	Float[] posY = new Float[8]
-	Float[] posZ = new Float[8]
-	Float[] angX = new Float[8]
-	Float[] angY = new Float[8]
-	Float[] angZ = new Float[8]
+	Float[] posX = new Float[27]
+	Float[] posY = new Float[27]
+	Float[] posZ = new Float[27]
+	Float[] angX = new Float[27]
+	Float[] angY = new Float[27]
+	Float[] angZ = new Float[27]
 
 	Int i = 0
-	While i < forms.Length
+	While i < kSlotCount
 		If forms[i]
 			posX[i] = OffsetX(heading, fwd[i], side[i])
 			posY[i] = OffsetY(heading, fwd[i], side[i])
@@ -288,25 +509,46 @@ Function SetUpCamp()
 	EndWhile
 
 	; Phase 2: place.
-	placedRefs = new ObjectReference[8]
+	placedRefs = new ObjectReference[27]
 	i = 0
-	While i < forms.Length
+	While i < kSlotCount
 		placedRefs[i] = PlaceAt(forms[i], posX[i], posY[i], posZ[i], angX[i], angY[i], angZ[i])
+		; Without tents, the bedrolls' scripts handle activation first, so
+		; sneaking and activating one can pack up the camp.
+		If tents == 0 && i >= kFirstBedroll && placedRefs[i]
+			placedRefs[i].BlockActivation(True)
+		EndIf
 		i += 1
 	EndWhile
 
-	PlayerRef.RemoveItem(CSK_TentKit, 1, True)
-	PlayerRef.RemoveItem(CSK_BedrollKit, 1 + extras, True)
+	t = 0
+	While t < tents
+		PlayerRef.RemoveItem(kits[t], 1, True)
+		t += 1
+	EndWhile
+	PlayerRef.RemoveItem(CSK_BedrollKit, bedrolls, True)
 	PlayerRef.RemoveItem(CSK_CampfireKit, 1, True)
 	If FirewoodRequired > 0 && Firewood01
 		PlayerRef.RemoveItem(Firewood01, FirewoodRequired, True)
 	EndIf
 
-	ExtraBedrollsPlaced = extras
-	CampDeployed = True
-	If extras > 0 && CSK_CampFollowersQuest
-		RegisterForSleep()
+	If followers
+		ObjectReference[] beds = new ObjectReference[3]
+		ObjectReference[] seats = new ObjectReference[3]
+		i = 0
+		While i < kMaxFollowers
+			beds[i] = placedRefs[kFirstBedroll + 1 + i]
+			seats[i] = placedRefs[kFirstFollowerSeat + i]
+			i += 1
+		EndWhile
+		followers.Assign(placedRefs[kCampfire], placedRefs[kPlayerSeat], beds, seats)
 	EndIf
+
+	tentKitsUsed = kits
+	tentSizesUsed = sizes
+	TentCount = tents
+	BedrollsPlaced = bedrolls
+	CampDeployed = True
 	Debug.Notification("You set up camp.")
 EndFunction
 
@@ -316,9 +558,8 @@ Function PackUpCamp()
 		Return
 	EndIf
 
-	UnregisterForSleep()
 	If CSK_CampFollowersQuest && CSK_CampFollowersQuest.IsRunning()
-		CSK_CampFollowersQuest.Stop()
+		(CSK_CampFollowersQuest as CSK_CampFollowersScript).Shutdown()
 	EndIf
 
 	Int i = 0
@@ -331,53 +572,149 @@ Function PackUpCamp()
 		i += 1
 	EndWhile
 
-	PlayerRef.AddItem(CSK_TentKit, 1, True)
-	PlayerRef.AddItem(CSK_BedrollKit, 1 + ExtraBedrollsPlaced, True)
+	i = 0
+	While i < TentCount
+		If tentKitsUsed[i]
+			PlayerRef.AddItem(tentKitsUsed[i], 1, True)
+		EndIf
+		i += 1
+	EndWhile
+	PlayerRef.AddItem(CSK_BedrollKit, BedrollsPlaced, True)
 	PlayerRef.AddItem(CSK_CampfireKit, 1, True)
 
-	ExtraBedrollsPlaced = 0
+	TentCount = 0
+	BedrollsPlaced = 0
 	CampDeployed = False
 	Debug.Notification("You pack up your camp.")
 EndFunction
 
-; Followers bed down in the extra bedrolls while the player sleeps near camp.
-Event OnSleepStart(Float afSleepStartTime, Float afDesiredSleepEndTime)
-	If !CampDeployed || ExtraBedrollsPlaced < 1 || !CSK_CampFollowersQuest
+; How far in front of the player the fire goes: one seat radius, so the
+; player's seat (on the near side of the ring) lands where they're standing.
+Float Function FireForward()
+	Return SeatRadius
+EndFunction
+
+; Bearing of tent `index` out of `count`, spaced evenly around the fire. The
+; first tent is at 0, straight across the fire from the player. The player
+; stands on the ring of seats, inside the ring of tents, so a tent at 180
+; simply stands behind them.
+Float Function TentBearing(Int index, Int count)
+	Return index * 360.0 / count
+EndFunction
+
+; Bearing of a seat around the fire, in degrees clockwise from the player's
+; facing when the camp was set up. -1 is the player, on the near side;
+; followers 0-2 sit to either side.
+Float Function SeatBearing(Int follower)
+	If follower == 0
+		Return 120.0
+	ElseIf follower == 1
+		Return 240.0
+	ElseIf follower == 2
+		Return 60.0
+	EndIf
+	Return 180.0
+EndFunction
+
+; Puts a seat in a slot, SeatRadius from the fire at the given bearing, facing it.
+Function SetSeat(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int slot, Form seat, Float bearing)
+	If !seat
 		Return
 	EndIf
-	If !placedRefs[4] || PlayerRef.GetDistance(placedRefs[4]) > CampRadius
-		Return
+	forms[slot] = seat
+	fwd[slot] = FireForward() + SeatRadius * Math.Cos(bearing)
+	side[slot] = SeatRadius * Math.Sin(bearing)
+	turn[slot] = bearing + 180.0
+EndFunction
+
+; Puts bedroll `index` of `count` in a slot, side by side across the tent at
+; (tentFwd, tentSide) facing the same way as the tent.
+Function SetTentBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int slot, Float tentFwd, Float tentSide, Float tentTurn, Int index, Int count)
+	; Offset along the tent's right axis, which points at tentTurn + 90.
+	Float offset = (index - (count - 1) / 2.0) * BedrollSpacing
+	forms[slot] = CSK_BedrollPlaced
+	fwd[slot] = tentFwd + offset * Math.Cos(tentTurn + 90.0)
+	side[slot] = tentSide + offset * Math.Sin(tentTurn + 90.0)
+	turn[slot] = tentTurn
+EndFunction
+
+MiscObject Function TentKit(Int size, Int color)
+	MiscObject[] kits = CSK_SmallTentKits
+	If size == kLarge
+		kits = CSK_LargeTentKits
 	EndIf
-
-	ObjectReference[] beds = new ObjectReference[3]
-	Int i = 0
-	While i < ExtraBedrollsPlaced
-		beds[i] = placedRefs[kFirstExtraBedroll + i]
-		i += 1
-	EndWhile
-
-	If CSK_CampFollowersQuest.IsRunning() || CSK_CampFollowersQuest.Start()
-		(CSK_CampFollowersQuest as CSK_CampFollowersScript).AssignBedrolls(beds)
+	If color < 0 || color >= kits.Length
+		Return None
 	EndIf
-EndEvent
+	Return kits[color]
+EndFunction
 
-Event OnSleepStop(Bool abInterrupted)
-	If CSK_CampFollowersQuest && CSK_CampFollowersQuest.IsRunning()
-		CSK_CampFollowersQuest.Stop()
+; Returns the tent for a size and colour, falling back to the first (brown).
+Form Function TentForm(Int size, Int color)
+	Form[] tents = CSK_SmallTents
+	If size == kLarge
+		tents = CSK_LargeTents
 	EndIf
-EndEvent
+	If !tents
+		Return None
+	EndIf
+	If color >= 0 && color < tents.Length && tents[color]
+		Return tents[color]
+	EndIf
+	Return tents[0]
+EndFunction
 
-; Checks the ground under the campfire and tent with the SKSE plugin.
-Bool Function IsSiteClear(Float heading)
-	Float fireX = OffsetX(heading, CampfireForward, 0.0)
-	Float fireY = OffsetY(heading, CampfireForward, 0.0)
+Int Function TentCapacity(Int size)
+	Int capacity = SmallTentCapacity
+	If size == kLarge
+		capacity = LargeTentCapacity
+	EndIf
+	If capacity < 1
+		Return 1
+	ElseIf capacity > 4
+		Return 4
+	EndIf
+	Return capacity
+EndFunction
+
+Float Function TentHalfWidth(Int size)
+	If size == kLarge
+		Return LargeTentHalfWidth
+	EndIf
+	Return SmallTentHalfWidth
+EndFunction
+
+Float Function TentHalfDepth(Int size)
+	If size == kLarge
+		Return LargeTentHalfDepth
+	EndIf
+	Return SmallTentHalfDepth
+EndFunction
+
+; True if akActor stands within the footprint of a tent of the given size.
+Bool Function IsInsideTent(ObjectReference akActor, ObjectReference akTent, Int size)
+	; Express the actor's position in the tent's own right/forward axes.
+	Float a = akTent.GetAngleZ()
+	Float dx = akActor.GetPositionX() - akTent.GetPositionX()
+	Float dy = akActor.GetPositionY() - akTent.GetPositionY()
+	Float localRight = dx * Math.Cos(a) - dy * Math.Sin(a)
+	Float localForward = dx * Math.Sin(a) + dy * Math.Cos(a)
+	Return Math.Abs(localRight) < TentHalfWidth(size) && Math.Abs(localForward) < TentHalfDepth(size)
+EndFunction
+
+; Checks the ground under the campfire and each tent with the SKSE plugin.
+Bool Function IsSiteClear(Float heading, Int tents, Int[] sizes, Float[] tentFwd, Float[] tentSide, Float[] tentTurn)
+	Float fireX = OffsetX(heading, FireForward(), 0.0)
+	Float fireY = OffsetY(heading, FireForward(), 0.0)
 	Int result = CSK_Native.IsAreaClear(PlayerRef, fireX, fireY, heading, CampfireHalfSize, CampfireHalfSize, MaxStep, MaxSlope, SearchUp, SearchDown)
 
-	If result == 0 && CSK_TentPlaced
-		Float tentX = OffsetX(heading, TentForward, TentRight)
-		Float tentY = OffsetY(heading, TentForward, TentRight)
-		result = CSK_Native.IsAreaClear(PlayerRef, tentX, tentY, heading + 180.0, TentHalfWidth, TentHalfDepth, MaxStep, MaxSlope, SearchUp, SearchDown)
-	EndIf
+	Int t = 0
+	While result == 0 && t < tents
+		Float tentX = OffsetX(heading, tentFwd[t], tentSide[t])
+		Float tentY = OffsetY(heading, tentFwd[t], tentSide[t])
+		result = CSK_Native.IsAreaClear(PlayerRef, tentX, tentY, heading + tentTurn[t], TentHalfWidth(sizes[t]), TentHalfDepth(sizes[t]), MaxStep, MaxSlope, SearchUp, SearchDown)
+		t += 1
+	EndWhile
 
 	If result == 1
 		Debug.Notification("There's no solid ground here to camp on.")

@@ -1,10 +1,11 @@
 Scriptname CSK_TentActivatorScript extends ObjectReference
-{Attached to the placed tent Activator. Activating the tent offers to pack up.}
+{Attached to every tent Activator (both sizes, all colours). Sneaking and
+activating the tent from outside packs up the camp.}
 
 CSK_CampsiteQuestScript Property CampQuest Auto
 
 Event OnActivate(ObjectReference akActionRef)
 	If akActionRef == CampQuest.PlayerRef
-		CampQuest.PromptPackUp(False)
+		CampQuest.OnTentActivated(Self)
 	EndIf
 EndEvent
