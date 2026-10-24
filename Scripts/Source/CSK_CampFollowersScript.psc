@@ -6,7 +6,8 @@ followers when the quest starts. Each follower has two alias packages:
 - sleep in their Bedrolls alias while CSK_CampActivity == 2 (the player is
   sleeping at camp). The bedrolls are handed out when the player goes to
   sleep, skipping whichever camp bedroll the player is lying in. A spouse or
-  lover gets the free bedroll nearest the player's.
+  lover gets the free bedroll nearest the player's, and each follower couple
+  the two free bedrolls closest together.
 The rest of the time they follow the player as normal. A follower without a
 seat or bedroll has an empty alias, so that package simply doesn't run.}
 
@@ -126,6 +127,8 @@ Function AssignBedrolls()
 	EndWhile
 
 	ObjectReference[] chosen = new ObjectReference[3]
+
+	; The player's partners take the free bedrolls nearest the player's.
 	If playerBed
 		i = 0
 		While i < Followers.Length && i < chosen.Length
@@ -141,6 +144,45 @@ Function AssignBedrolls()
 		EndWhile
 	EndIf
 
+	; Each follower couple takes the two free bedrolls closest together:
+	; normally side by side in the tent set aside for them.
+	Int[] mates = Mates()
+	i = 0
+	While i < mates.Length
+		Int j = mates[i]
+		If j > i && !chosen[i] && !chosen[j]
+			Int first = -1
+			Int second = -1
+			Float closest = 0.0
+			Int a = 0
+			While a < free.Length
+				If free[a]
+					Int b = a + 1
+					While b < free.Length
+						If free[b]
+							Float gap = free[a].GetDistance(free[b])
+							If first < 0 || gap < closest
+								first = a
+								second = b
+								closest = gap
+							EndIf
+						EndIf
+						b += 1
+					EndWhile
+				EndIf
+				a += 1
+			EndWhile
+			If first >= 0
+				chosen[i] = free[first]
+				chosen[j] = free[second]
+				free[first] = None
+				free[second] = None
+			EndIf
+		EndIf
+		i += 1
+	EndWhile
+
+	; Everyone else takes the rest in camp order.
 	Int next = 0
 	i = 0
 	While i < Followers.Length && i < chosen.Length
@@ -190,6 +232,62 @@ Int Function NearestFree(ObjectReference[] free, ObjectReference akRef)
 		i += 1
 	EndWhile
 	Return best
+EndFunction
+
+Int Function PartnerCount()
+	Int count = 0
+	Int i = 0
+	While i < Followers.Length
+		Actor follower = Followers[i].GetActorRef()
+		If follower && IsPartner(follower)
+			count += 1
+		EndIf
+		i += 1
+	EndWhile
+	Return count
+EndFunction
+
+Int Function CoupleCount()
+	Int[] mates = Mates()
+	Int count = 0
+	Int i = 0
+	While i < mates.Length
+		If mates[i] > i
+			count += 1
+		EndIf
+		i += 1
+	EndWhile
+	Return count
+EndFunction
+
+; For each Followers index, the index of the follower they're a couple with
+; (relationship rank Lover with each other), or -1. The player's partners
+; are paired with the player instead, and each follower with at most one.
+Int[] Function Mates()
+	Int[] mates = new Int[3]
+	Int i = 0
+	While i < mates.Length
+		mates[i] = -1
+		i += 1
+	EndWhile
+
+	i = 0
+	While i < Followers.Length && i < mates.Length
+		Actor first = Followers[i].GetActorRef()
+		If first && mates[i] < 0 && !IsPartner(first)
+			Int j = i + 1
+			While j < Followers.Length && j < mates.Length && mates[i] < 0
+				Actor second = Followers[j].GetActorRef()
+				If second && mates[j] < 0 && !IsPartner(second) && first.GetRelationshipRank(second) >= 4
+					mates[i] = j
+					mates[j] = i
+				EndIf
+				j += 1
+			EndWhile
+		EndIf
+		i += 1
+	EndWhile
+	Return mates
 EndFunction
 
 Bool Function IsPartner(Actor akActor)

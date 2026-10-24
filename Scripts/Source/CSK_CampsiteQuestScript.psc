@@ -292,6 +292,25 @@ Function SetUpCamp()
 	Bool native = UseNativePlacement && CSK_Native.GetVersion() > 0
 	Int bedrollsCarried = PlayerRef.GetItemCount(CSK_BedrollKit)
 
+	; Start the follower quest first: its aliases find the followers who are
+	; with the player. Each gets a seat by the fire, and partners and couples
+	; decide how the bedrolls are shared out between the tents.
+	CSK_CampFollowersScript followers = None
+	If CSK_CampFollowersQuest
+		If CSK_CampFollowersQuest.IsRunning()
+			CSK_CampFollowersQuest.Stop()
+		EndIf
+		If CSK_CampFollowersQuest.Start()
+			followers = CSK_CampFollowersQuest as CSK_CampFollowersScript
+		EndIf
+	EndIf
+	Int partners = 0
+	Int couples = 0
+	If followers
+		partners = followers.PartnerCount()
+		couples = followers.CoupleCount()
+	EndIf
+
 	; Tents: every tent kit the player carries, in kit order (small brown ...
 	; white, then large), up to kMaxTents. Each tent needs at least one
 	; bedroll, so there are never more tents than bedrolls.
@@ -315,17 +334,28 @@ Function SetUpCamp()
 		kit += 1
 	EndWhile
 
-	; Bedrolls: one in each tent, then the rest in turn up to each tent's
-	; capacity. Without tents, up to kRingBedrolls ring the fire.
+	; Bedrolls: each tent starts with its minimum (see MinBeds: room for the
+	; player's partners in the first tent, a couple in each of the next ones,
+	; one otherwise). If the bedrolls don't cover that, fewer tents go up
+	; rather than splitting anyone up. The rest are then shared out in turn up
+	; to each tent's capacity. Without tents, up to kRingBedrolls ring the fire.
 	Int[] bedsInTent = new Int[4]
 	Int bedrolls = 0
 	Int t = 0
 	If tents > 0
+		While tents > 1 && BedsNeeded(tents, sizes, partners, couples) > bedrollsCarried
+			tents -= 1
+		EndWhile
 		While t < tents
-			bedsInTent[t] = 1
+			bedsInTent[t] = MinBeds(t, sizes[t], partners, couples)
+			bedrolls += bedsInTent[t]
 			t += 1
 		EndWhile
-		bedrolls = tents
+		If bedrolls > bedrollsCarried
+			; A single tent and too few bedrolls for everyone's minimum.
+			bedsInTent[0] = bedrollsCarried
+			bedrolls = bedrollsCarried
+		EndIf
 		Bool added = True
 		While added && bedrolls < bedrollsCarried
 			added = False
@@ -398,19 +428,10 @@ Function SetUpCamp()
 	EndWhile
 
 	If native && !IsSiteClear(heading, tents, sizes, tentFwd, tentSide, tentTurn)
-		Return
-	EndIf
-
-	; Start the follower quest: its aliases find the followers who are with
-	; the player, and each one gets a seat by the fire.
-	CSK_CampFollowersScript followers = None
-	If CSK_CampFollowersQuest
-		If CSK_CampFollowersQuest.IsRunning()
+		If followers
 			CSK_CampFollowersQuest.Stop()
 		EndIf
-		If CSK_CampFollowersQuest.Start()
-			followers = CSK_CampFollowersQuest as CSK_CampFollowersScript
-		EndIf
+		Return
 	EndIf
 
 	; Slot layout (see placedRefs). Index 0, the campfire, is the camp's anchor.
@@ -687,6 +708,32 @@ Form Function TentForm(Int size, Int color)
 		Return tents[color]
 	EndIf
 	Return tents[0]
+EndFunction
+
+; The fewest bedrolls tent `index` starts with: the first (the player's)
+; holds the player and their partners, the next `couples` tents hold a
+; follower couple each, and the rest one bedroll. Never more than capacity.
+Int Function MinBeds(Int index, Int size, Int partners, Int couples)
+	Int want = 1
+	If index == 0
+		want = 1 + partners
+	ElseIf index <= couples
+		want = 2
+	EndIf
+	If want > TentCapacity(size)
+		Return TentCapacity(size)
+	EndIf
+	Return want
+EndFunction
+
+Int Function BedsNeeded(Int tents, Int[] sizes, Int partners, Int couples)
+	Int needed = 0
+	Int t = 0
+	While t < tents
+		needed += MinBeds(t, sizes[t], partners, couples)
+		t += 1
+	EndWhile
+	Return needed
 EndFunction
 
 Int Function TentCapacity(Int size)
