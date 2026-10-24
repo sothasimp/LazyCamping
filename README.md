@@ -18,7 +18,7 @@ The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **
 - **the other tents** are spaced evenly around the ring: 2 tents face each other across the fire, 3 form a triangle, and 4 form a square. The player stands on the ring of seats, inside the ring of tents, so a tent on the near side stands behind them.
 - **with no tent kits**, there are no tents. The bedrolls (up to 4) lie sideways, spaced evenly in a circle just outside the seats, starting behind the player's seat. With one bedroll per person, each lies behind its owner's seat.
 
-Followers sit at the fire when the player sits in their seat, and sleep in the spare bedrolls when the player sleeps at camp.
+Followers sit at the fire when the player sits in their seat. When the player sleeps at camp, in any of the camp's bedrolls, followers sleep in the bedrolls the player isn't using.
 
 **Sneaking and activating any of the tents from outside** packs up the camp straight away, with no prompt: everything is removed and every kit is returned, including each tent kit used. Activating a tent without sneaking, or from inside, does nothing. So the player can't pack up by accident while getting into bed.
 
@@ -168,7 +168,7 @@ When the quest starts, it gives the player the power.
 
 ### 2e. Followers at camp (optional)
 
-This quest runs while a camp is set up. When the camp goes up, its aliases find the followers who are with the player, and each one gets a seat by the fire and, if there's a spare bedroll, a bed. A global variable tells the followers what to do:
+This quest runs while a camp is set up. When the camp goes up, its aliases find the followers who are with the player, and each one gets a seat by the fire. When the player goes to sleep near camp, the script works out which camp bedroll the player is lying in, if any, and gives the followers the others, in camp order. A global variable tells the followers what to do:
 
 | `CSK_CampActivity` | When | Followers |
 |---|---|---|
@@ -212,7 +212,7 @@ This quest runs while a camp is set up. When the camp goes up, its aliases find 
 
 Then set `CSK_CampFollowersQuest` on the main quest's script (step 2d).
 
-A follower without a seat or bedroll keeps their normal behaviour, because that package's alias is empty. This also covers having more followers than spare bedrolls. Followers are counted when the camp goes up, so someone who joins afterwards gets a seat the next time you make camp.
+A follower without a seat or bedroll keeps their normal behaviour, because that package's alias is empty. This also covers having more followers than free bedrolls. Followers are counted when the camp goes up, so someone who joins afterwards gets a seat the next time you make camp.
 
 ### 2f. How players get the kits
 

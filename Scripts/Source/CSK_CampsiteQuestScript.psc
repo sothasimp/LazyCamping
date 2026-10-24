@@ -560,11 +560,17 @@ Function SetUpCamp()
 	EndIf
 
 	If followers
-		ObjectReference[] beds = new ObjectReference[3]
+		; Every camp bedroll goes to the follower quest, which hands them out
+		; when the player sleeps, skipping whichever one the player is in.
+		ObjectReference[] beds = new ObjectReference[16]
+		i = 0
+		While i < kMaxBedrolls
+			beds[i] = placedRefs[kFirstBedroll + i]
+			i += 1
+		EndWhile
 		ObjectReference[] seats = new ObjectReference[3]
 		i = 0
 		While i < kMaxFollowers
-			beds[i] = placedRefs[kFirstBedroll + 1 + i]
 			seats[i] = placedRefs[kFirstFollowerSeat + i]
 			i += 1
 		EndWhile
