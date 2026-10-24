@@ -12,7 +12,7 @@ jobs:
       run:
         working-directory: SKSE
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
 
@@ -21,7 +21,7 @@ jobs:
           xmake-version: latest
 
       - name: Cache xmake packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ runner.temp }}/xmake-packages
           key: xmake-${{ runner.os }}-${{ hashFiles('SKSE/xmake.lua', '.gitmodules') }}
@@ -37,7 +37,7 @@ jobs:
         run: xmake build -y -v
 
       - name: Upload plugin
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: CampsiteKit
           path: SKSE/dist/
