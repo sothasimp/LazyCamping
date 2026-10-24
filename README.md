@@ -18,7 +18,7 @@ The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **
 - **the other tents** are spaced evenly around the ring: 2 tents face each other across the fire, 3 form a triangle, and 4 form a square. The player stands on the ring of seats, inside the ring of tents, so a tent on the near side stands behind them.
 - **with no tent kits**, there are no tents. The bedrolls (up to 4) lie sideways, spaced evenly in a circle just outside the seats, starting behind the player's seat. With one bedroll per person, each lies behind its owner's seat.
 
-Followers sit at the fire when the player sits in their seat, and sleep in the spare bedrolls when the player sleeps at camp.
+Followers sit in their seats while the player sits in theirs, and lie down in the other bedrolls while the player is in their own bedroll. When the player gets up, the followers get up and follow them again.
 
 **Sneaking and activating any of the tents from outside** packs up the camp straight away, with no prompt: everything is removed and every kit is returned, including each tent kit used. Activating a tent without sneaking, or from inside, does nothing. So the player can't pack up by accident while getting into bed.
 
@@ -173,8 +173,8 @@ This quest runs while a camp is set up. When the camp goes up, its aliases find 
 | `CSK_CampActivity` | When | Followers |
 |---|---|---|
 | 0 | otherwise | follow the player as normal |
-| 1 | the player is sitting in their seat by the fire | sit in their own seats |
-| 2 | the player is sleeping within `CampRadius` of the fire | sleep in their bedrolls |
+| 1 | the player is sitting in their own seat by the fire | sit in their own seats |
+| 2 | the player is in their own bedroll | sleep in their bedrolls |
 
 **Global** `CSK_CampActivity`: Short, value 0.
 
@@ -207,7 +207,6 @@ This quest runs while a camp is set up. When the camp goes up, its aliases find 
 - **Scripts** tab: add `CSK_CampFollowersScript`, and fill:
   - `PlayerRef`
   - `CSK_CampActivity`
-  - `CampRadius`, default 1024
   - `Followers`, `Bedrolls` and `Seats`: the three aliases of each kind, in order 1–3
 
 Then set `CSK_CampFollowersQuest` on the main quest's script (step 2d).

@@ -568,7 +568,7 @@ Function SetUpCamp()
 			seats[i] = placedRefs[kFirstFollowerSeat + i]
 			i += 1
 		EndWhile
-		followers.Assign(placedRefs[kCampfire], placedRefs[kPlayerSeat], beds, seats)
+		followers.Assign(placedRefs[kPlayerSeat], placedRefs[kFirstBedroll], beds, seats)
 	EndIf
 
 	tentKitsUsed = kits
