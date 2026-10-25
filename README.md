@@ -5,7 +5,7 @@ The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **
 - a burning campfire with flickering light. For cooking on it, use a mod that makes campfires usable, such as *Useable Campfires*.
 - cross-legged seats around the fire, facing it:
   - one for the player, which the player can sit in. It's across the fire from where they stood to cast the power, in front of their tent's entrance.
-  - one for each follower who's with the player, fanning out from the player's seat: 60° to the right, 60° to the left, then 120° to the right
+  - one for each follower who's with the player, fanning out from the player's seat: 70° to the right, 70° to the left, then 140° to the right. A follower's seat 70° out sits in front of a side tent.
 - **tents in an amphitheater** on the far side of the fire, outside the seats, with their entrances facing the fire and the open side where the player stands:
   - up to 3 tents, with **at most one large tent**: the first large tent kit the player carries, in colour order. Every small tent kit carried, duplicates included, fills the rest.
   - each tent's size and colour come from its kit. There are small and large tents, each in brown, blue, green, red and white: 10 tent kits in all.
@@ -18,7 +18,7 @@ The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **
   - if there aren't enough bedrolls for that, fewer tents go up rather than splitting anyone up. With 2 tent kits, 2 bedrolls and a spouse, for example, one tent goes up with both bedrolls in it.
   - spare bedrolls then fill the tents in turn, up to each tent's capacity: 2 for a small tent, 4 for a large one
 - **the player's tent** stands in the middle, straight across the fire from the player, entrance facing them, with the player's bedroll in it. It's the large tent if there is one; otherwise it's the small tent with the most bedrolls.
-- **the other tents** stand 60° to either side of it: the second to the right, the third to the left. The near side of the fire stays open. Small tents fit side by side 290 units from the fire. With a large tent in the middle, the ring widens to about 370 units, so the tents' front corners don't touch.
+- **the other tents** stand 70° to either side of it: the second to the right, the third to the left. The near side of the fire stays open. Tent fronts sit just behind the seats: small tents stand 270 units from the fire, a lone large tent 320, and a large tent with small ones beside it about 330, just far enough that the tents' front corners don't touch.
 - **with no tent kits**, there are no tents. The bedrolls (up to 4) lie sideways in the same fan, just outside the seats: the player's behind their seat, the rest beside it. With one bedroll per person, each lies behind its owner's seat.
 
 **Dressing sets** add clutter around the camp, such as pelts, packs, firewood and lanterns. You lay each set out by eye in the Creation Kit around a stand-in marker, and every fire, tent or tentless bedroll gets a copy, turned to match. One **backpack** can be the player's storage: it's a single real container that moves from camp to camp, so whatever's in it stays there.
@@ -189,7 +189,7 @@ When a camp goes up, the storage moves to the first storage marker in camp order
 | `Firewood01`, `FirewoodRequired` | optional; for example `2` to burn 2 firewood per fire |
 | `SmallTentCapacity`, `LargeTentCapacity` | bedrolls per tent (default 2 and 4, maximum 4) |
 | `SmallTentHalfWidth`, `SmallTentHalfDepth`, `LargeTentHalfWidth`, `LargeTentHalfDepth` | half of each size's footprint; match these to your meshes. They place the tents in the ring, drive the flat-ground check, and decide what counts as inside a tent. |
-| `TentRingGap` | all tents share one ring, `SeatRadius + TentRingGap + the largest HalfDepth among them` from the fire (gap default 60). With a large tent and side tents, the ring widens automatically, just enough that neighbours 60° apart don't touch. |
+| `TentRingGap` | all tents share one ring, `SeatRadius + TentRingGap + the largest HalfDepth among them` from the fire (gap default 40, which leaves the tent fronts just behind the seats). With a large tent and side tents, the ring widens automatically, just enough that neighbours 70° apart don't touch. Raise the gap by 10–15 if seated people brush the tents. |
 | `BedrollSpacing` | side-to-side gap between bedrolls; check that 4 bedrolls fit in the large tent |
 | `SeatRadius`, `LightHeight` | how far the seats are from the fire (default 110), and the light's height. The fire goes `SeatRadius` in front of the player, so they stand at the near edge of the seat ring. |
 | `BedrollRingRadius`, `BedrollRingYaw` | without tents: how far the bedrolls are from the fire (default 230, just outside the seats), and the turn that lays them sideways (default 90; use 270 to swap head and foot) |
@@ -334,7 +334,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 - **Testing the tilt**: the slope math matches the game's `EulerAnglesToAxesZXY` rotation, and I checked it numerically. It still needs an in-game check on a hillside. If objects lean the wrong way, set `AlignToSlope` to false while you report or fix it; ground snapping and the site checks don't depend on it.
 - **Footprint check**: the check samples 5 points (the centre and four corners). Something small that sits between those points can still poke through the tent. You can add more sample points in `IsAreaClear` if needed.
 - **One camp at a time**: this is by design. Casting the power while a camp is up says so. A camp left far away has to be walked back to and packed up there.
-- **Bedroll fan**: neighbouring bedrolls in a tentless camp are 60° apart, about 230 units between centres at the default `BedrollRingRadius`. If your bedroll model is long enough that they touch end to end, raise `BedrollRingRadius`.
+- **Bedroll fan**: neighbouring bedrolls in a tentless camp are 70° apart, about 265 units between centres at the default `BedrollRingRadius`. If your bedroll model is long enough that they touch end to end, raise `BedrollRingRadius`.
 - **Sneak to pack up**: in a camp without tents, the bedrolls' normal activation is blocked and `LZC_BedrollAliasScript` passes it on itself. Followers should be unaffected, because anyone else's activation is passed straight through. If followers ever stop using the ring bedrolls, check this first.
 - **Cooking**: the camp doesn't place a cooking pot. Mods that make campfires usable, such as *Useable Campfires*, should work at the camp's fire if they apply to the vanilla campfire object it uses. That's untested.
 - **Base Object Swapper**: BOS swaps a reference's base object when the reference loads. That should include references the camp places, but test it: with a campfire or bedroll variance mod installed, set up camp a few times and check that the campfire and bedrolls vary. The camp's scripts don't depend on the base object, so a swapped bedroll still sleeps, gets followers, and packs up.

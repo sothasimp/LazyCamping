@@ -91,10 +91,11 @@ Float Property SeatRadius = 110.0 Auto
 front of the player, so they stand at the near edge of the seat ring; their
 own seat is across the fire, in front of their tent.}
 
-Float Property TentRingGap = 60.0 Auto
+Float Property TentRingGap = 40.0 Auto
 {Gap between the seats and the front of the deepest tent. All tents share one
 ring: SeatRadius + TentRingGap + the largest HalfDepth among them, widened
-when needed so tents 60 degrees apart don't touch.}
+when needed so neighbouring tents don't touch. The default leaves the tent
+fronts just behind the seats; raise it if seated people brush the tents.}
 Float Property SmallTentHalfWidth = 90.0 Auto
 Float Property SmallTentHalfDepth = 120.0 Auto
 Int Property SmallTentCapacity = 2 Auto
@@ -169,7 +170,7 @@ Int Property kSmall = 0 AutoReadOnly
 Int Property kLarge = 1 AutoReadOnly
 Int Property kColors = 5 AutoReadOnly
 Float Property kFireHalfSize = 50.0 AutoReadOnly     ; for the ground check
-Float Property kFanStep = 60.0 AutoReadOnly          ; degrees between neighbours
+Float Property kFanStep = 70.0 AutoReadOnly          ; degrees between neighbours
 Float Property kTentClearance = 15.0 AutoReadOnly    ; between neighbouring tents
 Int Property kNativeVersion = 3 AutoReadOnly         ; LazyCamping.dll needed
 
