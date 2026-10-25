@@ -101,7 +101,7 @@ Float Property SmallTentHalfDepth = 120.0 Auto
 Int Property SmallTentCapacity = 2 Auto
 {Most bedrolls a small tent holds (1-4).}
 Float Property LargeTentHalfWidth = 150.0 Auto
-Float Property LargeTentHalfDepth = 170.0 Auto
+Float Property LargeTentHalfDepth = 100.0 Auto
 Int Property LargeTentCapacity = 4 Auto
 {Most bedrolls a large tent holds (1-4).}
 Float Property BedrollSpacing = 70.0 Auto
