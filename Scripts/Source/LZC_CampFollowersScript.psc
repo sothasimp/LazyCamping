@@ -1,10 +1,11 @@
 Scriptname LZC_CampFollowersScript extends Quest
 {Runs while the camp is set up. The Followers aliases fill with nearby
 followers when the quest starts. Each follower has two alias packages:
-- sit at their Seats alias while LZC_CampActivity == 1 (the player is
-  sitting in their fire seat, or on a bedroll's seat). Sitting at the fire
-  sends followers to the fire seats; sitting on a bedroll sends them to the
-  other bedrolls' seats, matched like the bedrolls at bedtime.
+- sit at their Seats alias while LZC_CampActivity == 1. The player sitting
+  in their fire seat sends followers to the fire seats; sitting on a
+  bedroll's seat sends them to the other bedrolls' seats, matched like the
+  bedrolls at bedtime. Followers stay seated after the player gets up, until
+  the player goes to bed or packs up the camp.
 - sleep in their Bedrolls alias while LZC_CampActivity == 2 (the player is
   sleeping at camp). The bedrolls are handed out when the player goes to
   sleep, skipping whichever camp bedroll the player is lying in. A spouse or
@@ -123,14 +124,6 @@ Function OnPlayerSat(ObjectReference akFurniture)
 		If bedSeat >= 0
 			ForceChosen(Seats, campBedSeats, ChooseSpots(campBedSeats, bedGroup, bedOrder, bedSeat))
 			SetActivity(kSitting)
-		EndIf
-	EndIf
-EndFunction
-
-Function OnPlayerGotUp(ObjectReference akFurniture)
-	If akFurniture && LZC_CampActivity.GetValueInt() == kSitting
-		If akFurniture == PlayerSeat || IndexOf(campBedSeats, akFurniture) >= 0
-			SetActivity(kNormal)
 		EndIf
 	EndIf
 EndFunction
