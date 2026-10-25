@@ -17,6 +17,16 @@ Int Function CheckCampSite(ObjectReference origin, Float heading, Int count, Flo
 
 ; Places every form in the layout on the ground (raised by lift), tilted to
 ; the slope if alignToSlope (by at most maxTilt degrees), all in one frame.
-; Returns the new references in layout order (None where the form is None),
-; or an empty array if the arrays don't line up.
-ObjectReference[] Function PlaceCamp(ObjectReference origin, Float heading, Form[] forms, Float[] fwd, Float[] side, Float[] lift, Float[] turn, Bool alignToSlope, Float maxTilt) Global Native
+;
+; Dressing: a layout object with dressSet[i] = s + 1 also gets a copy of
+; dressing set s around it. Set s is setAnchors[s] (a marker standing in for
+; the camp object) plus the setItems whose itemSet entry is s + 1 (0 =
+; unused); each item's offset and rotation relative to the anchor carry over,
+; and items sit on the ground at their own spot, raised by their height above
+; the anchor. The first item found that is one of storageMarkers isn't copied
+; as clutter: a copy of it marks where the player's storage goes.
+;
+; Returns the layout's references (None where the form is None), then the
+; storage spot (or None), then the dressing; or an empty array if the arrays
+; don't line up.
+ObjectReference[] Function PlaceCamp(ObjectReference origin, Float heading, Form[] forms, Float[] fwd, Float[] side, Float[] lift, Float[] turn, Bool alignToSlope, Float maxTilt, Int[] dressSet, ObjectReference[] setAnchors, ObjectReference[] setItems, Int[] itemSet, ObjectReference[] storageMarkers) Global Native

@@ -75,6 +75,23 @@ namespace Placement
 		};
 	}
 
+	RE::NiMatrix3 MatrixFromAngles(const RE::NiPoint3& a_angles)
+	{
+		RE::NiMatrix3 matrix;
+		matrix.EulerAnglesToAxesZXY(a_angles);
+		return matrix;
+	}
+
+	RE::NiPoint3 AnglesFromMatrix(const RE::NiMatrix3& a_matrix)
+	{
+		// Inverse of EulerAnglesToAxesZXY (see AnglesForSurface).
+		return {
+			std::asin(std::clamp(-a_matrix.entry[2][1], -1.0f, 1.0f)),
+			std::atan2(a_matrix.entry[2][0], a_matrix.entry[2][2]),
+			std::atan2(a_matrix.entry[0][1], a_matrix.entry[1][1])
+		};
+	}
+
 	float SlopeDegrees(const RE::NiPoint3& a_normal)
 	{
 		return ToDegrees(std::acos(std::clamp(a_normal.z, -1.0f, 1.0f)));

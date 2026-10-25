@@ -21,6 +21,8 @@ The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **
 - **the other tents** are spaced evenly around the ring: 2 tents face each other across the fire, 3 form a triangle, and 4 form a square. The player stands on the ring of seats, inside the ring of tents, so a tent on the near side stands behind them.
 - **with no tent kits**, there are no tents. The bedrolls (up to 4) lie sideways, spaced evenly in a circle just outside the seats, starting behind the player's seat. With one bedroll per person, each lies behind its owner's seat.
 
+**Dressing sets** add clutter around the camp, such as pelts, packs, firewood and lanterns. You lay each set out by eye in the Creation Kit around a stand-in marker, and every fire, tent or tentless bedroll gets a copy, turned to match. One **backpack** can be the player's storage: it's a single real container that moves from camp to camp, so whatever's in it stays there.
+
 While a camp is up, a **map marker** shows where it is, and the player can fast travel to it, unless fast travel is disabled globally (for example in Survival Mode). Packing up removes the marker.
 
 Followers sit at the fire when the player sits in their seat. When the player sleeps at camp, in any of the camp's bedrolls, followers sleep in the bedrolls the player isn't using. A spouse or lover gets the bedroll next to the player's: the one beside them in the same tent, or the neighbouring one in a camp without tents. Two followers who are a couple get two free bedrolls side by side, normally in their own tent.
@@ -130,6 +132,29 @@ Skyrim can't create new map markers during play, so the mod moves one map marker
 
 When a camp goes up, the script moves the marker to the campfire, enables it and adds it to the map. When the camp is packed up, it disables the marker again, which takes it off the map.
 
+**Dressing sets (optional).** Clutter is laid out in the holding cell (the same one as the map marker is fine), around a marker for each kind of camp object:
+
+| Set | Marker stands in for | Properties (step 2d) |
+|---|---|---|
+| Fire | the campfire | `CSK_FireDressingAnchor`, `CSK_FireDressing` |
+| Small tent | each small tent | `CSK_SmallTentDressingAnchor`, `CSK_SmallTentDressing` |
+| Large tent | each large tent | `CSK_LargeTentDressingAnchor`, `CSK_LargeTentDressing` |
+| Ring bedroll | each bedroll in a camp without tents | `CSK_RingBedrollDressingAnchor`, `CSK_RingBedrollDressing` |
+
+For each set:
+1. Place an `XMarkerHeading` as the anchor, pointing the way its object faces: a tent's entrance, or a bedroll's head-to-foot direction. It helps to place a real tent or bedroll on it while you work, then delete that before saving.
+2. Arrange the clutter around it, at the size and angle you want. Use **static** clutter, not items that can be picked up, or players could take a fresh pelt from every camp. Vanilla objects get Base Object Swapper variants too.
+3. Give the anchor and each item an Editor ID if that helps you keep track, and fill the set's two properties: the anchor, and the list of items.
+
+Each copy keeps the item's position, height, turn, lean and scale relative to the anchor. Items sit on the ground at their own spot (raised by their height above the anchor), and tilt with the slope when `AlignToSlope` is on. All the sets together can hold up to 128 items.
+
+**Storage backpack (optional).**
+1. Make a container with a backpack model, **Respawns unchecked** and no owner, and place it in the holding cell as a persistent reference.
+2. In one or more dressing sets, place a marker where the backpack should go (an `XMarkerHeading`, or a static backpack to see it while you work). Add it to that set's item list, and also to `CSK_CampStorageMarkers`. For example, put one by the entrance of each tent size, and one by the ring bedroll.
+3. Set `CSK_CampStorage` to the container.
+
+When a camp goes up, the storage moves to the first storage marker in camp order: the main tent, or the player's bedroll without tents. It returns to the first marker's spot in the holding cell when the camp is packed up. Its contents stay with it, and are only reachable while a camp is up.
+
 ### 2c. The power
 
 1. **Magic Effect** `CSK_SetUpCampEffect`
@@ -159,6 +184,8 @@ When a camp goes up, the script moves the marker to the campfire, enables it and
 | `CSK_CampfireLight` | optional; leave empty for no light |
 | `CSK_SitMarkerPlayer`, `CSK_SitMarkerFollower` | the seats; leave either empty to skip it |
 | `CSK_CampMapMarker` | the map marker reference from step 2b; leave empty for no marker |
+| `CSK_*DressingAnchor`, `CSK_*Dressing` | the dressing sets from step 2b; leave a set's anchor empty for no dressing |
+| `CSK_CampStorage`, `CSK_CampStorageMarkers` | the storage container and its markers from step 2b; leave empty for no storage |
 | `LocTypeCity`, `LocTypeTown` | vanilla keywords (use auto-fill); blocks camping in settlements |
 | `Firewood01`, `FirewoodRequired` | optional; for example `2` to burn 2 firewood per fire |
 | `SmallTentCapacity`, `LargeTentCapacity` | bedrolls per tent (default 2 and 4, maximum 4) |
@@ -314,6 +341,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 - **Cooking**: the camp doesn't place a cooking pot. Mods that make campfires usable, such as *Useable Campfires*, should work at the camp's fire if they apply to the vanilla campfire object it uses. That's untested.
 - **Base Object Swapper**: BOS swaps a reference's base object when the reference loads. That should include references the camp places, but test it: with a campfire or bedroll variance mod installed, set up camp a few times and check that the campfire and bedrolls vary. The camp's scripts don't depend on the base object, so a swapped bedroll still sleeps, gets followers, and packs up.
 - **Map marker**: moving a persistent map marker is how other camping mods do it. Still, check in game that the marker appears at the camp on the world map, moves with each new camp, and disappears when you pack up.
+- **Dressing**: each copy takes its scale from its Creation Kit item, set as the copy is created. Check in game that scaled items appear at the right size. A camp with many dressed tents can place well over 100 objects; that's fine for the game, but keep sets modest.
 - **Tent inside check**: "inside" means within the tent's `HalfWidth` × `HalfDepth` footprint. If activating the tent from just outside its entrance does nothing, shrink those values a little.
 - **Follower count**: followers are counted when the camp goes up, up to 3. Someone who joins or leaves afterwards keeps their old status until the next camp.
 - **Expansion ideas**:

@@ -47,6 +47,33 @@ Form Property CSK_SitMarkerPlayer Auto
 Form Property CSK_SitMarkerFollower Auto
 {Optional. Cross-legged sit marker by the fire, one per follower.}
 
+; ---------------------------------------------------------------------------
+; Dressing sets: clutter laid out in the Creation Kit (in a holding cell)
+; around a marker that stands in for a camp object. Each fire, tent and
+; tentless bedroll gets a copy of its set, turned to match. Leave a set's
+; anchor empty for no dressing.
+; ---------------------------------------------------------------------------
+ObjectReference Property CSK_FireDressingAnchor Auto
+ObjectReference[] Property CSK_FireDressing Auto
+ObjectReference Property CSK_SmallTentDressingAnchor Auto
+{Faces the way the tent's entrance does.}
+ObjectReference[] Property CSK_SmallTentDressing Auto
+ObjectReference Property CSK_LargeTentDressingAnchor Auto
+{Faces the way the tent's entrance does.}
+ObjectReference[] Property CSK_LargeTentDressing Auto
+ObjectReference Property CSK_RingBedrollDressingAnchor Auto
+{For camps without tents; faces the way the bedroll does.}
+ObjectReference[] Property CSK_RingBedrollDressing Auto
+
+ObjectReference Property CSK_CampStorage Auto
+{Optional. A persistent, non-respawning, unowned container kept in the
+holding cell. It's moved to the camp while one is up, so its contents carry
+over from camp to camp.}
+ObjectReference[] Property CSK_CampStorageMarkers Auto
+{Items in the dressing sets that mark where the storage goes (they're also
+listed in their set). The first one in camp order is used; the storage
+returns to the first marker's spot in the holding cell on pack-up.}
+
 ObjectReference Property CSK_CampMapMarker Auto
 {Optional. A persistent, initially disabled map marker reference kept in a
 holding cell. It moves to the campfire while a camp is up and is disabled
@@ -141,7 +168,7 @@ Int Property kSmall = 0 AutoReadOnly
 Int Property kLarge = 1 AutoReadOnly
 Int Property kColors = 5 AutoReadOnly
 Float Property kFireHalfSize = 50.0 AutoReadOnly     ; for the ground check
-Int Property kNativeVersion = 2 AutoReadOnly         ; CampsiteKit.dll needed
+Int Property kNativeVersion = 3 AutoReadOnly         ; CampsiteKit.dll needed
 
 ObjectReference[] placedRefs
 MiscObject[] tentKitsUsed   ; refunded on pack-up
@@ -457,6 +484,10 @@ Function SetUpCamp()
 
 	; Where each bedroll is, for matching partners and couples at bedtime: its
 	; group (the tent it's in, or 0 for the ring) and its order within it.
+	; Which dressing set (1-based; 0 = none) goes around each layout object.
+	Int[] dressSet = new Int[26]
+	dressSet[kCampfire] = 1
+
 	Int[] bedGroup = new Int[16]
 	Int[] bedOrder = new Int[16]
 	Int ringSize = 0
@@ -492,6 +523,7 @@ Function SetUpCamp()
 			fwd[kFirstTent + t] = tentFwd[t]
 			side[kFirstTent + t] = tentSide[t]
 			turn[kFirstTent + t] = tentTurn[t]
+			dressSet[kFirstTent + t] = 2 + sizes[t]   ; 2 small, 3 large
 			t += 1
 		EndWhile
 
@@ -529,14 +561,27 @@ Function SetUpCamp()
 			side[kFirstBedroll + r] = BedrollRingRadius * Math.Sin(ringBearing)
 			turn[kFirstBedroll + r] = ringBearing + BedrollRingYaw
 			bedOrder[r] = r
+			dressSet[kFirstBedroll + r] = 4
 			r += 1
 		EndWhile
 		ringSize = bedrolls
 	EndIf
 
 	; The plugin puts everything on the ground and places it in one frame.
-	placedRefs = CSK_Native.PlaceCamp(PlayerRef, heading, forms, fwd, side, lift, turn, AlignToSlope, MaxSlope)
-	If placedRefs.Length != kSlotCount
+	ObjectReference[] setAnchors = new ObjectReference[4]
+	setAnchors[0] = CSK_FireDressingAnchor
+	setAnchors[1] = CSK_SmallTentDressingAnchor
+	setAnchors[2] = CSK_LargeTentDressingAnchor
+	setAnchors[3] = CSK_RingBedrollDressingAnchor
+	ObjectReference[] setItems = new ObjectReference[128]
+	Int[] itemSet = new Int[128]
+	Int itemCount = AddSet(setItems, itemSet, 0, CSK_FireDressing, 1)
+	itemCount = AddSet(setItems, itemSet, itemCount, CSK_SmallTentDressing, 2)
+	itemCount = AddSet(setItems, itemSet, itemCount, CSK_LargeTentDressing, 3)
+	itemCount = AddSet(setItems, itemSet, itemCount, CSK_RingBedrollDressing, 4)
+
+	placedRefs = CSK_Native.PlaceCamp(PlayerRef, heading, forms, fwd, side, lift, turn, AlignToSlope, MaxSlope, dressSet, setAnchors, setItems, itemSet, CSK_CampStorageMarkers)
+	If placedRefs.Length <= kSlotCount
 		Debug.Notification("Your camp couldn't be set up.")
 		placedRefs = new ObjectReference[26]
 		If followers
@@ -589,6 +634,17 @@ Function SetUpCamp()
 		followers.Assign(placedRefs[kCampfire], placedRefs[kPlayerSeat], beds, bedGroup, bedOrder, ringSize, seats)
 	EndIf
 
+	; The player's storage moves onto the spot the plugin marked, which then
+	; goes; its contents come along from camp to camp.
+	ObjectReference storageSpot = placedRefs[kSlotCount]
+	If storageSpot
+		If CSK_CampStorage
+			CSK_CampStorage.MoveTo(storageSpot)
+		EndIf
+		storageSpot.Delete()
+		placedRefs[kSlotCount] = None
+	EndIf
+
 	If CSK_CampMapMarker
 		CSK_CampMapMarker.MoveTo(placedRefs[kCampfire])
 		CSK_CampMapMarker.Enable()
@@ -614,6 +670,9 @@ Function PackUpCamp()
 	EndIf
 	If CSK_CampMapMarker
 		CSK_CampMapMarker.Disable()
+	EndIf
+	If CSK_CampStorage && CSK_CampStorageMarkers && CSK_CampStorageMarkers[0]
+		CSK_CampStorage.MoveTo(CSK_CampStorageMarkers[0])
 	EndIf
 
 	Int i = 0
@@ -772,6 +831,21 @@ Bool Function IsInsideTent(ObjectReference akActor, ObjectReference akTent, Int 
 	Float localRight = dx * Math.Cos(a) - dy * Math.Sin(a)
 	Float localForward = dx * Math.Sin(a) + dy * Math.Cos(a)
 	Return Math.Abs(localRight) < TentHalfWidth(size) && Math.Abs(localForward) < TentHalfDepth(size)
+EndFunction
+
+; Appends a dressing set's items to the flattened lists for PlaceCamp,
+; tagged with the set's number. Returns the new count.
+Int Function AddSet(ObjectReference[] setItems, Int[] itemSet, Int count, ObjectReference[] items, Int setNumber)
+	Int i = 0
+	While items && i < items.Length && count < setItems.Length
+		If items[i]
+			setItems[count] = items[i]
+			itemSet[count] = setNumber
+			count += 1
+		EndIf
+		i += 1
+	EndWhile
+	Return count
 EndFunction
 
 Function NotifySiteProblem(Int result)
