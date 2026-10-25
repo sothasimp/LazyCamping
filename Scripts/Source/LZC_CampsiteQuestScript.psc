@@ -161,11 +161,12 @@ Int Property TentCount = 0 Auto Hidden
 Int Property kCampfire = 0 AutoReadOnly
 Int Property kLight = 1 AutoReadOnly
 Int Property kPlayerSeat = 2 AutoReadOnly
-Int Property kFirstFollowerSeat = 3 AutoReadOnly   ; 3-5
-Int Property kFirstTent = 6 AutoReadOnly           ; 6-8
-Int Property kFirstBedroll = 9 AutoReadOnly        ; 9-20, the player's first
-Int Property kFirstBedrollSeat = 21 AutoReadOnly   ; 21-32, one on each bedroll
-Int Property kSlotCount = 33 AutoReadOnly
+Int Property kFirstFollowerSeat = 3 AutoReadOnly   ; 3-7
+Int Property kFirstTent = 8 AutoReadOnly           ; 8-10
+Int Property kFirstBedroll = 11 AutoReadOnly       ; 11-22, the player's first
+Int Property kFirstBedrollSeat = 23 AutoReadOnly   ; 23-34, one on each bedroll
+Int Property kSlotCount = 35 AutoReadOnly
+Int Property kMaxFollowerSeats = 5 AutoReadOnly    ; fire seats besides the player's
 
 Int Property kMaxFollowers = 3 AutoReadOnly
 Int Property kMaxTents = 3 AutoReadOnly
@@ -499,11 +500,11 @@ Function SetUpCamp()
 	EndIf
 
 	; Slot layout (see placedRefs). Index 0, the campfire, is the camp's anchor.
-	Form[] forms = new Form[33]
-	Float[] fwd = new Float[33]
-	Float[] side = new Float[33]
-	Float[] lift = new Float[33]
-	Float[] turn = new Float[33]
+	Form[] forms = new Form[35]
+	Float[] fwd = new Float[35]
+	Float[] side = new Float[35]
+	Float[] lift = new Float[35]
+	Float[] turn = new Float[35]
 
 	forms[kCampfire] = LZC_CampfirePlaced
 	fwd[kCampfire] = FireForward()
@@ -515,26 +516,33 @@ Function SetUpCamp()
 	; group (the tent it's in, or 0 without tents) and its place in the row
 	; (neighbours differ by 1).
 	; Which dressing set (1-based; 0 = none) goes around each layout object.
-	Int[] dressSet = new Int[33]
+	Int[] dressSet = new Int[35]
 	dressSet[kCampfire] = 1
 
 	Int[] bedGroup = new Int[12]
 	Int[] bedOrder = new Int[12]
 
 	; Seats ring the fire and face it. The player's is at 0, across the fire
-	; in front of their tent; followers' seats fan out to either side.
-	SetSeat(forms, fwd, side, turn, kPlayerSeat, LZC_SitMarkerPlayer, 0.0)
-	If followers && LZC_SitMarkerFollower
-		Int rank = 0
-		Int f = 0
-		While f < kMaxFollowers
-			If followers.HasFollower(f)
-				rank += 1
-				SetSeat(forms, fwd, side, turn, kFirstFollowerSeat + f, LZC_SitMarkerFollower, FanBearing(rank))
-			EndIf
-			f += 1
-		EndWhile
+	; in front of their tent. There's a follower seat for each bedroll beyond
+	; the player's, up to kMaxFollowerSeats, fanning out to either side:
+	; kFanStep apart while they fit, otherwise evenly round the ring.
+	Int followerSeats = 0
+	If LZC_SitMarkerFollower
+		followerSeats = bedrolls - 1
+		If followerSeats > kMaxFollowerSeats
+			followerSeats = kMaxFollowerSeats
+		EndIf
 	EndIf
+	Float seatStep = kFanStep
+	If (1 + followerSeats) * kFanStep > 360.0
+		seatStep = 360.0 / (1 + followerSeats)
+	EndIf
+	SetSeat(forms, fwd, side, turn, kPlayerSeat, LZC_SitMarkerPlayer, 0.0)
+	Int f = 0
+	While f < followerSeats
+		SetSeat(forms, fwd, side, turn, kFirstFollowerSeat + f, LZC_SitMarkerFollower, FanPlace(f + 1) * seatStep)
+		f += 1
+	EndWhile
 
 	If tents > 0
 		t = 0
@@ -621,7 +629,7 @@ Function SetUpCamp()
 	placedRefs = LZC_Native.PlaceCamp(PlayerRef, heading, forms, fwd, side, lift, turn, AlignToSlope, MaxSlope, dressSet, setAnchors, setItems, itemSet, LZC_CampStorageMarkers)
 	If placedRefs.Length <= kSlotCount
 		Debug.Notification("Your camp couldn't be set up.")
-		placedRefs = new ObjectReference[33]
+		placedRefs = new ObjectReference[35]
 		If followers
 			LZC_CampFollowersQuest.Stop()
 		EndIf
@@ -657,10 +665,14 @@ Function SetUpCamp()
 			beds[i] = placedRefs[kFirstBedroll + i]
 			i += 1
 		EndWhile
-		ObjectReference[] seats = new ObjectReference[3]
+		; The fire seats, the player's first, with their places in the fan.
+		ObjectReference[] fireSeats = new ObjectReference[6]
+		Int[] firePlaces = new Int[6]
+		fireSeats[0] = placedRefs[kPlayerSeat]
 		i = 0
-		While i < kMaxFollowers
-			seats[i] = placedRefs[kFirstFollowerSeat + i]
+		While i < kMaxFollowerSeats
+			fireSeats[i + 1] = placedRefs[kFirstFollowerSeat + i]
+			firePlaces[i + 1] = FanPlace(i + 1)
 			i += 1
 		EndWhile
 		ObjectReference[] bedSeats = new ObjectReference[12]
@@ -669,7 +681,7 @@ Function SetUpCamp()
 			bedSeats[i] = placedRefs[kFirstBedrollSeat + i]
 			i += 1
 		EndWhile
-		followers.Assign(placedRefs[kCampfire], placedRefs[kPlayerSeat], beds, bedSeats, bedGroup, bedOrder, seats)
+		followers.Assign(placedRefs[kCampfire], fireSeats, firePlaces, beds, bedSeats, bedGroup, bedOrder)
 	EndIf
 
 	; The player's storage moves onto the spot the plugin marked, which then

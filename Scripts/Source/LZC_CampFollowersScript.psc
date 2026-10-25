@@ -19,7 +19,8 @@ ReferenceAlias[] Property Followers Auto
 ReferenceAlias[] Property Bedrolls Auto
 {Bedroll1-3, filled when the player goes to sleep.}
 ReferenceAlias[] Property Seats Auto
-{Seat1-3: the fire seats, or bedroll seats when the player sits on a bedroll.}
+{Seat1-3: fire seats, or bedroll seats when the player sits on a bedroll;
+filled when the player sits down.}
 GlobalVariable Property LZC_CampActivity Auto
 {0 = normal, 1 = player sitting at the fire, 2 = player sleeping at camp.}
 Float Property CampRadius = 1024.0 Auto
@@ -46,25 +47,27 @@ ObjectReference[] campBedrolls
 ObjectReference[] campBedSeats   ; the seat on each bedroll, same index
 Int[] bedGroup
 Int[] bedOrder
-ObjectReference[] fireSeats      ; followers' seats by the fire
-
-Bool Function HasFollower(Int index)
-	Return index < Followers.Length && Followers[index].GetReference() != None
-EndFunction
+ObjectReference[] fireSeats      ; seats by the fire, the player's first
+Int[] fireGroups                 ; all 0: one ring
+Int[] firePlaces                 ; place in the fan (neighbours differ by 1)
+Int[] spotGroup                  ; groups/orders for the spots being chosen
+Int[] spotOrder
 
 ; Called by the camp script once everything is placed. allBeds holds every
 ; camp bedroll and bedSeats the seat on each (groups/orders say where each one
 ; is); followers get theirs when the player sleeps or sits on a bedroll.
-Function Assign(ObjectReference akCampfire, ObjectReference akPlayerSeat, ObjectReference[] allBeds, ObjectReference[] bedSeats, Int[] groups, Int[] orders, ObjectReference[] seats)
+Function Assign(ObjectReference akCampfire, ObjectReference[] seats, Int[] places, ObjectReference[] allBeds, ObjectReference[] bedSeats, Int[] groups, Int[] orders)
 	CampAnchor = akCampfire
-	PlayerSeat = akPlayerSeat
+	PlayerSeat = seats[0]
+	fireSeats = seats
+	firePlaces = places
+	fireGroups = new Int[6]
 	campBedrolls = allBeds
 	campBedSeats = bedSeats
-	fireSeats = seats
 	bedGroup = groups
 	bedOrder = orders
 	ClearAll(Bedrolls)
-	ForceAll(Seats, seats)
+	ClearAll(Seats)
 	RegisterForSleep()
 	SetActivity(kNormal)
 EndFunction
@@ -113,12 +116,12 @@ Function OnPlayerSat(ObjectReference akFurniture)
 		Return
 	EndIf
 	If akFurniture == PlayerSeat
-		ForceAll(Seats, fireSeats)
+		ForceChosen(Seats, fireSeats, ChooseSpots(fireSeats, fireGroups, firePlaces, 0))
 		SetActivity(kSitting)
 	Else
 		Int bedSeat = IndexOf(campBedSeats, akFurniture)
 		If bedSeat >= 0
-			ForceChosen(Seats, campBedSeats, ChooseSpots(campBedSeats, bedSeat))
+			ForceChosen(Seats, campBedSeats, ChooseSpots(campBedSeats, bedGroup, bedOrder, bedSeat))
 			SetActivity(kSitting)
 		EndIf
 	EndIf
@@ -152,16 +155,19 @@ EndEvent
 
 ; Gives each follower a camp bedroll the player isn't lying in.
 Function AssignBedrolls()
-	ForceChosen(Bedrolls, campBedrolls, ChooseSpots(campBedrolls, BedrollUnderPlayer()))
+	ForceChosen(Bedrolls, campBedrolls, ChooseSpots(campBedrolls, bedGroup, bedOrder, BedrollUnderPlayer()))
 EndFunction
 
-; Picks a spot for each follower among `spots` (the camp bedrolls, or the
-; seats on them; same index = same bedroll), skipping the player's spot
+; Picks a spot for each follower among `spots` (the camp bedrolls, the seats
+; on them, or the fire seats), with `groups`/`orders` saying where each one is
+; (same group and orders 1 apart = side by side), skipping the player's spot
 ; (-1 for none). Partners choose first, taking the free spots next to the
 ; player's; then each follower couple takes two free spots side by side;
 ; everyone else takes the rest in camp order, so followers spread across the
 ; tents. Returns each follower's spot index, or -1.
-Int[] Function ChooseSpots(ObjectReference[] spots, Int playerBed)
+Int[] Function ChooseSpots(ObjectReference[] spots, Int[] groups, Int[] orders, Int playerBed)
+	spotGroup = groups
+	spotOrder = orders
 	Bool[] taken = new Bool[12]
 	Int i = 0
 	While i < taken.Length
@@ -273,8 +279,8 @@ Int Function NearestFree(Bool[] taken, Int target)
 	While i < taken.Length
 		If !taken[i]
 			Int gap = 1000 + i   ; another group: only if nothing in this one
-			If bedGroup[i] == bedGroup[target]
-				gap = OrderGap(bedOrder[i], bedOrder[target])
+			If spotGroup[i] == spotGroup[target]
+				gap = OrderGap(spotOrder[i], spotOrder[target])
 			EndIf
 			If best < 0 || gap < bestGap
 				best = i
@@ -298,7 +304,7 @@ Int Function FreePairStart(Bool[] taken)
 			EndIf
 			Int j = 0
 			While j < taken.Length
-				If j != i && !taken[j] && bedGroup[j] == bedGroup[i] && OrderGap(bedOrder[i], bedOrder[j]) == 1
+				If j != i && !taken[j] && spotGroup[j] == spotGroup[i] && OrderGap(spotOrder[i], spotOrder[j]) == 1
 					Return i
 				EndIf
 				j += 1

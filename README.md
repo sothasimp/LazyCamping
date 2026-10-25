@@ -5,7 +5,7 @@ The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **
 - a burning campfire with flickering light. For cooking on it, use a mod that makes campfires usable, such as *Useable Campfires*.
 - cross-legged seats around the fire, facing it:
   - one for the player, which the player can sit in. It's across the fire from where they stood to cast the power, in front of their tent's entrance.
-  - one for each follower who's with the player, fanning out from the player's seat: 70° to the right, 70° to the left, then 140° to the right. A follower's seat 70° out sits in front of a side tent.
+  - one for followers per bedroll beyond the player's, up to 5, fanning out from the player's seat: 70° right, 70° left, 140° right, 140° left. A seat 70° out sits in front of a side tent. With all 5 follower seats, the six seats space out evenly every 60° instead, and the last lands on the near side, where the player stood.
 - **tents in an amphitheater** on the far side of the fire, outside the seats, with their entrances facing the fire and the open side where the player stands:
   - up to 3 tents, with **at most one large tent**: the first large tent kit the player carries, in colour order. Every small tent kit carried, duplicates included, fills the rest.
   - each tent's size and colour come from its kit. There are small and large tents, each in brown, blue, green, red and white: 10 tent kits in all.
@@ -216,7 +216,7 @@ When the quest starts, it gives the player the power.
 
 ### 2e. Followers at camp (optional)
 
-This quest runs while a camp is set up. When the camp goes up, its aliases find the followers who are with the player, and each one gets a seat by the fire. When the player goes to sleep near camp, the script works out which camp bedroll the player is lying in, if any, and gives the followers the others. Partners choose first, taking the free bedrolls next to the player's. Then each follower couple takes two free bedrolls side by side. Everyone else takes the rest in camp order. The camp records which tent each bedroll is in and its place in the row (or around the ring), so this matching doesn't measure distances between bedrolls.
+This quest runs while a camp is set up. When the camp goes up, its aliases find the followers who are with the player. When the player sits in their fire seat, followers take the other fire seats; when the player sits on a bedroll, they take the other bedrolls' seats. When the player goes to sleep near camp, the script works out which camp bedroll the player is lying in, if any, and gives the followers the others. Partners choose first, taking the free bedrolls next to the player's. Then each follower couple takes two free bedrolls side by side. Everyone else takes the rest in camp order. The camp records which tent each bedroll is in and its place in the row (or around the ring), so this matching doesn't measure distances between bedrolls.
 
 - A **partner** is a follower whose relationship rank with the player is *Lover* (vanilla spouses, and lovers in most romance mods), or who is in the optional `PartnerFaction`.
 - A **couple** is two followers whose relationship rank with each other is *Lover*. A partner is always paired with the player rather than another follower.
@@ -266,7 +266,7 @@ The camp also uses these when it shares bedrolls out between the tents, so partn
 
 Then set `LZC_CampFollowersQuest` on the main quest's script (step 2d).
 
-A follower without a seat or bedroll keeps their normal behaviour, because that package's alias is empty. This also covers having more followers than free bedrolls. Followers are counted when the camp goes up, so someone who joins afterwards gets a seat the next time you make camp.
+A follower without a seat or bedroll keeps their normal behaviour, because that package's alias is empty. This also covers having more followers than free bedrolls or seats. Followers are counted when the camp goes up, so someone who joins afterwards is included the next time you make camp.
 
 ### 2f. How players get the kits
 
@@ -350,7 +350,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 - **Map marker**: moving a persistent map marker is how other camping mods do it. Still, check in game that the marker appears at the camp on the world map, moves with each new camp, and disappears when you pack up.
 - **Dressing**: each copy takes its scale from its Creation Kit item, set as the copy is created. Check in game that scaled items appear at the right size. A camp with many dressed tents can place well over 100 objects; that's fine for the game, but keep sets modest.
 - **Tent inside check**: "inside" means within the tent's `HalfWidth` × `HalfDepth` footprint. If activating the tent from just outside its entrance does nothing, shrink those values a little.
-- **Follower count**: followers are counted when the camp goes up, up to 3. Someone who joins or leaves afterwards keeps their old status until the next camp.
+- **Follower count**: followers are counted when the camp goes up, up to 3, because the follower quest has 3 follower aliases. With more than 3 follower seats, the extra seats stay empty. Someone who joins or leaves afterwards keeps their old status until the next camp.
 - **Expansion ideas**:
   - a "Well Rested" style bonus for sleeping in your own tent (check `OnSleepStop` with a player alias)
   - fire damage when standing in the fire (a hazard)
