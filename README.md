@@ -1,6 +1,6 @@
 # Lazy Camping: a mod for Skyrim Special Edition
 
-The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **Bedroll** and a **Campfire Kit** in their inventory, casting the power uses up those kits and builds a camp in front of the player. Tent kits are optional. The mod requires **SKSE**, **Address Library for SKSE Plugins**, and its own `CampsiteKit.dll`. The camp includes:
+The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **Bedroll** in their inventory, casting the power builds a camp in front of the player, always with a campfire. Tent kits are optional. The kits are **reusable**: setting up camp doesn't take them from the inventory. The mod requires **SKSE**, **Address Library for SKSE Plugins**, and its own `CampsiteKit.dll`. The camp includes:
 
 - a burning campfire with flickering light. For cooking on it, use a mod that makes campfires usable, such as *Useable Campfires*.
 - cross-legged seats in a ring around the fire, facing it:
@@ -27,7 +27,7 @@ While a camp is up, a **map marker** shows where it is, and the player can fast 
 
 Followers sit at the fire when the player sits in their seat. When the player sleeps at camp, in any of the camp's bedrolls, followers sleep in the bedrolls the player isn't using. A spouse or lover gets the bedroll next to the player's: the one beside them in the same tent, or the neighbouring one in a camp without tents. Two followers who are a couple get two free bedrolls side by side, normally in their own tent.
 
-**Sneaking and activating any of the tents from outside** packs up the camp straight away, with no prompt: everything is removed and every kit is returned, including each tent kit used. Activating a tent without sneaking, or from inside, does nothing. So the player can't pack up by accident while getting into bed.
+**Sneaking and activating any of the tents from outside** packs up the camp straight away, with no prompt: everything the camp placed is removed. Activating a tent without sneaking, or from inside, does nothing. So the player can't pack up by accident while getting into bed.
 
 In a camp without tents, **sneaking and activating any of the camp's bedrolls** packs the camp up. Activating a bedroll without sneaking opens the usual Sleep/Wait menu.
 
@@ -77,7 +77,6 @@ Open the Creation Kit with `Skyrim.esm` loaded. Before you compile anything, ext
 | `CSK_TentKitSmallBrown`, `…Blue`, `…Green`, `…Red`, `…White` | Small Brown Tent, Small Blue Tent, … | a rolled hide or a leather bundle clutter mesh | 8 / 40 |
 | `CSK_TentKitLargeBrown`, `…Blue`, `…Green`, `…Red`, `…White` | Large Brown Tent, Large Blue Tent, … | the same, or a bigger bundle | 15 / 80 |
 | `CSK_BedrollKit` | Bedroll | the rolled-up bedroll clutter mesh | 4 / 15 |
-| `CSK_CampfireKit` | Campfire Kit | a firewood or kindling mesh | 3 / 10 |
 
 That's 10 tent kits: two sizes in five colours. They can all share one inventory model, or use the coloured TextureSets from step 2b (on the model's *Alternate Textures*) so each kit looks its colour in the inventory.
 
@@ -178,7 +177,7 @@ When a camp goes up, the storage moves to the first storage marker in camp order
 | `CSK_SetUpCampPower` | the spell |
 | `CSK_SmallTentKits`, `CSK_LargeTentKits` | the five tent kits of each size, **in the order brown, blue, green, red, white** |
 | `CSK_SmallTents`, `CSK_LargeTents` | the five tents of each size, **in the same order** as the kits. Each kit pitches the tent at the same position in its list. |
-| `CSK_BedrollKit`, `CSK_CampfireKit` | the other kits |
+| `CSK_BedrollKit` | the bedroll kit |
 | `CSK_BedrollPlaced`, `CSK_CampfirePlaced` | the vanilla bedroll and burning campfire (step 2b) |
 | `RingBedrollAliases` | the aliases `RingBedroll1`–`4`, in order (below) |
 | `CSK_CampfireLight` | optional; leave empty for no light |
@@ -270,7 +269,6 @@ Pick one or more of these:
   - Large tent kit = 6× `Leather01` + 5× `LeatherStrips` + 3× `Firewood01`
   - For colours, start from the brown recipe and add a dye ingredient, for example Blue Mountain Flower for blue, Red Mountain Flower for red, Hanging Moss for green and Bone Meal for white. Alternatively, make a colour recipe that converts a brown kit plus the dye into the coloured kit.
   - Bedroll = 2× `Leather01` + 2× `LeatherStrips`
-  - Campfire Kit = 3× `Firewood01`
 - **Merchants**: add the kits to a general goods leveled list, such as `LItemMiscVendorMiscItems75`.
 - **Testing**: in the console, run `help CSK_ 4` to find the form IDs, then `player.additem <id> 1`.
 

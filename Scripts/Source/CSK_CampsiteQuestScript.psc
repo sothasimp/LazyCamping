@@ -12,7 +12,8 @@ Spell Property CSK_SetUpCampPower Auto
 {The Lesser Power. Granted to the player when this quest starts.}
 
 ; ---------------------------------------------------------------------------
-; Inventory kits (MiscObjects the player must carry)
+; Inventory kits: MiscObjects the player carries. They're reusable: setting
+; up camp doesn't use them up.
 ; ---------------------------------------------------------------------------
 MiscObject[] Property CSK_SmallTentKits Auto
 {Small tent kits by colour: 0 brown, 1 blue, 2 green, 3 red, 4 white. Every
@@ -20,7 +21,7 @@ tent kit the player carries is pitched (up to 4 tents).}
 MiscObject[] Property CSK_LargeTentKits Auto
 {Large tent kits, same colour order as CSK_SmallTentKits.}
 MiscObject Property CSK_BedrollKit Auto
-MiscObject Property CSK_CampfireKit Auto
+{At least one is needed to make camp; the campfire always comes with it.}
 
 MiscObject Property Firewood01 Auto
 {Optional. Vanilla firewood, consumed (not refunded) each time a fire is built.}
@@ -149,7 +150,6 @@ Keyword Property LocTypeTown Auto
 ; ---------------------------------------------------------------------------
 Bool Property CampDeployed = False Auto Hidden
 Int Property TentCount = 0 Auto Hidden
-Int Property BedrollsPlaced = 0 Auto Hidden
 
 ; Slots in placedRefs.
 Int Property kCampfire = 0 AutoReadOnly
@@ -171,7 +171,6 @@ Float Property kFireHalfSize = 50.0 AutoReadOnly     ; for the ground check
 Int Property kNativeVersion = 3 AutoReadOnly         ; CampsiteKit.dll needed
 
 ObjectReference[] placedRefs
-MiscObject[] tentKitsUsed   ; refunded on pack-up
 Int[] tentSizesUsed
 Bool busy = False
 
@@ -288,9 +287,6 @@ Bool Function HasAllKits()
 	String missing = ""
 	If PlayerRef.GetItemCount(CSK_BedrollKit) < 1
 		missing += CSK_BedrollKit.GetName() + ", "
-	EndIf
-	If PlayerRef.GetItemCount(CSK_CampfireKit) < 1
-		missing += CSK_CampfireKit.GetName() + ", "
 	EndIf
 	If FirewoodRequired > 0 && Firewood01 && PlayerRef.GetItemCount(Firewood01) < FirewoodRequired
 		missing += FirewoodRequired + " " + Firewood01.GetName() + ", "
@@ -605,13 +601,7 @@ Function SetUpCamp()
 		EndWhile
 	EndIf
 
-	t = 0
-	While t < tents
-		PlayerRef.RemoveItem(kits[t], 1, True)
-		t += 1
-	EndWhile
-	PlayerRef.RemoveItem(CSK_BedrollKit, bedrolls, True)
-	PlayerRef.RemoveItem(CSK_CampfireKit, 1, True)
+	; The kits stay in the player's inventory; only firewood is burned.
 	If FirewoodRequired > 0 && Firewood01
 		PlayerRef.RemoveItem(Firewood01, FirewoodRequired, True)
 	EndIf
@@ -651,10 +641,8 @@ Function SetUpCamp()
 		CSK_CampMapMarker.AddToMap(True)
 	EndIf
 
-	tentKitsUsed = kits
 	tentSizesUsed = sizes
 	TentCount = tents
-	BedrollsPlaced = bedrolls
 	CampDeployed = True
 	Debug.Notification("You set up camp.")
 EndFunction
@@ -691,18 +679,7 @@ Function PackUpCamp()
 		i += 1
 	EndWhile
 
-	i = 0
-	While i < TentCount
-		If tentKitsUsed[i]
-			PlayerRef.AddItem(tentKitsUsed[i], 1, True)
-		EndIf
-		i += 1
-	EndWhile
-	PlayerRef.AddItem(CSK_BedrollKit, BedrollsPlaced, True)
-	PlayerRef.AddItem(CSK_CampfireKit, 1, True)
-
 	TentCount = 0
-	BedrollsPlaced = 0
 	CampDeployed = False
 	Debug.Notification("You pack up your camp.")
 EndFunction
