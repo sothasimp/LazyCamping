@@ -42,8 +42,6 @@ Form Property CSK_CampfirePlaced Auto
 {Static or Activator: the burning campfire. Can be the vanilla one.}
 Light Property CSK_CampfireLight Auto
 {Optional. Flickering firelight placed above the campfire.}
-Form Property CSK_CookingStation Auto
-{Optional. Cooking pot / spit furniture placed over the fire.}
 Form Property CSK_SitMarkerPlayer Auto
 {Optional. Visible cross-legged seat by the fire that the player can use.}
 Form Property CSK_SitMarkerFollower Auto
@@ -129,12 +127,11 @@ Int Property BedrollsPlaced = 0 Auto Hidden
 ; Slots in placedRefs.
 Int Property kCampfire = 0 AutoReadOnly
 Int Property kLight = 1 AutoReadOnly
-Int Property kCooking = 2 AutoReadOnly
-Int Property kPlayerSeat = 3 AutoReadOnly
-Int Property kFirstFollowerSeat = 4 AutoReadOnly   ; 4-6
-Int Property kFirstTent = 7 AutoReadOnly           ; 7-10
-Int Property kFirstBedroll = 11 AutoReadOnly       ; 11-26, the player's first
-Int Property kSlotCount = 27 AutoReadOnly
+Int Property kPlayerSeat = 2 AutoReadOnly
+Int Property kFirstFollowerSeat = 3 AutoReadOnly   ; 3-5
+Int Property kFirstTent = 6 AutoReadOnly           ; 6-9
+Int Property kFirstBedroll = 10 AutoReadOnly       ; 10-25, the player's first
+Int Property kSlotCount = 26 AutoReadOnly
 
 Int Property kMaxFollowers = 3 AutoReadOnly
 Int Property kMaxTents = 4 AutoReadOnly
@@ -446,19 +443,17 @@ Function SetUpCamp()
 	EndIf
 
 	; Slot layout (see placedRefs). Index 0, the campfire, is the camp's anchor.
-	Form[] forms = new Form[27]
-	Float[] fwd = new Float[27]
-	Float[] side = new Float[27]
-	Float[] lift = new Float[27]
-	Float[] turn = new Float[27]
+	Form[] forms = new Form[26]
+	Float[] fwd = new Float[26]
+	Float[] side = new Float[26]
+	Float[] lift = new Float[26]
+	Float[] turn = new Float[26]
 
 	forms[kCampfire] = CSK_CampfirePlaced
 	fwd[kCampfire] = FireForward()
 	forms[kLight] = CSK_CampfireLight
 	fwd[kLight] = FireForward()
 	lift[kLight] = LightHeight
-	forms[kCooking] = CSK_CookingStation
-	fwd[kCooking] = FireForward()
 
 	; Where each bedroll is, for matching partners and couples at bedtime: its
 	; group (the tent it's in, or 0 for the ring) and its order within it.
@@ -543,7 +538,7 @@ Function SetUpCamp()
 	placedRefs = CSK_Native.PlaceCamp(PlayerRef, heading, forms, fwd, side, lift, turn, AlignToSlope, MaxSlope)
 	If placedRefs.Length != kSlotCount
 		Debug.Notification("Your camp couldn't be set up.")
-		placedRefs = new ObjectReference[27]
+		placedRefs = new ObjectReference[26]
 		If followers
 			CSK_CampFollowersQuest.Stop()
 		EndIf

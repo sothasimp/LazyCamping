@@ -2,7 +2,7 @@
 
 The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **Bedroll** and a **Campfire Kit** in their inventory, casting the power uses up those kits and builds a camp in front of the player. Tent kits are optional. The mod requires **SKSE**, **Address Library for SKSE Plugins**, and its own `CampsiteKit.dll`. The camp includes:
 
-- a burning campfire with flickering light and an optional cooking pot
+- a burning campfire with flickering light. For cooking on it, use a mod that makes campfires usable, such as *Useable Campfires*.
 - cross-legged seats in a ring around the fire, facing it:
   - one for the player, which the player can sit in. It's across the fire from where they stood to cast the power, in front of their tent's entrance.
   - one for each follower who's with the player, spaced evenly around the ring from the player's seat
@@ -83,13 +83,12 @@ To use custom meshes, put them in `Data/Meshes/CampsiteKit/` and point the Model
 
 ### 2b. Objects placed in the world
 
-**Use vanilla objects directly where you can.** The campfire, light, cooking pot, bedroll and follower sit marker need nothing added to them, so fill their properties (step 2d) with the vanilla objects themselves rather than duplicates. That way, mods that change those vanilla objects also change the camp's. In particular, **Base Object Swapper (BOS) variance mods**, which swap vanilla objects for varied versions, also vary the camp's campfire and bedrolls. Find the objects by filtering the Object Window with the search term shown.
+**Use vanilla objects directly where you can.** The campfire, light, bedroll and follower sit marker need nothing added to them, so fill their properties (step 2d) with the vanilla objects themselves rather than duplicates. That way, mods that change those vanilla objects also change the camp's. In particular, **Base Object Swapper (BOS) variance mods**, which swap vanilla objects for varied versions, also vary the camp's campfire and bedrolls. Find the objects by filtering the Object Window with the search term shown.
 
 | Property | Type | Vanilla object (search term) | Notes |
 |---|---|---|---|
 | `CSK_CampfirePlaced` | Static | `campfire` (a *burning* one) | |
 | `CSK_CampfireLight` | Light | `fire` (any flickering fire light) | |
-| `CSK_CookingStation` | Furniture | `CookingPot` | Has the `CraftingCookingPot` keyword, so cooking works. Optional. |
 | `CSK_BedrollPlaced` | Furniture | `bedroll` (the ground bedroll furniture) | Its sleep marker makes Sleep and Wait work. |
 | `CSK_SitMarkerFollower` | Furniture | `CrossLegged` (a cross-legged sit marker) | Followers use these. Invisible is fine. |
 | `CSK_SitMarkerPlayer` | Furniture | **duplicate** the same marker | The only one that has to be a new record: it needs a **visible model** so the player can activate it (see below). |
@@ -157,7 +156,7 @@ When a camp goes up, the script moves the marker to the campfire, enables it and
 | `CSK_BedrollKit`, `CSK_CampfireKit` | the other kits |
 | `CSK_BedrollPlaced`, `CSK_CampfirePlaced` | the vanilla bedroll and burning campfire (step 2b) |
 | `RingBedrollAliases` | the aliases `RingBedroll1`–`4`, in order (below) |
-| `CSK_CampfireLight`, `CSK_CookingStation` | optional; leave empty to skip |
+| `CSK_CampfireLight` | optional; leave empty for no light |
 | `CSK_SitMarkerPlayer`, `CSK_SitMarkerFollower` | the seats; leave either empty to skip it |
 | `CSK_CampMapMarker` | the map marker reference from step 2b; leave empty for no marker |
 | `LocTypeCity`, `LocTypeTown` | vanilla keywords (use auto-fill); blocks camping in settlements |
@@ -312,6 +311,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 - **One camp at a time**: this is by design. Casting the power while a camp is up says so. A camp left far away has to be walked back to and packed up there.
 - **Bedroll ring**: neighbouring bedrolls in a tentless camp are at least 90° apart (4 bedrolls). If your bedroll model is long enough that they overlap end to end, raise `BedrollRingRadius`.
 - **Sneak to pack up**: in a camp without tents, the bedrolls' normal activation is blocked and `CSK_BedrollAliasScript` passes it on itself. Followers should be unaffected, because anyone else's activation is passed straight through. If followers ever stop using the ring bedrolls, check this first.
+- **Cooking**: the camp doesn't place a cooking pot. Mods that make campfires usable, such as *Useable Campfires*, should work at the camp's fire if they apply to the vanilla campfire object it uses. That's untested.
 - **Base Object Swapper**: BOS swaps a reference's base object when the reference loads. That should include references the camp places, but test it: with a campfire or bedroll variance mod installed, set up camp a few times and check that the campfire and bedrolls vary. The camp's scripts don't depend on the base object, so a swapped bedroll still sleeps, gets followers, and packs up.
 - **Map marker**: moving a persistent map marker is how other camping mods do it. Still, check in game that the marker appears at the camp on the world map, moves with each new camp, and disappears when you pack up.
 - **Tent inside check**: "inside" means within the tent's `HalfWidth` × `HalfDepth` footprint. If activating the tent from just outside its entrance does nothing, shrink those values a little.
