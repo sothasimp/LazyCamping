@@ -21,6 +21,8 @@ The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **
 - **the other tents** are spaced evenly around the ring: 2 tents face each other across the fire, 3 form a triangle, and 4 form a square. The player stands on the ring of seats, inside the ring of tents, so a tent on the near side stands behind them.
 - **with no tent kits**, there are no tents. The bedrolls (up to 4) lie sideways, spaced evenly in a circle just outside the seats, starting behind the player's seat. With one bedroll per person, each lies behind its owner's seat.
 
+While a camp is up, a **map marker** shows where it is, and the player can fast travel to it. Packing up removes the marker.
+
 Followers sit at the fire when the player sits in their seat. When the player sleeps at camp, in any of the camp's bedrolls, followers sleep in the bedrolls the player isn't using. A spouse or lover gets the bedroll next to the player's: the one beside them in the same tent, or the neighbouring one in a camp without tents. Two followers who are a couple get two free bedrolls side by side, normally in their own tent.
 
 **Sneaking and activating any of the tents from outside** packs up the camp straight away, with no prompt: everything is removed and every kit is returned, including each tent kit used. Activating a tent without sneaking, or from inside, does nothing. So the player can't pack up by accident while getting into bed.
@@ -116,6 +118,19 @@ You don't need a separate mesh for each colour:
 
 Brown can stay as the mesh's original texture.
 
+**Camp map marker (optional).**
+
+Skyrim can't create new map markers during play, so the mod moves one map marker made in the Creation Kit:
+
+1. Create an interior cell to hold it, for example `CSK_HoldingCell`. It just needs to exist; nothing else goes in it.
+2. Place a `MapMarker` (Statics) in that cell and edit the reference:
+   - **Marker Data** tab: check *Map Marker*, name it `Your Camp`, Type *Camp*, check *Can Travel To*
+   - check *Persistent Reference* and *Initially Disabled*
+   - give the reference an Editor ID, for example `CSK_CampMapMarkerRef`
+3. Set `CSK_CampMapMarker` on the controller quest's script (step 2d) to that reference.
+
+When a camp goes up, the script moves the marker to the campfire, enables it and adds it to the map. When the camp is packed up, it disables the marker again, which takes it off the map.
+
 ### 2c. The power
 
 1. **Magic Effect** `CSK_SetUpCampEffect`
@@ -144,6 +159,7 @@ Brown can stay as the mesh's original texture.
 | `RingBedrollAliases` | the aliases `RingBedroll1`–`4`, in order (below) |
 | `CSK_CampfireLight`, `CSK_CookingStation` | optional; leave empty to skip |
 | `CSK_SitMarkerPlayer`, `CSK_SitMarkerFollower` | the seats; leave either empty to skip it |
+| `CSK_CampMapMarker`, `CampFastTravel` | the map marker reference from step 2b (leave empty for no marker), and whether the player can fast travel to it (default on) |
 | `LocTypeCity`, `LocTypeTown` | vanilla keywords (use auto-fill); blocks camping in settlements |
 | `Firewood01`, `FirewoodRequired` | optional; for example `2` to burn 2 firewood per fire |
 | `SmallTentCapacity`, `LargeTentCapacity` | bedrolls per tent (default 2 and 4, maximum 4) |
@@ -297,6 +313,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 - **Bedroll ring**: neighbouring bedrolls in a tentless camp are at least 90° apart (4 bedrolls). If your bedroll model is long enough that they overlap end to end, raise `BedrollRingRadius`.
 - **Sneak to pack up**: in a camp without tents, the bedrolls' normal activation is blocked and `CSK_BedrollAliasScript` passes it on itself. Followers should be unaffected, because anyone else's activation is passed straight through. If followers ever stop using the ring bedrolls, check this first.
 - **Base Object Swapper**: BOS swaps a reference's base object when the reference loads. That should include references the camp places, but test it: with a campfire or bedroll variance mod installed, set up camp a few times and check that the campfire and bedrolls vary. The camp's scripts don't depend on the base object, so a swapped bedroll still sleeps, gets followers, and packs up.
+- **Map marker**: moving a persistent map marker is how other camping mods do it. Still, check in game that the marker appears at the camp on the world map, moves with each new camp, and disappears when you pack up.
 - **Tent inside check**: "inside" means within the tent's `HalfWidth` × `HalfDepth` footprint. If activating the tent from just outside its entrance does nothing, shrink those values a little.
 - **Follower count**: followers are counted when the camp goes up, up to 3. Someone who joins or leaves afterwards keeps their old status until the next camp.
 - **Expansion ideas**:

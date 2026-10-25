@@ -49,6 +49,13 @@ Form Property CSK_SitMarkerPlayer Auto
 Form Property CSK_SitMarkerFollower Auto
 {Optional. Cross-legged sit marker by the fire, one per follower.}
 
+ObjectReference Property CSK_CampMapMarker Auto
+{Optional. A persistent, initially disabled map marker reference kept in a
+holding cell. It moves to the campfire while a camp is up and is disabled
+(off the map) when the camp is packed up.}
+Bool Property CampFastTravel = True Auto
+{Whether the player can fast travel to the camp's map marker.}
+
 ; ---------------------------------------------------------------------------
 ; Layout, in game units. ~70 units is roughly one metre. Everything is
 ; arranged around the fire; tweak to fit your meshes.
@@ -588,6 +595,12 @@ Function SetUpCamp()
 		followers.Assign(placedRefs[kCampfire], placedRefs[kPlayerSeat], beds, bedGroup, bedOrder, ringSize, seats)
 	EndIf
 
+	If CSK_CampMapMarker
+		CSK_CampMapMarker.MoveTo(placedRefs[kCampfire])
+		CSK_CampMapMarker.Enable()
+		CSK_CampMapMarker.AddToMap(CampFastTravel)
+	EndIf
+
 	tentKitsUsed = kits
 	tentSizesUsed = sizes
 	TentCount = tents
@@ -604,6 +617,9 @@ Function PackUpCamp()
 
 	If CSK_CampFollowersQuest && CSK_CampFollowersQuest.IsRunning()
 		(CSK_CampFollowersQuest as CSK_CampFollowersScript).Shutdown()
+	EndIf
+	If CSK_CampMapMarker
+		CSK_CampMapMarker.Disable()
 	EndIf
 
 	Int i = 0
