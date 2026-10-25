@@ -1,4 +1,4 @@
-# Campsite Kit: a mod for Skyrim Special Edition
+# Lazy Camping: a mod for Skyrim Special Edition
 
 The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **Bedroll** and a **Campfire Kit** in their inventory, casting the power uses up those kits and builds a camp in front of the player. Tent kits are optional. The mod requires **SKSE**, **Address Library for SKSE Plugins**, and its own `CampsiteKit.dll`. The camp includes:
 
