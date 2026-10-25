@@ -7,18 +7,18 @@ The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **
   - one for the player, which the player can sit in. It's across the fire from where they stood to cast the power, in front of their tent's entrance.
   - one for each follower who's with the player, fanning out from the player's seat: 60° to the right, 60° to the left, then 120° to the right
 - **tents in an amphitheater** on the far side of the fire, outside the seats, with their entrances facing the fire and the open side where the player stands:
-  - every tent kit the player carries is pitched, duplicates included, up to 3 tents
+  - up to 3 tents, with **at most one large tent**: the first large tent kit the player carries, in colour order. Every small tent kit carried, duplicates included, fills the rest.
   - each tent's size and colour come from its kit. There are small and large tents, each in brown, blue, green, red and white: 10 tent kits in all.
   - every tent gets at least one bedroll, so there are never more tents than bedrolls. With 3 tent kits and 2 bedrolls, for example, only 2 tents go up.
-  - tents are taken in kit order: small brown, blue, green, red, white, then large in the same colour order
+  - small tents are taken in colour order: brown, blue, green, red, white
 - **bedrolls in the tents**:
   - the player's tent gets a bedroll for the player and one for each partner (spouse or lover) travelling with them
   - each follower couple gets a tent with two bedrolls
   - every other tent gets one bedroll
   - if there aren't enough bedrolls for that, fewer tents go up rather than splitting anyone up. With 2 tent kits, 2 bedrolls and a spouse, for example, one tent goes up with both bedrolls in it.
   - spare bedrolls then fill the tents in turn, up to each tent's capacity: 2 for a small tent, 4 for a large one
-- **the main tent**, the one with the most bedrolls (or the only tent), stands straight across the fire from the player, entrance facing them. The player's bedroll is in it.
-- **the other tents** stand 60° to either side of it: the second to the right, the third to the left. The near side of the fire stays open. With more than one tent, the ring widens so that neighbouring tents' front corners don't touch: to about 330 units from the fire for small tents and 500 for large, instead of 290 and 340.
+- **the player's tent** stands in the middle, straight across the fire from the player, entrance facing them, with the player's bedroll in it. It's the large tent if there is one; otherwise it's the small tent with the most bedrolls.
+- **the other tents** stand 60° to either side of it: the second to the right, the third to the left. The near side of the fire stays open. Small tents fit side by side 290 units from the fire. With a large tent in the middle, the ring widens to about 370 units, so the tents' front corners don't touch.
 - **with no tent kits**, there are no tents. The bedrolls (up to 4) lie sideways in the same fan, just outside the seats: the player's behind their seat, the rest beside it. With one bedroll per person, each lies behind its owner's seat.
 
 **Dressing sets** add clutter around the camp, such as pelts, packs, firewood and lanterns. You lay each set out by eye in the Creation Kit around a stand-in marker, and every fire, tent or tentless bedroll gets a copy, turned to match. One **backpack** can be the player's storage: it's a single real container that moves from camp to camp, so whatever's in it stays there.
@@ -189,7 +189,7 @@ When a camp goes up, the storage moves to the first storage marker in camp order
 | `Firewood01`, `FirewoodRequired` | optional; for example `2` to burn 2 firewood per fire |
 | `SmallTentCapacity`, `LargeTentCapacity` | bedrolls per tent (default 2 and 4, maximum 4) |
 | `SmallTentHalfWidth`, `SmallTentHalfDepth`, `LargeTentHalfWidth`, `LargeTentHalfDepth` | half of each size's footprint; match these to your meshes. They place the tents in the ring, drive the flat-ground check, and decide what counts as inside a tent. |
-| `TentRingGap` | all tents share one ring, `SeatRadius + TentRingGap + the largest HalfDepth among them` from the fire (gap default 60). With more than one tent, the ring widens automatically so tents 60° apart don't touch. |
+| `TentRingGap` | all tents share one ring, `SeatRadius + TentRingGap + the largest HalfDepth among them` from the fire (gap default 60). With a large tent and side tents, the ring widens automatically, just enough that neighbours 60° apart don't touch. |
 | `BedrollSpacing` | side-to-side gap between bedrolls; check that 4 bedrolls fit in the large tent |
 | `SeatRadius`, `LightHeight` | how far the seats are from the fire (default 110), and the light's height. The fire goes `SeatRadius` in front of the player, so they stand at the near edge of the seat ring. |
 | `BedrollRingRadius`, `BedrollRingYaw` | without tents: how far the bedrolls are from the fire (default 230, just outside the seats), and the turn that lays them sideways (default 90; use 270 to swap head and foot) |

@@ -325,27 +325,39 @@ Function SetUpCamp()
 		couples = followers.CoupleCount()
 	EndIf
 
-	; Tents: every tent kit the player carries, in kit order (small brown ...
-	; white, then large), up to kMaxTents. Each tent needs at least one
-	; bedroll, so there are never more tents than bedrolls.
+	; Tents, up to kMaxTents and never more than bedrolls (each tent needs at
+	; least one). At most one large tent: the first large kit carried (in
+	; colour order) becomes the player's tent, in the middle. Every small kit
+	; carried fills the rest, in colour order.
 	MiscObject[] kits = new MiscObject[4]
 	Int[] sizes = new Int[4]
 	Int[] colors = new Int[4]
 	Int tents = 0
-	Int kit = 0
-	While kit < 2 * kColors && tents < kMaxTents && tents < bedrollsCarried
-		MiscObject k = TentKit(kit / kColors, kit % kColors)
-		If k
-			Int have = PlayerRef.GetItemCount(k)
+	Int color = 0
+	While color < kColors && tents == 0 && bedrollsCarried > 0
+		MiscObject large = TentKit(kLarge, color)
+		If large && PlayerRef.GetItemCount(large) > 0
+			kits[0] = large
+			sizes[0] = kLarge
+			colors[0] = color
+			tents = 1
+		EndIf
+		color += 1
+	EndWhile
+	color = 0
+	While color < kColors && tents < kMaxTents && tents < bedrollsCarried
+		MiscObject small = TentKit(kSmall, color)
+		If small
+			Int have = PlayerRef.GetItemCount(small)
 			While have > 0 && tents < kMaxTents && tents < bedrollsCarried
-				kits[tents] = k
-				sizes[tents] = kit / kColors
-				colors[tents] = kit % kColors
+				kits[tents] = small
+				sizes[tents] = kSmall
+				colors[tents] = color
 				tents += 1
 				have -= 1
 			EndWhile
 		EndIf
-		kit += 1
+		color += 1
 	EndWhile
 
 	; Bedrolls: each tent starts with its minimum (see MinBeds: room for the
@@ -384,12 +396,13 @@ Function SetUpCamp()
 			EndWhile
 		EndWhile
 
-		; The tent with the most bedrolls becomes the first tent: it stands
-		; across the fire from the player, entrance facing them, and holds the
-		; player's bedroll.
+		; Without a large tent, the tent with the most bedrolls becomes the
+		; first tent: it stands across the fire from the player, entrance
+		; facing them, and holds the player's bedroll. A large tent is always
+		; first already.
 		Int main = 0
 		t = 1
-		While t < tents
+		While t < tents && sizes[0] != kLarge
 			If bedsInTent[t] > bedsInTent[main]
 				main = t
 			EndIf
@@ -421,26 +434,24 @@ Function SetUpCamp()
 	; straight across, the others kFanStep degrees to either side. Bearings
 	; are degrees clockwise from the player's facing, seen from the fire.
 	Float deepest = 0.0
-	Float widest = 0.0
 	t = 0
 	While t < tents
 		If TentHalfDepth(sizes[t]) > deepest
 			deepest = TentHalfDepth(sizes[t])
 		EndIf
-		If TentHalfWidth(sizes[t]) > widest
-			widest = TentHalfWidth(sizes[t])
-		EndIf
 		t += 1
 	EndWhile
 	Float radius = SeatRadius + TentRingGap + deepest
-	If tents > 1
-		; Neighbours are closest at their front corners; push the ring out
-		; until those clear each other.
-		Float fanRadius = (widest + kTentClearance) / Math.Sin(kFanStep / 2.0) + deepest
-		If fanRadius > radius
-			radius = fanRadius
-		EndIf
-	EndIf
+	; Seen from the fire, each tent spans an angle set by its front corners.
+	; Push the ring out until the middle tent's span and each side tent's fit
+	; within the kFanStep between them.
+	t = 1
+	While t < tents
+		While TentSpan(sizes[0], radius) + TentSpan(sizes[t], radius) > kFanStep
+			radius += 5.0
+		EndWhile
+		t += 1
+	EndWhile
 
 	Float[] tentFwd = new Float[4]
 	Float[] tentSide = new Float[4]
@@ -804,6 +815,12 @@ Float Function TentHalfWidth(Int size)
 		Return LargeTentHalfWidth
 	EndIf
 	Return SmallTentHalfWidth
+EndFunction
+
+; Half the angle, in degrees, that a tent of this size spans as seen from
+; the fire when it stands `radius` from it (plus half the clearance).
+Float Function TentSpan(Int size, Float radius)
+	Return Math.atan((TentHalfWidth(size) + kTentClearance / 2.0) / (radius - TentHalfDepth(size)))
 EndFunction
 
 Float Function TentHalfDepth(Int size)
