@@ -1,12 +1,12 @@
-Scriptname CSK_Native Hidden
-{Native functions provided by CampsiteKit.dll (SKSE), which the mod requires.
+Scriptname LZC_Native Hidden
+{Native functions provided by LazyCamping.dll (SKSE), which the mod requires.
 If the DLL is not loaded these are unbound and GetVersion() returns 0.
 
 Camp layouts are offsets from an origin (the player): fwd units in front
 along heading and side units to the right, with turn added to heading for
 each object's facing. Angles are in degrees.}
 
-; Returns the plugin version, or 0 if CampsiteKit.dll is not loaded.
+; Returns the plugin version, or 0 if LazyCamping.dll is not loaded.
 Int Function GetVersion() Global Native
 
 ; Checks the ground under the first count footprints (rectangles with the

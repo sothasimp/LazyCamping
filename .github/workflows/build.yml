@@ -45,6 +45,6 @@ jobs:
       - name: Upload plugin
         uses: actions/upload-artifact@v7
         with:
-          name: CampsiteKit
+          name: LazyCamping
           path: SKSE/dist/
           if-no-files-found: error

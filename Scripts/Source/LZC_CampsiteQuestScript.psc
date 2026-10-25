@@ -1,26 +1,26 @@
-Scriptname CSK_CampsiteQuestScript extends Quest
+Scriptname LZC_CampsiteQuestScript extends Quest
 {Central controller for the Set Up Camp power. Tracks the deployed campsite,
 checks/consumes the camping kits in the player's inventory, lays out the camp
-and packs it back up. CampsiteKit.dll (SKSE) checks the ground and places the
+and packs it back up. LazyCamping.dll (SKSE) checks the ground and places the
 camp in one go.}
 
 ; ---------------------------------------------------------------------------
 ; Core
 ; ---------------------------------------------------------------------------
 Actor Property PlayerRef Auto
-Spell Property CSK_SetUpCampPower Auto
+Spell Property LZC_SetUpCampPower Auto
 {The Lesser Power. Granted to the player when this quest starts.}
 
 ; ---------------------------------------------------------------------------
 ; Inventory kits: MiscObjects the player carries. They're reusable: setting
 ; up camp doesn't use them up.
 ; ---------------------------------------------------------------------------
-MiscObject[] Property CSK_SmallTentKits Auto
+MiscObject[] Property LZC_SmallTentKits Auto
 {Small tent kits by colour: 0 brown, 1 blue, 2 green, 3 red, 4 white. Every
 tent kit the player carries is pitched (up to 4 tents).}
-MiscObject[] Property CSK_LargeTentKits Auto
-{Large tent kits, same colour order as CSK_SmallTentKits.}
-MiscObject Property CSK_BedrollKit Auto
+MiscObject[] Property LZC_LargeTentKits Auto
+{Large tent kits, same colour order as LZC_SmallTentKits.}
+MiscObject Property LZC_BedrollKit Auto
 {At least one is needed to make camp; the campfire always comes with it.}
 
 MiscObject Property Firewood01 Auto
@@ -31,21 +31,21 @@ Int Property FirewoodRequired = 0 Auto
 ; ---------------------------------------------------------------------------
 ; World objects placed when the camp is set up
 ; ---------------------------------------------------------------------------
-Form[] Property CSK_SmallTents Auto
-{Small tent Activators, same colour order as CSK_SmallTentKits. Each needs
-CSK_TentActivatorScript.}
-Form[] Property CSK_LargeTents Auto
-{Large tent Activators, same colour order as CSK_SmallTents.}
-Form Property CSK_BedrollPlaced Auto
+Form[] Property LZC_SmallTents Auto
+{Small tent Activators, same colour order as LZC_SmallTentKits. Each needs
+LZC_TentActivatorScript.}
+Form[] Property LZC_LargeTents Auto
+{Large tent Activators, same colour order as LZC_SmallTents.}
+Form Property LZC_BedrollPlaced Auto
 {Furniture with a sleep marker, so the player can sleep / wait in it. Can be
 the vanilla bedroll: this script needs nothing on it.}
-Form Property CSK_CampfirePlaced Auto
+Form Property LZC_CampfirePlaced Auto
 {Static or Activator: the burning campfire. Can be the vanilla one.}
-Light Property CSK_CampfireLight Auto
+Light Property LZC_CampfireLight Auto
 {Optional. Flickering firelight placed above the campfire.}
-Form Property CSK_SitMarkerPlayer Auto
+Form Property LZC_SitMarkerPlayer Auto
 {Optional. Visible cross-legged seat by the fire that the player can use.}
-Form Property CSK_SitMarkerFollower Auto
+Form Property LZC_SitMarkerFollower Auto
 {Optional. Cross-legged sit marker by the fire, one per follower.}
 
 ; ---------------------------------------------------------------------------
@@ -54,28 +54,28 @@ Form Property CSK_SitMarkerFollower Auto
 ; tentless bedroll gets a copy of its set, turned to match. Leave a set's
 ; anchor empty for no dressing.
 ; ---------------------------------------------------------------------------
-ObjectReference Property CSK_FireDressingAnchor Auto
-ObjectReference[] Property CSK_FireDressing Auto
-ObjectReference Property CSK_SmallTentDressingAnchor Auto
+ObjectReference Property LZC_FireDressingAnchor Auto
+ObjectReference[] Property LZC_FireDressing Auto
+ObjectReference Property LZC_SmallTentDressingAnchor Auto
 {Faces the way the tent's entrance does.}
-ObjectReference[] Property CSK_SmallTentDressing Auto
-ObjectReference Property CSK_LargeTentDressingAnchor Auto
+ObjectReference[] Property LZC_SmallTentDressing Auto
+ObjectReference Property LZC_LargeTentDressingAnchor Auto
 {Faces the way the tent's entrance does.}
-ObjectReference[] Property CSK_LargeTentDressing Auto
-ObjectReference Property CSK_RingBedrollDressingAnchor Auto
+ObjectReference[] Property LZC_LargeTentDressing Auto
+ObjectReference Property LZC_RingBedrollDressingAnchor Auto
 {For camps without tents; faces the way the bedroll does.}
-ObjectReference[] Property CSK_RingBedrollDressing Auto
+ObjectReference[] Property LZC_RingBedrollDressing Auto
 
-ObjectReference Property CSK_CampStorage Auto
+ObjectReference Property LZC_CampStorage Auto
 {Optional. A persistent, non-respawning, unowned container kept in the
 holding cell. It's moved to the camp while one is up, so its contents carry
 over from camp to camp.}
-ObjectReference[] Property CSK_CampStorageMarkers Auto
+ObjectReference[] Property LZC_CampStorageMarkers Auto
 {Items in the dressing sets that mark where the storage goes (they're also
 listed in their set). The first one in camp order is used; the storage
 returns to the first marker's spot in the holding cell on pack-up.}
 
-ObjectReference Property CSK_CampMapMarker Auto
+ObjectReference Property LZC_CampMapMarker Auto
 {Optional. A persistent, initially disabled map marker reference kept in a
 holding cell. It moves to the campfire while a camp is up and is disabled
 (off the map) when the camp is packed up. The player can always fast travel
@@ -118,10 +118,10 @@ axis isn't its forward axis.}
 ; ---------------------------------------------------------------------------
 ReferenceAlias[] Property RingBedrollAliases Auto
 {RingBedroll1-4 on this quest: optional, empty Specific Reference aliases with
-CSK_BedrollAliasScript. In a camp without tents they hold the bedrolls, so
+LZC_BedrollAliasScript. In a camp without tents they hold the bedrolls, so
 sneaking and activating one packs up the camp.}
 
-Quest Property CSK_CampFollowersQuest Auto
+Quest Property LZC_CampFollowersQuest Auto
 {Optional. Seats followers by the fire and puts them to bed with the player.
 Leave empty to place only the player's seat and the bedrolls.}
 
@@ -168,14 +168,14 @@ Int Property kSmall = 0 AutoReadOnly
 Int Property kLarge = 1 AutoReadOnly
 Int Property kColors = 5 AutoReadOnly
 Float Property kFireHalfSize = 50.0 AutoReadOnly     ; for the ground check
-Int Property kNativeVersion = 3 AutoReadOnly         ; CampsiteKit.dll needed
+Int Property kNativeVersion = 3 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
 Int[] tentSizesUsed
 Bool busy = False
 
 Event OnInit()
-	PlayerRef.AddSpell(CSK_SetUpCampPower, False)
+	PlayerRef.AddSpell(LZC_SetUpCampPower, False)
 EndEvent
 
 ; Called by the power's magic effect.
@@ -188,8 +188,8 @@ Function HandlePowerCast()
 		EndIf
 		Return
 	EndIf
-	If CSK_Native.GetVersion() < kNativeVersion
-		Debug.Notification("Campsite Kit needs SKSE and an up-to-date CampsiteKit.dll.")
+	If LZC_Native.GetVersion() < kNativeVersion
+		Debug.Notification("Lazy Camping needs SKSE and an up-to-date LazyCamping.dll.")
 		Return
 	EndIf
 
@@ -203,7 +203,7 @@ Function HandlePowerCast()
 	busy = False
 EndFunction
 
-; Called by CSK_TentActivatorScript. Sneaking and activating any of the camp's
+; Called by LZC_TentActivatorScript. Sneaking and activating any of the camp's
 ; tents from outside packs up the camp. Anything else does nothing; in
 ; particular the player can't pack up by accident from inside a tent.
 Function OnTentActivated(ObjectReference akTent)
@@ -226,7 +226,7 @@ Function OnTentActivated(ObjectReference akTent)
 	EndWhile
 EndFunction
 
-; Called by CSK_BedrollAliasScript. In a camp without tents, the bedrolls'
+; Called by LZC_BedrollAliasScript. In a camp without tents, the bedrolls'
 ; activation is blocked so this runs first: sneaking packs up the camp, and
 ; anything else is passed through to the bedroll as normal.
 Function OnBedrollActivated(ObjectReference akBedroll, ObjectReference akActionRef)
@@ -285,8 +285,8 @@ EndFunction
 
 Bool Function HasAllKits()
 	String missing = ""
-	If PlayerRef.GetItemCount(CSK_BedrollKit) < 1
-		missing += CSK_BedrollKit.GetName() + ", "
+	If PlayerRef.GetItemCount(LZC_BedrollKit) < 1
+		missing += LZC_BedrollKit.GetName() + ", "
 	EndIf
 	If FirewoodRequired > 0 && Firewood01 && PlayerRef.GetItemCount(Firewood01) < FirewoodRequired
 		missing += FirewoodRequired + " " + Firewood01.GetName() + ", "
@@ -301,18 +301,18 @@ EndFunction
 
 Function SetUpCamp()
 	Float heading = PlayerRef.GetAngleZ()
-	Int bedrollsCarried = PlayerRef.GetItemCount(CSK_BedrollKit)
+	Int bedrollsCarried = PlayerRef.GetItemCount(LZC_BedrollKit)
 
 	; Start the follower quest first: its aliases find the followers who are
 	; with the player. Each gets a seat by the fire, and partners and couples
 	; decide how the bedrolls are shared out between the tents.
-	CSK_CampFollowersScript followers = None
-	If CSK_CampFollowersQuest
-		If CSK_CampFollowersQuest.IsRunning()
-			CSK_CampFollowersQuest.Stop()
+	LZC_CampFollowersScript followers = None
+	If LZC_CampFollowersQuest
+		If LZC_CampFollowersQuest.IsRunning()
+			LZC_CampFollowersQuest.Stop()
 		EndIf
-		If CSK_CampFollowersQuest.Start()
-			followers = CSK_CampFollowersQuest as CSK_CampFollowersScript
+		If LZC_CampFollowersQuest.Start()
+			followers = LZC_CampFollowersQuest as LZC_CampFollowersScript
 		EndIf
 	EndIf
 	Int partners = 0
@@ -456,11 +456,11 @@ Function SetUpCamp()
 		siteHalfDepth[t + 1] = TentHalfDepth(sizes[t])
 		t += 1
 	EndWhile
-	Int site = CSK_Native.CheckCampSite(PlayerRef, heading, 1 + tents, siteFwd, siteSide, siteTurn, siteHalfWidth, siteHalfDepth, MaxStep, MaxSlope)
+	Int site = LZC_Native.CheckCampSite(PlayerRef, heading, 1 + tents, siteFwd, siteSide, siteTurn, siteHalfWidth, siteHalfDepth, MaxStep, MaxSlope)
 	If site != 0
 		NotifySiteProblem(site)
 		If followers
-			CSK_CampFollowersQuest.Stop()
+			LZC_CampFollowersQuest.Stop()
 		EndIf
 		Return
 	EndIf
@@ -472,9 +472,9 @@ Function SetUpCamp()
 	Float[] lift = new Float[26]
 	Float[] turn = new Float[26]
 
-	forms[kCampfire] = CSK_CampfirePlaced
+	forms[kCampfire] = LZC_CampfirePlaced
 	fwd[kCampfire] = FireForward()
-	forms[kLight] = CSK_CampfireLight
+	forms[kLight] = LZC_CampfireLight
 	fwd[kLight] = FireForward()
 	lift[kLight] = LightHeight
 
@@ -490,8 +490,8 @@ Function SetUpCamp()
 
 	; Seats ring the fire and face it. The player's is at 0, across the fire
 	; in front of their tent; followers' seats are spaced evenly from there.
-	SetSeat(forms, fwd, side, turn, kPlayerSeat, CSK_SitMarkerPlayer, 0.0)
-	If followers && CSK_SitMarkerFollower
+	SetSeat(forms, fwd, side, turn, kPlayerSeat, LZC_SitMarkerPlayer, 0.0)
+	If followers && LZC_SitMarkerFollower
 		Int present = 0
 		Int f = 0
 		While f < kMaxFollowers
@@ -506,7 +506,7 @@ Function SetUpCamp()
 		While f < kMaxFollowers
 			If followers.HasFollower(f)
 				rank += 1
-				SetSeat(forms, fwd, side, turn, kFirstFollowerSeat + f, CSK_SitMarkerFollower, rank * 360.0 / (present + 1))
+				SetSeat(forms, fwd, side, turn, kFirstFollowerSeat + f, LZC_SitMarkerFollower, rank * 360.0 / (present + 1))
 			EndIf
 			f += 1
 		EndWhile
@@ -552,7 +552,7 @@ Function SetUpCamp()
 		Int r = 0
 		While r < bedrolls
 			Float ringBearing = r * 360.0 / bedrolls
-			forms[kFirstBedroll + r] = CSK_BedrollPlaced
+			forms[kFirstBedroll + r] = LZC_BedrollPlaced
 			fwd[kFirstBedroll + r] = FireForward() + BedrollRingRadius * Math.Cos(ringBearing)
 			side[kFirstBedroll + r] = BedrollRingRadius * Math.Sin(ringBearing)
 			turn[kFirstBedroll + r] = ringBearing + BedrollRingYaw
@@ -565,23 +565,23 @@ Function SetUpCamp()
 
 	; The plugin puts everything on the ground and places it in one frame.
 	ObjectReference[] setAnchors = new ObjectReference[4]
-	setAnchors[0] = CSK_FireDressingAnchor
-	setAnchors[1] = CSK_SmallTentDressingAnchor
-	setAnchors[2] = CSK_LargeTentDressingAnchor
-	setAnchors[3] = CSK_RingBedrollDressingAnchor
+	setAnchors[0] = LZC_FireDressingAnchor
+	setAnchors[1] = LZC_SmallTentDressingAnchor
+	setAnchors[2] = LZC_LargeTentDressingAnchor
+	setAnchors[3] = LZC_RingBedrollDressingAnchor
 	ObjectReference[] setItems = new ObjectReference[128]
 	Int[] itemSet = new Int[128]
-	Int itemCount = AddSet(setItems, itemSet, 0, CSK_FireDressing, 1)
-	itemCount = AddSet(setItems, itemSet, itemCount, CSK_SmallTentDressing, 2)
-	itemCount = AddSet(setItems, itemSet, itemCount, CSK_LargeTentDressing, 3)
-	itemCount = AddSet(setItems, itemSet, itemCount, CSK_RingBedrollDressing, 4)
+	Int itemCount = AddSet(setItems, itemSet, 0, LZC_FireDressing, 1)
+	itemCount = AddSet(setItems, itemSet, itemCount, LZC_SmallTentDressing, 2)
+	itemCount = AddSet(setItems, itemSet, itemCount, LZC_LargeTentDressing, 3)
+	itemCount = AddSet(setItems, itemSet, itemCount, LZC_RingBedrollDressing, 4)
 
-	placedRefs = CSK_Native.PlaceCamp(PlayerRef, heading, forms, fwd, side, lift, turn, AlignToSlope, MaxSlope, dressSet, setAnchors, setItems, itemSet, CSK_CampStorageMarkers)
+	placedRefs = LZC_Native.PlaceCamp(PlayerRef, heading, forms, fwd, side, lift, turn, AlignToSlope, MaxSlope, dressSet, setAnchors, setItems, itemSet, LZC_CampStorageMarkers)
 	If placedRefs.Length <= kSlotCount
 		Debug.Notification("Your camp couldn't be set up.")
 		placedRefs = new ObjectReference[26]
 		If followers
-			CSK_CampFollowersQuest.Stop()
+			LZC_CampFollowersQuest.Stop()
 		EndIf
 		Return
 	EndIf
@@ -628,17 +628,17 @@ Function SetUpCamp()
 	; goes; its contents come along from camp to camp.
 	ObjectReference storageSpot = placedRefs[kSlotCount]
 	If storageSpot
-		If CSK_CampStorage
-			CSK_CampStorage.MoveTo(storageSpot)
+		If LZC_CampStorage
+			LZC_CampStorage.MoveTo(storageSpot)
 		EndIf
 		storageSpot.Delete()
 		placedRefs[kSlotCount] = None
 	EndIf
 
-	If CSK_CampMapMarker
-		CSK_CampMapMarker.MoveTo(placedRefs[kCampfire])
-		CSK_CampMapMarker.Enable()
-		CSK_CampMapMarker.AddToMap(True)
+	If LZC_CampMapMarker
+		LZC_CampMapMarker.MoveTo(placedRefs[kCampfire])
+		LZC_CampMapMarker.Enable()
+		LZC_CampMapMarker.AddToMap(True)
 	EndIf
 
 	tentSizesUsed = sizes
@@ -653,14 +653,14 @@ Function PackUpCamp()
 		Return
 	EndIf
 
-	If CSK_CampFollowersQuest && CSK_CampFollowersQuest.IsRunning()
-		(CSK_CampFollowersQuest as CSK_CampFollowersScript).Shutdown()
+	If LZC_CampFollowersQuest && LZC_CampFollowersQuest.IsRunning()
+		(LZC_CampFollowersQuest as LZC_CampFollowersScript).Shutdown()
 	EndIf
-	If CSK_CampMapMarker
-		CSK_CampMapMarker.Disable()
+	If LZC_CampMapMarker
+		LZC_CampMapMarker.Disable()
 	EndIf
-	If CSK_CampStorage && CSK_CampStorageMarkers && CSK_CampStorageMarkers[0]
-		CSK_CampStorage.MoveTo(CSK_CampStorageMarkers[0])
+	If LZC_CampStorage && LZC_CampStorageMarkers && LZC_CampStorageMarkers[0]
+		LZC_CampStorage.MoveTo(LZC_CampStorageMarkers[0])
 	EndIf
 
 	Int i = 0
@@ -714,16 +714,16 @@ EndFunction
 Function SetTentBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int slot, Float tentFwd, Float tentSide, Float tentTurn, Int index, Int count)
 	; Offset along the tent's right axis, which points at tentTurn + 90.
 	Float offset = (index - (count - 1) / 2.0) * BedrollSpacing
-	forms[slot] = CSK_BedrollPlaced
+	forms[slot] = LZC_BedrollPlaced
 	fwd[slot] = tentFwd + offset * Math.Cos(tentTurn + 90.0)
 	side[slot] = tentSide + offset * Math.Sin(tentTurn + 90.0)
 	turn[slot] = tentTurn
 EndFunction
 
 MiscObject Function TentKit(Int size, Int color)
-	MiscObject[] kits = CSK_SmallTentKits
+	MiscObject[] kits = LZC_SmallTentKits
 	If size == kLarge
-		kits = CSK_LargeTentKits
+		kits = LZC_LargeTentKits
 	EndIf
 	If color < 0 || color >= kits.Length
 		Return None
@@ -733,9 +733,9 @@ EndFunction
 
 ; Returns the tent for a size and colour, falling back to the first (brown).
 Form Function TentForm(Int size, Int color)
-	Form[] tents = CSK_SmallTents
+	Form[] tents = LZC_SmallTents
 	If size == kLarge
-		tents = CSK_LargeTents
+		tents = LZC_LargeTents
 	EndIf
 	If !tents
 		Return None

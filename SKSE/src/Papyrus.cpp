@@ -2,7 +2,7 @@
 
 #include "Placement.h"
 
-// Native functions for CSK_Native.psc. They are registered as not callable
+// Native functions for LZC_Native.psc. They are registered as not callable
 // from tasklets, so the VM runs them in sync with the main thread, which is
 // required for the Havok raycasts and for creating references.
 //
@@ -13,14 +13,14 @@ namespace Papyrus
 {
 	namespace
 	{
-		constexpr auto         kClass = "CSK_Native"sv;
+		constexpr auto         kClass = "LZC_Native"sv;
 		constexpr std::int32_t kVersion = 3;
 
 		// How far above/below the origin to look for ground.
 		constexpr float kSearchUp = 256.0f;
 		constexpr float kSearchDown = 1024.0f;
 
-		// Result codes for CheckCampSite (mirrored in CSK_CampsiteQuestScript).
+		// Result codes for CheckCampSite (mirrored in LZC_CampsiteQuestScript).
 		enum AreaResult : std::int32_t
 		{
 			kClear = 0,

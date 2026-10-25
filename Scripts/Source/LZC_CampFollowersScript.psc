@@ -1,9 +1,9 @@
-Scriptname CSK_CampFollowersScript extends Quest
+Scriptname LZC_CampFollowersScript extends Quest
 {Runs while the camp is set up. The Followers aliases fill with nearby
 followers when the quest starts. Each follower has two alias packages:
-- sit at their Seats alias while CSK_CampActivity == 1 (the player is
+- sit at their Seats alias while LZC_CampActivity == 1 (the player is
   sitting at the fire)
-- sleep in their Bedrolls alias while CSK_CampActivity == 2 (the player is
+- sleep in their Bedrolls alias while LZC_CampActivity == 2 (the player is
   sleeping at camp). The bedrolls are handed out when the player goes to
   sleep, skipping whichever camp bedroll the player is lying in. A spouse or
   lover gets the free bedroll next to the player's, and each follower couple
@@ -18,7 +18,7 @@ ReferenceAlias[] Property Bedrolls Auto
 {Bedroll1-3, filled when the player goes to sleep.}
 ReferenceAlias[] Property Seats Auto
 {Seat1-3, filled by Assign.}
-GlobalVariable Property CSK_CampActivity Auto
+GlobalVariable Property LZC_CampActivity Auto
 {0 = normal, 1 = player sitting at the fire, 2 = player sleeping at camp.}
 Float Property CampRadius = 1024.0 Auto
 {Sleeping within this distance of the campfire counts as sleeping at camp.}
@@ -68,7 +68,7 @@ EndFunction
 ; Called by the camp script when the camp is packed up.
 Function Shutdown()
 	UnregisterForSleep()
-	CSK_CampActivity.SetValueInt(kNormal)
+	LZC_CampActivity.SetValueInt(kNormal)
 
 	Actor[] actors = new Actor[3]
 	Int i = 0
@@ -90,7 +90,7 @@ Function Shutdown()
 EndFunction
 
 Function SetActivity(Int activity)
-	CSK_CampActivity.SetValueInt(activity)
+	LZC_CampActivity.SetValueInt(activity)
 	Int i = 0
 	While i < Followers.Length
 		Actor follower = Followers[i].GetActorRef()
@@ -101,15 +101,15 @@ Function SetActivity(Int activity)
 	EndWhile
 EndFunction
 
-; Called by CSK_CampPlayerAliasScript.
+; Called by LZC_CampPlayerAliasScript.
 Function OnPlayerSat(ObjectReference akFurniture)
-	If akFurniture && akFurniture == PlayerSeat && CSK_CampActivity.GetValueInt() != kSleeping
+	If akFurniture && akFurniture == PlayerSeat && LZC_CampActivity.GetValueInt() != kSleeping
 		SetActivity(kSitting)
 	EndIf
 EndFunction
 
 Function OnPlayerGotUp(ObjectReference akFurniture)
-	If akFurniture && akFurniture == PlayerSeat && CSK_CampActivity.GetValueInt() == kSitting
+	If akFurniture && akFurniture == PlayerSeat && LZC_CampActivity.GetValueInt() == kSitting
 		SetActivity(kNormal)
 	EndIf
 EndFunction

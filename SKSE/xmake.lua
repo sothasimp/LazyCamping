@@ -1,10 +1,10 @@
--- CampsiteKit SKSE plugin
+-- LazyCamping SKSE plugin
 -- Build: xmake config -m release && xmake
 set_xmakever("2.8.2")
 
 includes("lib/commonlibsse-ng")
 
-set_project("CampsiteKit")
+set_project("LazyCamping")
 set_version("1.0.0")
 set_license("GPL-3.0")
 
@@ -13,13 +13,13 @@ set_warnings("allextra")
 
 add_rules("mode.debug", "mode.release")
 
-target("CampsiteKit")
+target("LazyCamping")
     add_deps("commonlibsse-ng")
 
     add_rules("commonlibsse-ng.plugin", {
-        name = "CampsiteKit",
-        author = "CampsiteKit",
-        description = "Native ground placement for the Campsite Kit power"
+        name = "LazyCamping",
+        author = "LazyCamping",
+        description = "Native ground placement for the Lazy Camping power"
     })
 
     add_files("src/**.cpp")

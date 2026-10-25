@@ -1,9 +1,9 @@
-Scriptname CSK_BedrollAliasScript extends ReferenceAlias
-{On the RingBedroll1-4 aliases of CSK_CampsiteQuest. In a camp without tents,
+Scriptname LZC_BedrollAliasScript extends ReferenceAlias
+{On the RingBedroll1-4 aliases of LZC_CampsiteQuest. In a camp without tents,
 sneaking and activating a bedroll packs up the camp. Being on an alias rather
 than the bedroll's base object lets the camp use the vanilla bedroll, so Base
 Object Swapper variants still apply.}
 
 Event OnActivate(ObjectReference akActionRef)
-	(GetOwningQuest() as CSK_CampsiteQuestScript).OnBedrollActivated(GetReference(), akActionRef)
+	(GetOwningQuest() as LZC_CampsiteQuestScript).OnBedrollActivated(GetReference(), akActionRef)
 EndEvent
