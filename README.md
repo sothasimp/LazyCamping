@@ -21,7 +21,7 @@ The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **
 - **the other tents** are spaced evenly around the ring: 2 tents face each other across the fire, 3 form a triangle, and 4 form a square. The player stands on the ring of seats, inside the ring of tents, so a tent on the near side stands behind them.
 - **with no tent kits**, there are no tents. The bedrolls (up to 4) lie sideways, spaced evenly in a circle just outside the seats, starting behind the player's seat. With one bedroll per person, each lies behind its owner's seat.
 
-While a camp is up, a **map marker** shows where it is, and the player can fast travel to it. Packing up removes the marker.
+While a camp is up, a **map marker** shows where it is, and the player can fast travel to it, unless fast travel is disabled globally (for example in Survival Mode). Packing up removes the marker.
 
 Followers sit at the fire when the player sits in their seat. When the player sleeps at camp, in any of the camp's bedrolls, followers sleep in the bedrolls the player isn't using. A spouse or lover gets the bedroll next to the player's: the one beside them in the same tent, or the neighbouring one in a camp without tents. Two followers who are a couple get two free bedrolls side by side, normally in their own tent.
 
@@ -159,7 +159,7 @@ When a camp goes up, the script moves the marker to the campfire, enables it and
 | `RingBedrollAliases` | the aliases `RingBedroll1`–`4`, in order (below) |
 | `CSK_CampfireLight`, `CSK_CookingStation` | optional; leave empty to skip |
 | `CSK_SitMarkerPlayer`, `CSK_SitMarkerFollower` | the seats; leave either empty to skip it |
-| `CSK_CampMapMarker`, `CampFastTravel` | the map marker reference from step 2b (leave empty for no marker), and whether the player can fast travel to it (default on) |
+| `CSK_CampMapMarker` | the map marker reference from step 2b; leave empty for no marker |
 | `LocTypeCity`, `LocTypeTown` | vanilla keywords (use auto-fill); blocks camping in settlements |
 | `Firewood01`, `FirewoodRequired` | optional; for example `2` to burn 2 firewood per fire |
 | `SmallTentCapacity`, `LargeTentCapacity` | bedrolls per tent (default 2 and 4, maximum 4) |

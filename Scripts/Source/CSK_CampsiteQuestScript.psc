@@ -52,9 +52,8 @@ Form Property CSK_SitMarkerFollower Auto
 ObjectReference Property CSK_CampMapMarker Auto
 {Optional. A persistent, initially disabled map marker reference kept in a
 holding cell. It moves to the campfire while a camp is up and is disabled
-(off the map) when the camp is packed up.}
-Bool Property CampFastTravel = True Auto
-{Whether the player can fast travel to the camp's map marker.}
+(off the map) when the camp is packed up. The player can always fast travel
+to it, unless fast travel is disabled globally.}
 
 ; ---------------------------------------------------------------------------
 ; Layout, in game units. ~70 units is roughly one metre. Everything is
@@ -598,7 +597,7 @@ Function SetUpCamp()
 	If CSK_CampMapMarker
 		CSK_CampMapMarker.MoveTo(placedRefs[kCampfire])
 		CSK_CampMapMarker.Enable()
-		CSK_CampMapMarker.AddToMap(CampFastTravel)
+		CSK_CampMapMarker.AddToMap(True)
 	EndIf
 
 	tentKitsUsed = kits
