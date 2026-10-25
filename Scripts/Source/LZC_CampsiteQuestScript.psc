@@ -46,9 +46,9 @@ Light Property LZC_CampfireLight Auto
 Form Property LZC_SitMarkerPlayer Auto
 {Optional. Visible cross-legged seat by the fire that the player can use.}
 Form Property LZC_BedrollSitMarker Auto
-{Optional. Cross-legged seat placed on every bedroll, facing the fire. Needs a
-small visible model (a folded pelt, a cushion) so the player can aim at it
-apart from the bedroll.}
+{Optional. Cross-legged seat placed on every bedroll, facing the fire.
+Invisible but selectable: its model is a small collision box with no visible
+geometry, so the player can aim at it apart from the bedroll.}
 Form Property LZC_SitMarkerFollower Auto
 {Optional. Cross-legged sit marker by the fire, one per follower.}
 

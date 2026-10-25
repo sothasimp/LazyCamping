@@ -93,7 +93,7 @@ To use custom meshes, put them in `Data/Meshes/LazyCamping/` and point the Model
 | `LZC_BedrollPlaced` | Furniture | `bedroll` (the ground bedroll furniture) | Its sleep marker makes Sleep and Wait work. |
 | `LZC_SitMarkerFollower` | Furniture | `CrossLegged` (a cross-legged sit marker) | Followers use these. Invisible is fine. |
 | `LZC_SitMarkerPlayer` | Furniture | **duplicate** the same marker | Needs a **visible model** so the player can activate it (see below). |
-| `LZC_BedrollSitMarker` | Furniture | **duplicate** the same marker | Placed on every bedroll, facing the fire. Give it a **small** visible model, such as a folded pelt or a cushion, sitting on the middle of the bedroll: the player aims at it to sit and at the rest of the bedroll to sleep. Optional. |
+| `LZC_BedrollSitMarker` | Furniture | **duplicate** the same marker | Placed on every bedroll, facing the fire. It's **invisible but selectable**: give it an invisible collision box over the middle of the bedroll (see below). The player aims at it to sit and at the rest of the bedroll to sleep. Optional. |
 
 **The player's seat.** The player can only activate furniture they can point the crosshair at, and plain sit markers have no visible model or collision. So after duplicating the cross-legged marker:
 1. Set its model to something to sit on, such as a fur pelt, a folded bedroll or a log.
@@ -101,6 +101,13 @@ To use custom meshes, put them in `Data/Meshes/LazyCamping/` and point the Model
 3. Set the Activate Text Override to `Sit`.
 
 The followers' seats can use the same visible model if you want all the seats to match. The player's seat and the bedroll seat are the only placed objects that need new records.
+
+**The bedroll seat.** The game picks what the crosshair is on by its collision, not by what's drawn, so an invisible model can still be selected:
+1. In NifSkope, open a small vanilla clutter model that has collision, such as a folded pelt, and save a copy as `Meshes/LazyCamping/BedrollSeat.nif`.
+2. Delete its visible geometry (the `BSTriShape` or `NiTriShape` blocks), keeping its collision object (`bhkCollisionObject`).
+3. Set `LZC_BedrollSitMarker`'s model to that file, and its Activate Text Override to `Sit`.
+
+Keep the collision box small and centred on the bedroll, so its head and foot stay easy to target for sleeping. Check that the furniture's sit marker still sits at the bedroll's height.
 
 **Tents: 2 sizes × 5 colours = 10 Activators.** Make each tent a new **Activator**:
 - Model: a tent mesh. Search `tent` in Statics to find the vanilla `.nif` paths; pick a smaller and a larger one, or use your own meshes.
@@ -324,6 +331,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
    Scripts/LZC_CampFollowersScript.pex
    Scripts/LZC_CampPlayerAliasScript.pex
    Textures/LazyCamping/...        (the tent recolours)
+   Meshes/LazyCamping/BedrollSeat.nif (the invisible bedroll seat)
    SKSE/Plugins/LazyCamping.dll
    Source/Scripts/*.psc            (optional but polite)
    Meshes/LazyCamping/...          (if you made custom meshes)
