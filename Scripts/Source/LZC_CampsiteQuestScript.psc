@@ -96,8 +96,8 @@ Float Property TentRingGap = 40.0 Auto
 ring: SeatRadius + TentRingGap + the largest HalfDepth among them, widened
 when needed so neighbouring tents don't touch. The default leaves the tent
 fronts just behind the seats; raise it if seated people brush the tents.}
-Float Property SmallTentHalfWidth = 90.0 Auto
-Float Property SmallTentHalfDepth = 120.0 Auto
+Float Property SmallTentHalfWidth = 85.0 Auto
+Float Property SmallTentHalfDepth = 85.0 Auto
 Int Property SmallTentCapacity = 2 Auto
 {Most bedrolls a small tent holds (1-4).}
 Float Property LargeTentHalfWidth = 150.0 Auto
