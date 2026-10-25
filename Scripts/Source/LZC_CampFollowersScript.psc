@@ -38,12 +38,11 @@ Int Property kSitting = 1 AutoReadOnly
 Int Property kSleeping = 2 AutoReadOnly
 
 ; Every camp bedroll, with where it is: its group (the tent it's in, or 0
-; for the ring around the fire) and its order within the group. Partners and
+; without tents) and its place in the row (neighbours differ by 1). Partners and
 ; couples are matched from these, without measuring distances.
 ObjectReference[] campBedrolls
 Int[] bedGroup
 Int[] bedOrder
-Int ringSize   ; bedrolls in the ring, or 0 for tents
 
 Bool Function HasFollower(Int index)
 	Return index < Followers.Length && Followers[index].GetReference() != None
@@ -52,13 +51,12 @@ EndFunction
 ; Called by the camp script once everything is placed. allBeds holds every
 ; camp bedroll (groups/orders say where each one is); followers get theirs
 ; when the player goes to sleep.
-Function Assign(ObjectReference akCampfire, ObjectReference akPlayerSeat, ObjectReference[] allBeds, Int[] groups, Int[] orders, Int akRingSize, ObjectReference[] seats)
+Function Assign(ObjectReference akCampfire, ObjectReference akPlayerSeat, ObjectReference[] allBeds, Int[] groups, Int[] orders, ObjectReference[] seats)
 	CampAnchor = akCampfire
 	PlayerSeat = akPlayerSeat
 	campBedrolls = allBeds
 	bedGroup = groups
 	bedOrder = orders
-	ringSize = akRingSize
 	ClearAll(Bedrolls)
 	ForceAll(Seats, seats)
 	RegisterForSleep()
@@ -126,7 +124,7 @@ EndEvent
 ; follower couple takes two free bedrolls side by side; everyone else takes
 ; the rest in camp order, so followers spread across the tents.
 Function AssignBedrolls()
-	Bool[] taken = new Bool[16]
+	Bool[] taken = new Bool[12]
 	Int i = 0
 	While i < taken.Length
 		taken[i] = i >= campBedrolls.Length || !campBedrolls[i]
@@ -270,17 +268,12 @@ Int Function FreePairStart(Bool[] taken)
 	Return anyFree
 EndFunction
 
-; How many places apart two bedrolls are within a group: along the row in a
-; tent, or either way round the ring without tents.
+; How many places apart two bedrolls are within a group.
 Int Function OrderGap(Int a, Int b)
-	Int gap = a - b
-	If gap < 0
-		gap = -gap
+	If a > b
+		Return a - b
 	EndIf
-	If ringSize > 0 && ringSize - gap < gap
-		gap = ringSize - gap
-	EndIf
-	Return gap
+	Return b - a
 EndFunction
 
 Int Function PartnerCount()

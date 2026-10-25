@@ -93,7 +93,8 @@ own seat is across the fire, in front of their tent.}
 
 Float Property TentRingGap = 60.0 Auto
 {Gap between the seats and the front of the deepest tent. All tents share one
-ring: SeatRadius + TentRingGap + the largest HalfDepth among them.}
+ring: SeatRadius + TentRingGap + the largest HalfDepth among them, widened
+when needed so tents 60 degrees apart don't touch.}
 Float Property SmallTentHalfWidth = 90.0 Auto
 Float Property SmallTentHalfDepth = 120.0 Auto
 Int Property SmallTentCapacity = 2 Auto
@@ -156,18 +157,20 @@ Int Property kCampfire = 0 AutoReadOnly
 Int Property kLight = 1 AutoReadOnly
 Int Property kPlayerSeat = 2 AutoReadOnly
 Int Property kFirstFollowerSeat = 3 AutoReadOnly   ; 3-5
-Int Property kFirstTent = 6 AutoReadOnly           ; 6-9
-Int Property kFirstBedroll = 10 AutoReadOnly       ; 10-25, the player's first
-Int Property kSlotCount = 26 AutoReadOnly
+Int Property kFirstTent = 6 AutoReadOnly           ; 6-8
+Int Property kFirstBedroll = 9 AutoReadOnly        ; 9-20, the player's first
+Int Property kSlotCount = 21 AutoReadOnly
 
 Int Property kMaxFollowers = 3 AutoReadOnly
-Int Property kMaxTents = 4 AutoReadOnly
-Int Property kMaxBedrolls = 16 AutoReadOnly
+Int Property kMaxTents = 3 AutoReadOnly
+Int Property kMaxBedrolls = 12 AutoReadOnly
 Int Property kRingBedrolls = 4 AutoReadOnly        ; without tents
 Int Property kSmall = 0 AutoReadOnly
 Int Property kLarge = 1 AutoReadOnly
 Int Property kColors = 5 AutoReadOnly
 Float Property kFireHalfSize = 50.0 AutoReadOnly     ; for the ground check
+Float Property kFanStep = 60.0 AutoReadOnly          ; degrees between neighbours
+Float Property kTentClearance = 15.0 AutoReadOnly    ; between neighbouring tents
 Int Property kNativeVersion = 3 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
@@ -413,25 +416,38 @@ Function SetUpCamp()
 		EndIf
 	EndIf
 
-	; Tents stand on one ring outside the seats, entrances facing the fire.
-	; Bearings are degrees clockwise from the player's facing, seen from the fire.
-	Float radius = SeatRadius + TentRingGap
+	; Tents stand in an amphitheater on the far side of the fire, entrances
+	; facing it and the open side where the player stands: the player's tent
+	; straight across, the others kFanStep degrees to either side. Bearings
+	; are degrees clockwise from the player's facing, seen from the fire.
 	Float deepest = 0.0
+	Float widest = 0.0
 	t = 0
 	While t < tents
 		If TentHalfDepth(sizes[t]) > deepest
 			deepest = TentHalfDepth(sizes[t])
 		EndIf
+		If TentHalfWidth(sizes[t]) > widest
+			widest = TentHalfWidth(sizes[t])
+		EndIf
 		t += 1
 	EndWhile
-	radius += deepest
+	Float radius = SeatRadius + TentRingGap + deepest
+	If tents > 1
+		; Neighbours are closest at their front corners; push the ring out
+		; until those clear each other.
+		Float fanRadius = (widest + kTentClearance) / Math.Sin(kFanStep / 2.0) + deepest
+		If fanRadius > radius
+			radius = fanRadius
+		EndIf
+	EndIf
 
 	Float[] tentFwd = new Float[4]
 	Float[] tentSide = new Float[4]
 	Float[] tentTurn = new Float[4]
 	t = 0
 	While t < tents
-		Float bearing = TentBearing(t, tents)
+		Float bearing = FanBearing(t)
 		tentFwd[t] = FireForward() + radius * Math.Cos(bearing)
 		tentSide[t] = radius * Math.Sin(bearing)
 		tentTurn[t] = bearing + 180.0
@@ -439,11 +455,11 @@ Function SetUpCamp()
 	EndWhile
 
 	; Check the ground under the fire and every tent in one go.
-	Float[] siteFwd = new Float[5]
-	Float[] siteSide = new Float[5]
-	Float[] siteTurn = new Float[5]
-	Float[] siteHalfWidth = new Float[5]
-	Float[] siteHalfDepth = new Float[5]
+	Float[] siteFwd = new Float[4]
+	Float[] siteSide = new Float[4]
+	Float[] siteTurn = new Float[4]
+	Float[] siteHalfWidth = new Float[4]
+	Float[] siteHalfDepth = new Float[4]
 	siteFwd[0] = FireForward()
 	siteHalfWidth[0] = kFireHalfSize
 	siteHalfDepth[0] = kFireHalfSize
@@ -466,11 +482,11 @@ Function SetUpCamp()
 	EndIf
 
 	; Slot layout (see placedRefs). Index 0, the campfire, is the camp's anchor.
-	Form[] forms = new Form[26]
-	Float[] fwd = new Float[26]
-	Float[] side = new Float[26]
-	Float[] lift = new Float[26]
-	Float[] turn = new Float[26]
+	Form[] forms = new Form[21]
+	Float[] fwd = new Float[21]
+	Float[] side = new Float[21]
+	Float[] lift = new Float[21]
+	Float[] turn = new Float[21]
 
 	forms[kCampfire] = LZC_CampfirePlaced
 	fwd[kCampfire] = FireForward()
@@ -479,34 +495,25 @@ Function SetUpCamp()
 	lift[kLight] = LightHeight
 
 	; Where each bedroll is, for matching partners and couples at bedtime: its
-	; group (the tent it's in, or 0 for the ring) and its order within it.
+	; group (the tent it's in, or 0 without tents) and its place in the row
+	; (neighbours differ by 1).
 	; Which dressing set (1-based; 0 = none) goes around each layout object.
-	Int[] dressSet = new Int[26]
+	Int[] dressSet = new Int[21]
 	dressSet[kCampfire] = 1
 
-	Int[] bedGroup = new Int[16]
-	Int[] bedOrder = new Int[16]
-	Int ringSize = 0
+	Int[] bedGroup = new Int[12]
+	Int[] bedOrder = new Int[12]
 
 	; Seats ring the fire and face it. The player's is at 0, across the fire
-	; in front of their tent; followers' seats are spaced evenly from there.
+	; in front of their tent; followers' seats fan out to either side.
 	SetSeat(forms, fwd, side, turn, kPlayerSeat, LZC_SitMarkerPlayer, 0.0)
 	If followers && LZC_SitMarkerFollower
-		Int present = 0
+		Int rank = 0
 		Int f = 0
 		While f < kMaxFollowers
 			If followers.HasFollower(f)
-				present += 1
-			EndIf
-			f += 1
-		EndWhile
-
-		Int rank = 0
-		f = 0
-		While f < kMaxFollowers
-			If followers.HasFollower(f)
 				rank += 1
-				SetSeat(forms, fwd, side, turn, kFirstFollowerSeat + f, LZC_SitMarkerFollower, rank * 360.0 / (present + 1))
+				SetSeat(forms, fwd, side, turn, kFirstFollowerSeat + f, LZC_SitMarkerFollower, FanBearing(rank))
 			EndIf
 			f += 1
 		EndWhile
@@ -547,20 +554,19 @@ Function SetUpCamp()
 			t += 1
 		EndWhile
 	Else
-		; Without tents, the bedrolls lie sideways, spaced evenly along a circle
-		; just outside the seats, starting behind the player's seat.
+		; Without tents, the bedrolls lie sideways in the same fan, just
+		; outside the seats: the player's behind their seat, the rest beside it.
 		Int r = 0
 		While r < bedrolls
-			Float ringBearing = r * 360.0 / bedrolls
+			Float ringBearing = FanBearing(r)
 			forms[kFirstBedroll + r] = LZC_BedrollPlaced
 			fwd[kFirstBedroll + r] = FireForward() + BedrollRingRadius * Math.Cos(ringBearing)
 			side[kFirstBedroll + r] = BedrollRingRadius * Math.Sin(ringBearing)
 			turn[kFirstBedroll + r] = ringBearing + BedrollRingYaw
-			bedOrder[r] = r
+			bedOrder[r] = FanPlace(r)
 			dressSet[kFirstBedroll + r] = 4
 			r += 1
 		EndWhile
-		ringSize = bedrolls
 	EndIf
 
 	; The plugin puts everything on the ground and places it in one frame.
@@ -579,7 +585,7 @@ Function SetUpCamp()
 	placedRefs = LZC_Native.PlaceCamp(PlayerRef, heading, forms, fwd, side, lift, turn, AlignToSlope, MaxSlope, dressSet, setAnchors, setItems, itemSet, LZC_CampStorageMarkers)
 	If placedRefs.Length <= kSlotCount
 		Debug.Notification("Your camp couldn't be set up.")
-		placedRefs = new ObjectReference[26]
+		placedRefs = new ObjectReference[21]
 		If followers
 			LZC_CampFollowersQuest.Stop()
 		EndIf
@@ -609,7 +615,7 @@ Function SetUpCamp()
 	If followers
 		; Every camp bedroll goes to the follower quest, which hands them out
 		; when the player sleeps, skipping whichever one the player is in.
-		ObjectReference[] beds = new ObjectReference[16]
+		ObjectReference[] beds = new ObjectReference[12]
 		i = 0
 		While i < kMaxBedrolls
 			beds[i] = placedRefs[kFirstBedroll + i]
@@ -621,7 +627,7 @@ Function SetUpCamp()
 			seats[i] = placedRefs[kFirstFollowerSeat + i]
 			i += 1
 		EndWhile
-		followers.Assign(placedRefs[kCampfire], placedRefs[kPlayerSeat], beds, bedGroup, bedOrder, ringSize, seats)
+		followers.Assign(placedRefs[kCampfire], placedRefs[kPlayerSeat], beds, bedGroup, bedOrder, seats)
 	EndIf
 
 	; The player's storage moves onto the spot the plugin marked, which then
@@ -690,12 +696,20 @@ Float Function FireForward()
 	Return SeatRadius
 EndFunction
 
-; Bearing of tent `index` out of `count`, spaced evenly around the fire. The
-; first tent is at 0, straight across the fire from the player. The player
-; stands on the ring of seats, inside the ring of tents, so a tent at 180
-; simply stands behind them.
-Float Function TentBearing(Int index, Int count)
-	Return index * 360.0 / count
+; Place `index` in the amphitheater fan: 0 in the middle, then alternately
+; right and left, further out each pair: 0, 1, -1, 2, -2...
+Int Function FanPlace(Int index)
+	Int place = (index + 1) / 2
+	If index % 2 == 0
+		Return -place
+	EndIf
+	Return place
+EndFunction
+
+; Bearing of fan place `index` around the fire, in degrees clockwise from the
+; player's facing: 0 straight across the fire, then kFanStep to either side.
+Float Function FanBearing(Int index)
+	Return FanPlace(index) * kFanStep
 EndFunction
 
 ; Puts a seat in a slot, SeatRadius from the fire at the given bearing, facing it.
