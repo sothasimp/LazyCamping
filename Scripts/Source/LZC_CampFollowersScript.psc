@@ -5,7 +5,8 @@ followers when the quest starts. Each follower has two alias packages:
   in their fire seat sends followers to the fire seats; sitting on a
   bedroll's seat sends them to the other bedrolls' seats, matched like the
   bedrolls at bedtime. Followers stay seated after the player gets up, until
-  the player goes to bed or packs up the camp.
+  the player goes to bed, packs up the camp, or leaves it (further than
+  CampRadius from the fire, or in another worldspace).
 - sleep in their Bedrolls alias while LZC_CampActivity == 2 (the player is
   sleeping at camp). The bedrolls are handed out when the player goes to
   sleep, skipping whichever camp bedroll the player is lying in. A spouse or
@@ -25,7 +26,9 @@ filled when the player sits down.}
 GlobalVariable Property LZC_CampActivity Auto
 {0 = normal, 1 = player sitting at the fire, 2 = player sleeping at camp.}
 Float Property CampRadius = 1024.0 Auto
-{Sleeping within this distance of the campfire counts as sleeping at camp.}
+{Sleeping within this distance of the campfire counts as sleeping at camp.
+Seated followers get up and follow once the player is further away than
+this, or in another worldspace.}
 Faction Property PartnerFaction Auto
 {Optional, such as PlayerMarriedFaction. Followers in it count as the player's
 partner, as well as any follower whose relationship rank with the player is
@@ -34,6 +37,8 @@ Lover (4), which covers vanilla spouses and most romance mods.}
 ObjectReference Property CampAnchor Auto Hidden
 ObjectReference Property PlayerSeat Auto Hidden
 
+Float Property kLeftCampCheckSeconds = 5.0 AutoReadOnly
+{How often to check, while followers are seated, whether the player has left.}
 Float Property kInBedDistance = 128.0 AutoReadOnly
 {The player counts as lying in a camp bedroll within this distance of it.}
 
@@ -76,6 +81,7 @@ EndFunction
 ; Called by the camp script when the camp is packed up.
 Function Shutdown()
 	UnregisterForSleep()
+	UnregisterForUpdate()
 	LZC_CampActivity.SetValueInt(kNormal)
 
 	Actor[] actors = new Actor[3]
@@ -99,6 +105,12 @@ EndFunction
 
 Function SetActivity(Int activity)
 	LZC_CampActivity.SetValueInt(activity)
+	; While followers are seated, keep checking whether the player has left.
+	If activity == kSitting
+		RegisterForSingleUpdate(kLeftCampCheckSeconds)
+	Else
+		UnregisterForUpdate()
+	EndIf
 	Int i = 0
 	While i < Followers.Length
 		Actor follower = Followers[i].GetActorRef()
@@ -137,6 +149,26 @@ Int Function IndexOf(ObjectReference[] refs, ObjectReference akRef)
 		i += 1
 	EndWhile
 	Return -1
+EndFunction
+
+Event OnUpdate()
+	If LZC_CampActivity.GetValueInt() != kSitting
+		Return
+	EndIf
+	If PlayerHasLeftCamp()
+		SetActivity(kNormal)
+	Else
+		RegisterForSingleUpdate(kLeftCampCheckSeconds)
+	EndIf
+EndEvent
+
+; True once the player is further than CampRadius from the fire, or in another
+; worldspace (indoors, or fast travelled away).
+Bool Function PlayerHasLeftCamp()
+	If !CampAnchor || PlayerRef.GetWorldSpace() != CampAnchor.GetWorldSpace()
+		Return True
+	EndIf
+	Return PlayerRef.GetDistance(CampAnchor) > CampRadius
 EndFunction
 
 Event OnSleepStart(Float afSleepStartTime, Float afDesiredSleepEndTime)

@@ -25,7 +25,7 @@ The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **
 
 While a camp is up, a **map marker** shows where it is, and the player can fast travel to it, unless fast travel is disabled globally (for example in Survival Mode). Packing up removes the marker.
 
-Every bedroll also has a **seat on it**, facing the fire. Followers sit at the fire when the player sits in their fire seat, and on the other bedrolls when the player sits on a bedroll, matched the same way as at bedtime. Once seated, they stay seated after the player gets up, until the player goes to bed or packs up the camp. When the player sleeps at camp, in any of the camp's bedrolls, followers sleep in the bedrolls the player isn't using. A spouse or lover gets the bedroll next to the player's: the one beside them in the same tent, or the neighbouring one in a camp without tents. Two followers who are a couple get two free bedrolls side by side, normally in their own tent.
+Every bedroll also has a **seat on it**, facing the fire. Followers sit at the fire when the player sits in their fire seat, and on the other bedrolls when the player sits on a bedroll, matched the same way as at bedtime. Once seated, they stay seated after the player gets up, until the player goes to bed, packs up the camp, or leaves it. When the player sleeps at camp, in any of the camp's bedrolls, followers sleep in the bedrolls the player isn't using. A spouse or lover gets the bedroll next to the player's: the one beside them in the same tent, or the neighbouring one in a camp without tents. Two followers who are a couple get two free bedrolls side by side, normally in their own tent.
 
 **Sneaking and activating any of the tents from outside** packs up the camp straight away, with no prompt: everything the camp placed is removed. Activating a tent without sneaking, or from inside, does nothing. So the player can't pack up by accident while getting into bed.
 
@@ -225,8 +225,8 @@ The camp also uses these when it shares bedrolls out between the tents, so partn
 
 | `LZC_CampActivity` | When | Followers |
 |---|---|---|
-| 0 | the camp is up, before anyone has sat down, and after the player wakes | follow the player as normal |
-| 1 | the player has sat in their fire seat, or on a bedroll's seat | sit in the fire seats, or on the other bedrolls' seats (partners beside the player, couples side by side). They **stay seated after the player gets up**, until the player goes to bed (they go to their bedrolls) or packs up the camp (they follow). Sitting somewhere else moves them to match. |
+| 0 | the camp is up, before anyone has sat down; after the player wakes; after the player leaves camp | follow the player as normal |
+| 1 | the player has sat in their fire seat, or on a bedroll's seat | sit in the fire seats, or on the other bedrolls' seats (partners beside the player, couples side by side). They **stay seated after the player gets up**, until the player goes to bed (they go to their bedrolls), packs up the camp, or leaves it: more than `CampRadius` from the fire, or in another worldspace, checked every 5 seconds (they follow). Sitting somewhere else moves them to match. |
 | 2 | the player is sleeping within `CampRadius` of the fire | sleep in their bedrolls |
 
 **Global** `LZC_CampActivity`: Short, value 0.
