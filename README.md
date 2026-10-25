@@ -260,7 +260,7 @@ The camp also uses these when it shares bedrolls out between the tents, so partn
 - **Scripts** tab: add `LZC_CampFollowersScript`, and fill:
   - `PlayerRef`
   - `LZC_CampActivity`
-  - `CampRadius`, default 1024
+  - `CampRadius`, default 1024: how near the fire counts as "at camp", for sleeping and for seated followers staying put
   - `PartnerFaction`, optional: for example vanilla `PlayerMarriedFaction`, or a romance mod's lover faction if it doesn't set relationship rank
   - `Followers`, `Bedrolls` and `Seats`: the three aliases of each kind, in order 1–3
 
