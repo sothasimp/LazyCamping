@@ -25,7 +25,7 @@ The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **
 
 While a camp is up, a **map marker** shows where it is, and the player can fast travel to it, unless fast travel is disabled globally (for example in Survival Mode). Packing up removes the marker.
 
-Followers sit at the fire when the player sits in their seat. When the player sleeps at camp, in any of the camp's bedrolls, followers sleep in the bedrolls the player isn't using. A spouse or lover gets the bedroll next to the player's: the one beside them in the same tent, or the neighbouring one in a camp without tents. Two followers who are a couple get two free bedrolls side by side, normally in their own tent.
+Every bedroll also has a **seat on it**, facing the fire. Followers sit at the fire when the player sits in their fire seat, and on the other bedrolls when the player sits on a bedroll, matched the same way as at bedtime. When the player sleeps at camp, in any of the camp's bedrolls, followers sleep in the bedrolls the player isn't using. A spouse or lover gets the bedroll next to the player's: the one beside them in the same tent, or the neighbouring one in a camp without tents. Two followers who are a couple get two free bedrolls side by side, normally in their own tent.
 
 **Sneaking and activating any of the tents from outside** packs up the camp straight away, with no prompt: everything the camp placed is removed. Activating a tent without sneaking, or from inside, does nothing. So the player can't pack up by accident while getting into bed.
 
@@ -92,14 +92,15 @@ To use custom meshes, put them in `Data/Meshes/LazyCamping/` and point the Model
 | `LZC_CampfireLight` | Light | `fire` (any flickering fire light) | |
 | `LZC_BedrollPlaced` | Furniture | `bedroll` (the ground bedroll furniture) | Its sleep marker makes Sleep and Wait work. |
 | `LZC_SitMarkerFollower` | Furniture | `CrossLegged` (a cross-legged sit marker) | Followers use these. Invisible is fine. |
-| `LZC_SitMarkerPlayer` | Furniture | **duplicate** the same marker | The only one that has to be a new record: it needs a **visible model** so the player can activate it (see below). |
+| `LZC_SitMarkerPlayer` | Furniture | **duplicate** the same marker | Needs a **visible model** so the player can activate it (see below). |
+| `LZC_BedrollSitMarker` | Furniture | **duplicate** the same marker | Placed on every bedroll, facing the fire. Give it a **small** visible model, such as a folded pelt or a cushion, sitting on the middle of the bedroll: the player aims at it to sit and at the rest of the bedroll to sleep. Optional. |
 
 **The player's seat.** The player can only activate furniture they can point the crosshair at, and plain sit markers have no visible model or collision. So after duplicating the cross-legged marker:
 1. Set its model to something to sit on, such as a fur pelt, a folded bedroll or a log.
 2. Check that the furniture's sit marker still lines up with the model. Adjust it in the furniture's marker settings if needed.
 3. Set the Activate Text Override to `Sit`.
 
-The followers' seats can use the same visible model if you want all the seats to match.
+The followers' seats can use the same visible model if you want all the seats to match. The player's seat and the bedroll seat are the only placed objects that need new records.
 
 **Tents: 2 sizes × 5 colours = 10 Activators.** Make each tent a new **Activator**:
 - Model: a tent mesh. Search `tent` in Statics to find the vanilla `.nif` paths; pick a smaller and a larger one, or use your own meshes.
@@ -181,7 +182,7 @@ When a camp goes up, the storage moves to the first storage marker in camp order
 | `LZC_BedrollPlaced`, `LZC_CampfirePlaced` | the vanilla bedroll and burning campfire (step 2b) |
 | `RingBedrollAliases` | the aliases `RingBedroll1`–`4`, in order (below) |
 | `LZC_CampfireLight` | optional; leave empty for no light |
-| `LZC_SitMarkerPlayer`, `LZC_SitMarkerFollower` | the seats; leave either empty to skip it |
+| `LZC_SitMarkerPlayer`, `LZC_SitMarkerFollower`, `LZC_BedrollSitMarker` | the seats; leave any empty to skip it |
 | `LZC_CampMapMarker` | the map marker reference from step 2b; leave empty for no marker |
 | `LZC_*DressingAnchor`, `LZC_*Dressing` | the dressing sets from step 2b; leave a set's anchor empty for no dressing |
 | `LZC_CampStorage`, `LZC_CampStorageMarkers` | the storage container and its markers from step 2b; leave empty for no storage |
@@ -218,7 +219,7 @@ The camp also uses these when it shares bedrolls out between the tents, so partn
 | `LZC_CampActivity` | When | Followers |
 |---|---|---|
 | 0 | otherwise | follow the player as normal |
-| 1 | the player is sitting in their seat by the fire | sit in their own seats |
+| 1 | the player is sitting in their fire seat, or on a bedroll's seat | sit in the fire seats, or on the other bedrolls' seats (partners beside the player, couples side by side) |
 | 2 | the player is sleeping within `CampRadius` of the fire | sleep in their bedrolls |
 
 **Global** `LZC_CampActivity`: Short, value 0.

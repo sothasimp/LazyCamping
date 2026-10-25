@@ -45,6 +45,10 @@ Light Property LZC_CampfireLight Auto
 {Optional. Flickering firelight placed above the campfire.}
 Form Property LZC_SitMarkerPlayer Auto
 {Optional. Visible cross-legged seat by the fire that the player can use.}
+Form Property LZC_BedrollSitMarker Auto
+{Optional. Cross-legged seat placed on every bedroll, facing the fire. Needs a
+small visible model (a folded pelt, a cushion) so the player can aim at it
+apart from the bedroll.}
 Form Property LZC_SitMarkerFollower Auto
 {Optional. Cross-legged sit marker by the fire, one per follower.}
 
@@ -160,7 +164,8 @@ Int Property kPlayerSeat = 2 AutoReadOnly
 Int Property kFirstFollowerSeat = 3 AutoReadOnly   ; 3-5
 Int Property kFirstTent = 6 AutoReadOnly           ; 6-8
 Int Property kFirstBedroll = 9 AutoReadOnly        ; 9-20, the player's first
-Int Property kSlotCount = 21 AutoReadOnly
+Int Property kFirstBedrollSeat = 21 AutoReadOnly   ; 21-32, one on each bedroll
+Int Property kSlotCount = 33 AutoReadOnly
 
 Int Property kMaxFollowers = 3 AutoReadOnly
 Int Property kMaxTents = 3 AutoReadOnly
@@ -494,11 +499,11 @@ Function SetUpCamp()
 	EndIf
 
 	; Slot layout (see placedRefs). Index 0, the campfire, is the camp's anchor.
-	Form[] forms = new Form[21]
-	Float[] fwd = new Float[21]
-	Float[] side = new Float[21]
-	Float[] lift = new Float[21]
-	Float[] turn = new Float[21]
+	Form[] forms = new Form[33]
+	Float[] fwd = new Float[33]
+	Float[] side = new Float[33]
+	Float[] lift = new Float[33]
+	Float[] turn = new Float[33]
 
 	forms[kCampfire] = LZC_CampfirePlaced
 	fwd[kCampfire] = FireForward()
@@ -510,7 +515,7 @@ Function SetUpCamp()
 	; group (the tent it's in, or 0 without tents) and its place in the row
 	; (neighbours differ by 1).
 	; Which dressing set (1-based; 0 = none) goes around each layout object.
-	Int[] dressSet = new Int[21]
+	Int[] dressSet = new Int[33]
 	dressSet[kCampfire] = 1
 
 	Int[] bedGroup = new Int[12]
@@ -581,6 +586,25 @@ Function SetUpCamp()
 		EndWhile
 	EndIf
 
+	; A seat on each bedroll, facing the fire: in a tent that's the way the
+	; bedroll faces; in the ring, back toward the fire.
+	If LZC_BedrollSitMarker
+		Int bs = 0
+		While bs < kMaxBedrolls
+			If forms[kFirstBedroll + bs]
+				forms[kFirstBedrollSeat + bs] = LZC_BedrollSitMarker
+				fwd[kFirstBedrollSeat + bs] = fwd[kFirstBedroll + bs]
+				side[kFirstBedrollSeat + bs] = side[kFirstBedroll + bs]
+				If tents > 0
+					turn[kFirstBedrollSeat + bs] = turn[kFirstBedroll + bs]
+				Else
+					turn[kFirstBedrollSeat + bs] = FanBearing(bs) + 180.0
+				EndIf
+			EndIf
+			bs += 1
+		EndWhile
+	EndIf
+
 	; The plugin puts everything on the ground and places it in one frame.
 	ObjectReference[] setAnchors = new ObjectReference[4]
 	setAnchors[0] = LZC_FireDressingAnchor
@@ -597,7 +621,7 @@ Function SetUpCamp()
 	placedRefs = LZC_Native.PlaceCamp(PlayerRef, heading, forms, fwd, side, lift, turn, AlignToSlope, MaxSlope, dressSet, setAnchors, setItems, itemSet, LZC_CampStorageMarkers)
 	If placedRefs.Length <= kSlotCount
 		Debug.Notification("Your camp couldn't be set up.")
-		placedRefs = new ObjectReference[21]
+		placedRefs = new ObjectReference[33]
 		If followers
 			LZC_CampFollowersQuest.Stop()
 		EndIf
@@ -639,7 +663,13 @@ Function SetUpCamp()
 			seats[i] = placedRefs[kFirstFollowerSeat + i]
 			i += 1
 		EndWhile
-		followers.Assign(placedRefs[kCampfire], placedRefs[kPlayerSeat], beds, bedGroup, bedOrder, seats)
+		ObjectReference[] bedSeats = new ObjectReference[12]
+		i = 0
+		While i < kMaxBedrolls
+			bedSeats[i] = placedRefs[kFirstBedrollSeat + i]
+			i += 1
+		EndWhile
+		followers.Assign(placedRefs[kCampfire], placedRefs[kPlayerSeat], beds, bedSeats, bedGroup, bedOrder, seats)
 	EndIf
 
 	; The player's storage moves onto the spot the plugin marked, which then

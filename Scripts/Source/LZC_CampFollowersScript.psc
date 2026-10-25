@@ -2,7 +2,9 @@ Scriptname LZC_CampFollowersScript extends Quest
 {Runs while the camp is set up. The Followers aliases fill with nearby
 followers when the quest starts. Each follower has two alias packages:
 - sit at their Seats alias while LZC_CampActivity == 1 (the player is
-  sitting at the fire)
+  sitting in their fire seat, or on a bedroll's seat). Sitting at the fire
+  sends followers to the fire seats; sitting on a bedroll sends them to the
+  other bedrolls' seats, matched like the bedrolls at bedtime.
 - sleep in their Bedrolls alias while LZC_CampActivity == 2 (the player is
   sleeping at camp). The bedrolls are handed out when the player goes to
   sleep, skipping whichever camp bedroll the player is lying in. A spouse or
@@ -17,7 +19,7 @@ ReferenceAlias[] Property Followers Auto
 ReferenceAlias[] Property Bedrolls Auto
 {Bedroll1-3, filled when the player goes to sleep.}
 ReferenceAlias[] Property Seats Auto
-{Seat1-3, filled by Assign.}
+{Seat1-3: the fire seats, or bedroll seats when the player sits on a bedroll.}
 GlobalVariable Property LZC_CampActivity Auto
 {0 = normal, 1 = player sitting at the fire, 2 = player sleeping at camp.}
 Float Property CampRadius = 1024.0 Auto
@@ -41,20 +43,24 @@ Int Property kSleeping = 2 AutoReadOnly
 ; without tents) and its place in the row (neighbours differ by 1). Partners and
 ; couples are matched from these, without measuring distances.
 ObjectReference[] campBedrolls
+ObjectReference[] campBedSeats   ; the seat on each bedroll, same index
 Int[] bedGroup
 Int[] bedOrder
+ObjectReference[] fireSeats      ; followers' seats by the fire
 
 Bool Function HasFollower(Int index)
 	Return index < Followers.Length && Followers[index].GetReference() != None
 EndFunction
 
 ; Called by the camp script once everything is placed. allBeds holds every
-; camp bedroll (groups/orders say where each one is); followers get theirs
-; when the player goes to sleep.
-Function Assign(ObjectReference akCampfire, ObjectReference akPlayerSeat, ObjectReference[] allBeds, Int[] groups, Int[] orders, ObjectReference[] seats)
+; camp bedroll and bedSeats the seat on each (groups/orders say where each one
+; is); followers get theirs when the player sleeps or sits on a bedroll.
+Function Assign(ObjectReference akCampfire, ObjectReference akPlayerSeat, ObjectReference[] allBeds, ObjectReference[] bedSeats, Int[] groups, Int[] orders, ObjectReference[] seats)
 	CampAnchor = akCampfire
 	PlayerSeat = akPlayerSeat
 	campBedrolls = allBeds
+	campBedSeats = bedSeats
+	fireSeats = seats
 	bedGroup = groups
 	bedOrder = orders
 	ClearAll(Bedrolls)
@@ -99,17 +105,42 @@ Function SetActivity(Int activity)
 	EndWhile
 EndFunction
 
-; Called by LZC_CampPlayerAliasScript.
+; Called by LZC_CampPlayerAliasScript. Sitting in the player's fire seat
+; sends followers to the fire seats; sitting on a bedroll's seat sends them to
+; the other bedrolls' seats.
 Function OnPlayerSat(ObjectReference akFurniture)
-	If akFurniture && akFurniture == PlayerSeat && LZC_CampActivity.GetValueInt() != kSleeping
+	If !akFurniture || LZC_CampActivity.GetValueInt() == kSleeping
+		Return
+	EndIf
+	If akFurniture == PlayerSeat
+		ForceAll(Seats, fireSeats)
 		SetActivity(kSitting)
+	Else
+		Int bedSeat = IndexOf(campBedSeats, akFurniture)
+		If bedSeat >= 0
+			ForceChosen(Seats, campBedSeats, ChooseSpots(campBedSeats, bedSeat))
+			SetActivity(kSitting)
+		EndIf
 	EndIf
 EndFunction
 
 Function OnPlayerGotUp(ObjectReference akFurniture)
-	If akFurniture && akFurniture == PlayerSeat && LZC_CampActivity.GetValueInt() == kSitting
-		SetActivity(kNormal)
+	If akFurniture && LZC_CampActivity.GetValueInt() == kSitting
+		If akFurniture == PlayerSeat || IndexOf(campBedSeats, akFurniture) >= 0
+			SetActivity(kNormal)
+		EndIf
 	EndIf
+EndFunction
+
+Int Function IndexOf(ObjectReference[] refs, ObjectReference akRef)
+	Int i = 0
+	While refs && i < refs.Length
+		If refs[i] && refs[i] == akRef
+			Return i
+		EndIf
+		i += 1
+	EndWhile
+	Return -1
 EndFunction
 
 Event OnSleepStart(Float afSleepStartTime, Float afDesiredSleepEndTime)
@@ -119,19 +150,25 @@ Event OnSleepStart(Float afSleepStartTime, Float afDesiredSleepEndTime)
 	EndIf
 EndEvent
 
-; Gives each follower a camp bedroll the player isn't lying in. Partners
-; choose first, taking the free bedrolls next to the player's; then each
-; follower couple takes two free bedrolls side by side; everyone else takes
-; the rest in camp order, so followers spread across the tents.
+; Gives each follower a camp bedroll the player isn't lying in.
 Function AssignBedrolls()
+	ForceChosen(Bedrolls, campBedrolls, ChooseSpots(campBedrolls, BedrollUnderPlayer()))
+EndFunction
+
+; Picks a spot for each follower among `spots` (the camp bedrolls, or the
+; seats on them; same index = same bedroll), skipping the player's spot
+; (-1 for none). Partners choose first, taking the free spots next to the
+; player's; then each follower couple takes two free spots side by side;
+; everyone else takes the rest in camp order, so followers spread across the
+; tents. Returns each follower's spot index, or -1.
+Int[] Function ChooseSpots(ObjectReference[] spots, Int playerBed)
 	Bool[] taken = new Bool[12]
 	Int i = 0
 	While i < taken.Length
-		taken[i] = i >= campBedrolls.Length || !campBedrolls[i]
+		taken[i] = !spots || i >= spots.Length || !spots[i]
 		i += 1
 	EndWhile
 
-	Int playerBed = BedrollUnderPlayer()
 	If playerBed >= 0
 		taken[playerBed] = True
 	EndIf
@@ -194,12 +231,16 @@ Function AssignBedrolls()
 		i += 1
 	EndWhile
 
-	i = 0
-	While i < Bedrolls.Length
+	Return chosen
+EndFunction
+
+Function ForceChosen(ReferenceAlias[] aliases, ObjectReference[] spots, Int[] chosen)
+	Int i = 0
+	While i < aliases.Length
 		If i < chosen.Length && chosen[i] >= 0
-			Bedrolls[i].ForceRefTo(campBedrolls[chosen[i]])
+			aliases[i].ForceRefTo(spots[chosen[i]])
 		Else
-			Bedrolls[i].Clear()
+			aliases[i].Clear()
 		EndIf
 		i += 1
 	EndWhile
