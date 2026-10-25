@@ -107,7 +107,7 @@ Int Property LargeTentCapacity = 4 Auto
 Float Property BedrollSpacing = 70.0 Auto
 {Side-to-side distance between bedrolls in a tent.}
 
-Float Property BedrollRingRadius = 230.0 Auto
+Float Property BedrollRingRadius = 205.0 Auto
 {Without tents: distance of the bedrolls from the centre of the fire, just
 outside the seats.}
 Float Property BedrollRingYaw = 90.0 Auto
