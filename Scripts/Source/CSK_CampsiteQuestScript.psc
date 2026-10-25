@@ -1,7 +1,8 @@
 Scriptname CSK_CampsiteQuestScript extends Quest
 {Central controller for the Set Up Camp power. Tracks the deployed campsite,
-checks/consumes the camping kits in the player's inventory, places the camp
-in the world and packs it back up.}
+checks/consumes the camping kits in the player's inventory, lays out the camp
+and packs it back up. CampsiteKit.dll (SKSE) checks the ground and places the
+camp in one go.}
 
 ; ---------------------------------------------------------------------------
 ; Core
@@ -93,23 +94,16 @@ Quest Property CSK_CampFollowersQuest Auto
 Leave empty to place only the player's seat and the bedrolls.}
 
 ; ---------------------------------------------------------------------------
-; Native placement (CampsiteKit.dll). Ignored if the SKSE plugin isn't loaded.
+; Ground
 ; ---------------------------------------------------------------------------
-Bool Property UseNativePlacement = True Auto
-{Use the SKSE plugin to snap the camp to the ground when it is available.}
 Bool Property AlignToSlope = True Auto
 {Tilt the tents, bedrolls, seats and fire to match the ground.}
-Float Property MaxTilt = 20.0 Auto
-{Objects never tilt more than this many degrees, even on steeper ground.}
 Float Property MaxSlope = 25.0 Auto
-{Refuse to camp where the ground is steeper than this (degrees).}
+{Refuse to camp where the ground is steeper than this (degrees). Objects
+tilt by at most this much.}
 Float Property MaxStep = 48.0 Auto
 {Refuse to camp if the ground under a tent varies by more than this
 (catches rocks, logs and ledges).}
-Float Property CampfireHalfSize = 50.0 Auto
-Float Property SearchUp = 256.0 Auto
-Float Property SearchDown = 1024.0 Auto
-{How far above/below the player to look for ground.}
 
 ; ---------------------------------------------------------------------------
 ; Restrictions
@@ -118,12 +112,6 @@ Keyword Property LocTypeCity Auto
 {Optional. Camping is blocked in locations with this keyword.}
 Keyword Property LocTypeTown Auto
 {Optional. Camping is blocked in locations with this keyword.}
-Bool Property AllowPackUpFromPower = False Auto
-{If true, casting the power while a camp is up packs it up, so a camp left
-far away can still be retrieved. Otherwise only sneaking and activating a
-tent (or, without tents, a bedroll) does.}
-Float Property MaxPackUpDistance = 0.0 Auto
-{With AllowPackUpFromPower: if > 0, the player must be this close to the camp.}
 
 ; ---------------------------------------------------------------------------
 ; State
@@ -149,6 +137,8 @@ Int Property kRingBedrolls = 4 AutoReadOnly        ; without tents
 Int Property kSmall = 0 AutoReadOnly
 Int Property kLarge = 1 AutoReadOnly
 Int Property kColors = 5 AutoReadOnly
+Float Property kFireHalfSize = 50.0 AutoReadOnly     ; for the ground check
+Int Property kNativeVersion = 2 AutoReadOnly         ; CampsiteKit.dll needed
 
 ObjectReference[] placedRefs
 MiscObject[] tentKitsUsed   ; refunded on pack-up
@@ -162,19 +152,15 @@ EndEvent
 ; Called by the power's magic effect.
 Function HandlePowerCast()
 	If CampDeployed
-		If !AllowPackUpFromPower
-			If TentCount == 0
-				Debug.Notification("You already have a camp set up. Sneak and use a bedroll to pack it up.")
-			Else
-				Debug.Notification("You already have a camp set up. Sneak and use a tent to pack it up.")
-			EndIf
-		ElseIf MaxPackUpDistance > 0.0 && PlayerRef.GetDistance(placedRefs[kCampfire]) > MaxPackUpDistance
-			Debug.Notification("You are too far from your camp to pack it up.")
-		ElseIf !busy
-			busy = True
-			PackUpCamp()
-			busy = False
+		If TentCount == 0
+			Debug.Notification("You already have a camp set up. Sneak and use a bedroll to pack it up.")
+		Else
+			Debug.Notification("You already have a camp set up. Sneak and use a tent to pack it up.")
 		EndIf
+		Return
+	EndIf
+	If CSK_Native.GetVersion() < kNativeVersion
+		Debug.Notification("Campsite Kit needs SKSE and an up-to-date CampsiteKit.dll.")
 		Return
 	EndIf
 
@@ -289,7 +275,6 @@ EndFunction
 
 Function SetUpCamp()
 	Float heading = PlayerRef.GetAngleZ()
-	Bool native = UseNativePlacement && CSK_Native.GetVersion() > 0
 	Int bedrollsCarried = PlayerRef.GetItemCount(CSK_BedrollKit)
 
 	; Start the follower quest first: its aliases find the followers who are
@@ -427,7 +412,27 @@ Function SetUpCamp()
 		t += 1
 	EndWhile
 
-	If native && !IsSiteClear(heading, tents, sizes, tentFwd, tentSide, tentTurn)
+	; Check the ground under the fire and every tent in one go.
+	Float[] siteFwd = new Float[5]
+	Float[] siteSide = new Float[5]
+	Float[] siteTurn = new Float[5]
+	Float[] siteHalfWidth = new Float[5]
+	Float[] siteHalfDepth = new Float[5]
+	siteFwd[0] = FireForward()
+	siteHalfWidth[0] = kFireHalfSize
+	siteHalfDepth[0] = kFireHalfSize
+	t = 0
+	While t < tents
+		siteFwd[t + 1] = tentFwd[t]
+		siteSide[t + 1] = tentSide[t]
+		siteTurn[t + 1] = tentTurn[t]
+		siteHalfWidth[t + 1] = TentHalfWidth(sizes[t])
+		siteHalfDepth[t + 1] = TentHalfDepth(sizes[t])
+		t += 1
+	EndWhile
+	Int site = CSK_Native.CheckCampSite(PlayerRef, heading, 1 + tents, siteFwd, siteSide, siteTurn, siteHalfWidth, siteHalfDepth, MaxStep, MaxSlope)
+	If site != 0
+		NotifySiteProblem(site)
 		If followers
 			CSK_CampFollowersQuest.Stop()
 		EndIf
@@ -448,6 +453,12 @@ Function SetUpCamp()
 	lift[kLight] = LightHeight
 	forms[kCooking] = CSK_CookingStation
 	fwd[kCooking] = FireForward()
+
+	; Where each bedroll is, for matching partners and couples at bedtime: its
+	; group (the tent it's in, or 0 for the ring) and its order within it.
+	Int[] bedGroup = new Int[16]
+	Int[] bedOrder = new Int[16]
+	Int ringSize = 0
 
 	; Seats ring the fire and face it. The player's is at 0, across the fire
 	; in front of their tent; followers' seats are spaced evenly from there.
@@ -489,6 +500,8 @@ Function SetUpCamp()
 		t = 0
 		While t < tents
 			SetTentBedroll(forms, fwd, side, turn, nextSlot, tentFwd[t], tentSide[t], tentTurn[t], 0, bedsInTent[t])
+			bedGroup[nextSlot - kFirstBedroll] = t
+			bedOrder[nextSlot - kFirstBedroll] = 0
 			nextSlot += 1
 			t += 1
 		EndWhile
@@ -497,6 +510,8 @@ Function SetUpCamp()
 			Int b = 1
 			While b < bedsInTent[t]
 				SetTentBedroll(forms, fwd, side, turn, nextSlot, tentFwd[t], tentSide[t], tentTurn[t], b, bedsInTent[t])
+				bedGroup[nextSlot - kFirstBedroll] = t
+				bedOrder[nextSlot - kFirstBedroll] = b
 				nextSlot += 1
 				b += 1
 			EndWhile
@@ -512,53 +527,28 @@ Function SetUpCamp()
 			fwd[kFirstBedroll + r] = FireForward() + BedrollRingRadius * Math.Cos(ringBearing)
 			side[kFirstBedroll + r] = BedrollRingRadius * Math.Sin(ringBearing)
 			turn[kFirstBedroll + r] = ringBearing + BedrollRingYaw
+			bedOrder[r] = r
 			r += 1
 		EndWhile
+		ringSize = bedrolls
 	EndIf
 
-	; Phase 1: work out every position before placing anything, so a
-	; bedroll's ground check can't hit the tent standing over it.
-	Float[] posX = new Float[27]
-	Float[] posY = new Float[27]
-	Float[] posZ = new Float[27]
-	Float[] angX = new Float[27]
-	Float[] angY = new Float[27]
-	Float[] angZ = new Float[27]
-
-	Int i = 0
-	While i < kSlotCount
-		If forms[i]
-			posX[i] = OffsetX(heading, fwd[i], side[i])
-			posY[i] = OffsetY(heading, fwd[i], side[i])
-			posZ[i] = PlayerRef.GetPositionZ() + lift[i]
-			angZ[i] = heading + turn[i]
-
-			If native
-				Float[] p = CSK_Native.FindPlacement(PlayerRef, posX[i], posY[i], angZ[i], AlignToSlope, MaxTilt, SearchUp, SearchDown)
-				If p.Length == 5
-					posZ[i] = p[0] + lift[i]
-					angX[i] = p[1]
-					angY[i] = p[2]
-					angZ[i] = p[3]
-				EndIf
-			EndIf
+	; The plugin puts everything on the ground and places it in one frame.
+	placedRefs = CSK_Native.PlaceCamp(PlayerRef, heading, forms, fwd, side, lift, turn, AlignToSlope, MaxSlope)
+	If placedRefs.Length != kSlotCount
+		Debug.Notification("Your camp couldn't be set up.")
+		placedRefs = new ObjectReference[27]
+		If followers
+			CSK_CampFollowersQuest.Stop()
 		EndIf
-		i += 1
-	EndWhile
-
-	; Phase 2: place.
-	placedRefs = new ObjectReference[27]
-	i = 0
-	While i < kSlotCount
-		placedRefs[i] = PlaceAt(forms[i], posX[i], posY[i], posZ[i], angX[i], angY[i], angZ[i])
-		i += 1
-	EndWhile
+		Return
+	EndIf
 
 	; Without tents, the bedrolls go into the RingBedroll aliases, whose
 	; script handles activation first, so sneaking and activating one can
 	; pack up the camp.
+	Int i = 0
 	If tents == 0
-		i = 0
 		While i < bedrolls && i < RingBedrollAliases.Length
 			ObjectReference bed = placedRefs[kFirstBedroll + i]
 			If bed
@@ -595,7 +585,7 @@ Function SetUpCamp()
 			seats[i] = placedRefs[kFirstFollowerSeat + i]
 			i += 1
 		EndWhile
-		followers.Assign(placedRefs[kCampfire], placedRefs[kPlayerSeat], beds, seats)
+		followers.Assign(placedRefs[kCampfire], placedRefs[kPlayerSeat], beds, bedGroup, bedOrder, ringSize, seats)
 	EndIf
 
 	tentKitsUsed = kits
@@ -774,20 +764,7 @@ Bool Function IsInsideTent(ObjectReference akActor, ObjectReference akTent, Int 
 	Return Math.Abs(localRight) < TentHalfWidth(size) && Math.Abs(localForward) < TentHalfDepth(size)
 EndFunction
 
-; Checks the ground under the campfire and each tent with the SKSE plugin.
-Bool Function IsSiteClear(Float heading, Int tents, Int[] sizes, Float[] tentFwd, Float[] tentSide, Float[] tentTurn)
-	Float fireX = OffsetX(heading, FireForward(), 0.0)
-	Float fireY = OffsetY(heading, FireForward(), 0.0)
-	Int result = CSK_Native.IsAreaClear(PlayerRef, fireX, fireY, heading, CampfireHalfSize, CampfireHalfSize, MaxStep, MaxSlope, SearchUp, SearchDown)
-
-	Int t = 0
-	While result == 0 && t < tents
-		Float tentX = OffsetX(heading, tentFwd[t], tentSide[t])
-		Float tentY = OffsetY(heading, tentFwd[t], tentSide[t])
-		result = CSK_Native.IsAreaClear(PlayerRef, tentX, tentY, heading + tentTurn[t], TentHalfWidth(sizes[t]), TentHalfDepth(sizes[t]), MaxStep, MaxSlope, SearchUp, SearchDown)
-		t += 1
-	EndWhile
-
+Function NotifySiteProblem(Int result)
 	If result == 1
 		Debug.Notification("There's no solid ground here to camp on.")
 	ElseIf result == 2
@@ -796,28 +773,7 @@ Bool Function IsSiteClear(Float heading, Int tents, Int[] sizes, Float[] tentFwd
 		Debug.Notification("There isn't enough flat, open ground here.")
 	ElseIf result == 4
 		Debug.Notification("You can't set up camp in the water.")
+	Else
+		Debug.Notification("Your camp couldn't be set up.")
 	EndIf
-	Return result == 0
-EndFunction
-
-; Skyrim heading: 0 = north (+Y), increasing clockwise.
-; forward = (sin a, cos a), right = (cos a, -sin a)
-Float Function OffsetX(Float heading, Float fwd, Float right)
-	Return PlayerRef.GetPositionX() + fwd * Math.Sin(heading) + right * Math.Cos(heading)
-EndFunction
-
-Float Function OffsetY(Float heading, Float fwd, Float right)
-	Return PlayerRef.GetPositionY() + fwd * Math.Cos(heading) - right * Math.Sin(heading)
-EndFunction
-
-ObjectReference Function PlaceAt(Form akForm, Float x, Float y, Float z, Float ax, Float ay, Float az)
-	If !akForm
-		Return None
-	EndIf
-
-	ObjectReference ref = PlayerRef.PlaceAtMe(akForm, 1, False, True)
-	ref.SetPosition(x, y, z)
-	ref.SetAngle(ax, ay, az)
-	ref.Enable()
-	Return ref
 EndFunction

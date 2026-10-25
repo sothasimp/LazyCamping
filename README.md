@@ -1,6 +1,6 @@
 # Campsite Kit: a mod for Skyrim Special Edition
 
-The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **Bedroll** and a **Campfire Kit** in their inventory, casting the power uses up those kits and builds a camp in front of the player. Tent kits are optional. The camp includes:
+The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **Bedroll** and a **Campfire Kit** in their inventory, casting the power uses up those kits and builds a camp in front of the player. Tent kits are optional. The mod requires **SKSE**, **Address Library for SKSE Plugins**, and its own `CampsiteKit.dll`. The camp includes:
 
 - a burning campfire with flickering light and an optional cooking pot
 - cross-legged seats in a ring around the fire, facing it:
@@ -21,7 +21,7 @@ The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **
 - **the other tents** are spaced evenly around the ring: 2 tents face each other across the fire, 3 form a triangle, and 4 form a square. The player stands on the ring of seats, inside the ring of tents, so a tent on the near side stands behind them.
 - **with no tent kits**, there are no tents. The bedrolls (up to 4) lie sideways, spaced evenly in a circle just outside the seats, starting behind the player's seat. With one bedroll per person, each lies behind its owner's seat.
 
-Followers sit at the fire when the player sits in their seat. When the player sleeps at camp, in any of the camp's bedrolls, followers sleep in the bedrolls the player isn't using. A spouse or lover gets the bedroll nearest the player's: the one beside them in the same tent, or the neighbouring one in a camp without tents. Two followers who are a couple get the two free bedrolls closest together, normally side by side in their own tent.
+Followers sit at the fire when the player sits in their seat. When the player sleeps at camp, in any of the camp's bedrolls, followers sleep in the bedrolls the player isn't using. A spouse or lover gets the bedroll next to the player's: the one beside them in the same tent, or the neighbouring one in a camp without tents. Two followers who are a couple get two free bedrolls side by side, normally in their own tent.
 
 **Sneaking and activating any of the tents from outside** packs up the camp straight away, with no prompt: everything is removed and every kit is returned, including each tent kit used. Activating a tent without sneaking, or from inside, does nothing. So the player can't pack up by accident while getting into bed.
 
@@ -42,24 +42,21 @@ Scripts/Source/
   CSK_CampFollowersScript.psc   followers' seats and bedrolls; sit/sleep with the player
   CSK_CampPlayerAliasScript.psc on the follower quest's Player alias; notices the player sitting
   CSK_Native.psc                declarations of the SKSE plugin's functions
-SKSE/                           optional C++ plugin (CampsiteKit.dll)
+SKSE/                           C++ plugin (CampsiteKit.dll), required
   xmake.lua
   src/main.cpp                  plugin entry point, logging
   src/Papyrus.cpp               native functions for CSK_Native
   src/Placement.cpp             ground raycast, slope tilt, water check
 ```
 
-### How the hybrid works
+### How the scripts and the plugin split the work
 
-The mod works with or without SKSE. Each time the power is cast, the quest script calls `CSK_Native.GetVersion()`:
+The Papyrus scripts decide the layout: which tents and bedrolls go up, and where each object stands relative to the player. `CampsiteKit.dll` handles the ground and the placing, in two calls:
 
-- **When `CampsiteKit.dll` is loaded**, the plugin:
-  - checks the ground under the campfire and the tent footprint, and refuses to camp if the ground is too steep, uneven, blocked by rocks or logs, underwater, or missing
-  - finds the real ground height under each object
-  - tilts each object to match the slope, up to `MaxTilt` degrees
-- **When the DLL is missing**, the call returns 0 and the script places everything at the player's height, as in the Papyrus-only version.
+1. **`CheckCampSite`** checks the ground under the fire and every tent's footprint, and refuses the camp if the ground is too steep, uneven, blocked by rocks or logs, underwater, or missing.
+2. **`PlaceCamp`** finds the ground under every object, tilts each one to the slope (up to `MaxSlope` degrees), and creates them all at their final positions in a single frame. It finds the ground for everything before placing anything, so a bedroll's ground check can't hit the tent standing over it.
 
-The script works out every position before placing anything, so a bedroll's ground check can't hit the tent standing over it.
+If the DLL isn't loaded, or is older than the scripts expect, casting the power tells the player that Campsite Kit needs SKSE, and nothing is placed.
 
 Compiled `.pex` files go in `Data/Scripts/`.
 
@@ -155,10 +152,9 @@ Brown can stay as the mesh's original texture.
 | `BedrollSpacing` | side-to-side gap between bedrolls; check that 4 bedrolls fit in the large tent |
 | `SeatRadius`, `LightHeight` | how far the seats are from the fire (default 110), and the light's height. The fire goes `SeatRadius` in front of the player, so they stand at the near edge of the seat ring. |
 | `BedrollRingRadius`, `BedrollRingYaw` | without tents: how far the bedrolls are from the fire (default 230, just outside the seats), and the turn that lays them sideways (default 90; use 270 to swap head and foot) |
-| `UseNativePlacement`, `AlignToSlope` | turn the SKSE features on or off (both default to on) |
-| `MaxSlope`, `MaxTilt`, `MaxStep`, `CampfireHalfSize` | steepest ground allowed, most an object will tilt, how uneven the tent footprint may be, and the fire's footprint |
+| `AlignToSlope` | tilt objects to match the ground (default on) |
+| `MaxSlope`, `MaxStep` | steepest ground allowed, which is also the most an object will tilt (default 25°), and how uneven a tent's footprint may be (default 48) |
 | `CSK_CampFollowersQuest` | the follower quest from step 2e; leave empty to skip follower seats and behaviour |
-| `AllowPackUpFromPower`, `MaxPackUpDistance` | off by default, so only a sneak-activated tent packs up the camp, or a sneak-activated bedroll in a camp without tents. Turn it on to let casting the power pack up the camp too, for example to retrieve a camp left far away. |
 
 **Quest Aliases** tab: create `RingBedroll1` to `RingBedroll4`, each with:
 - Fill Type: *Specific Reference*, left empty
@@ -171,7 +167,7 @@ When the quest starts, it gives the player the power.
 
 ### 2e. Followers at camp (optional)
 
-This quest runs while a camp is set up. When the camp goes up, its aliases find the followers who are with the player, and each one gets a seat by the fire. When the player goes to sleep near camp, the script works out which camp bedroll the player is lying in, if any, and gives the followers the others. Partners choose first, taking the free bedrolls nearest the player's. Then each follower couple takes the two free bedrolls closest together. Everyone else takes the rest in camp order.
+This quest runs while a camp is set up. When the camp goes up, its aliases find the followers who are with the player, and each one gets a seat by the fire. When the player goes to sleep near camp, the script works out which camp bedroll the player is lying in, if any, and gives the followers the others. Partners choose first, taking the free bedrolls next to the player's. Then each follower couple takes two free bedrolls side by side. Everyone else takes the rest in camp order. The camp records which tent each bedroll is in and its place in the row (or around the ring), so this matching doesn't measure distances between bedrolls.
 
 - A **partner** is a follower whose relationship rank with the player is *Lover* (vanilla spouses, and lovers in most romance mods), or who is in the optional `PartnerFaction`.
 - A **couple** is two followers whose relationship rank with each other is *Lover*. A partner is always paired with the player rather than another follower.
@@ -291,14 +287,13 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
    Source/Scripts/*.psc            (optional but polite)
    Meshes/CampsiteKit/...          (if you made custom meshes)
    ```
-   Mark SKSE as optional on your mod page. Without it, the mod still works, but the camp may float on slopes. If SKSE isn't installed, the Papyrus log records an "unbound native function" error on each cast. This error is harmless.
+   List SKSE and Address Library for SKSE Plugins as requirements on your mod page.
 
 ## 5. Known limitations and ideas
 
-- **Uneven ground without SKSE**: in fallback mode, objects are placed at the player's height. Players should camp on flat ground or install SKSE.
 - **Testing the tilt**: the slope math matches the game's `EulerAnglesToAxesZXY` rotation, and I checked it numerically. It still needs an in-game check on a hillside. If objects lean the wrong way, set `AlignToSlope` to false while you report or fix it; ground snapping and the site checks don't depend on it.
 - **Footprint check**: the check samples 5 points (the centre and four corners). Something small that sits between those points can still poke through the tent. You can add more sample points in `IsAreaClear` if needed.
-- **One camp at a time**: this is by design. Casting the power while a camp is up says so, unless `AllowPackUpFromPower` is on.
+- **One camp at a time**: this is by design. Casting the power while a camp is up says so. A camp left far away has to be walked back to and packed up there.
 - **Bedroll ring**: neighbouring bedrolls in a tentless camp are at least 90° apart (4 bedrolls). If your bedroll model is long enough that they overlap end to end, raise `BedrollRingRadius`.
 - **Sneak to pack up**: in a camp without tents, the bedrolls' normal activation is blocked and `CSK_BedrollAliasScript` passes it on itself. Followers should be unaffected, because anyone else's activation is passed straight through. If followers ever stop using the ring bedrolls, check this first.
 - **Base Object Swapper**: BOS swaps a reference's base object when the reference loads. That should include references the camp places, but test it: with a campfire or bedroll variance mod installed, set up camp a few times and check that the campfire and bedrolls vary. The camp's scripts don't depend on the base object, so a swapped bedroll still sleeps, gets followers, and packs up.

@@ -6,8 +6,8 @@ followers when the quest starts. Each follower has two alias packages:
 - sleep in their Bedrolls alias while CSK_CampActivity == 2 (the player is
   sleeping at camp). The bedrolls are handed out when the player goes to
   sleep, skipping whichever camp bedroll the player is lying in. A spouse or
-  lover gets the free bedroll nearest the player's, and each follower couple
-  the two free bedrolls closest together.
+  lover gets the free bedroll next to the player's, and each follower couple
+  two free bedrolls side by side.
 The rest of the time they follow the player as normal. A follower without a
 seat or bedroll has an empty alias, so that package simply doesn't run.}
 
@@ -37,18 +37,28 @@ Int Property kNormal = 0 AutoReadOnly
 Int Property kSitting = 1 AutoReadOnly
 Int Property kSleeping = 2 AutoReadOnly
 
+; Every camp bedroll, with where it is: its group (the tent it's in, or 0
+; for the ring around the fire) and its order within the group. Partners and
+; couples are matched from these, without measuring distances.
 ObjectReference[] campBedrolls
+Int[] bedGroup
+Int[] bedOrder
+Int ringSize   ; bedrolls in the ring, or 0 for tents
 
 Bool Function HasFollower(Int index)
 	Return index < Followers.Length && Followers[index].GetReference() != None
 EndFunction
 
 ; Called by the camp script once everything is placed. allBeds holds every
-; camp bedroll; followers get theirs when the player goes to sleep.
-Function Assign(ObjectReference akCampfire, ObjectReference akPlayerSeat, ObjectReference[] allBeds, ObjectReference[] seats)
+; camp bedroll (groups/orders say where each one is); followers get theirs
+; when the player goes to sleep.
+Function Assign(ObjectReference akCampfire, ObjectReference akPlayerSeat, ObjectReference[] allBeds, Int[] groups, Int[] orders, Int akRingSize, ObjectReference[] seats)
 	CampAnchor = akCampfire
 	PlayerSeat = akPlayerSeat
 	campBedrolls = allBeds
+	bedGroup = groups
+	bedOrder = orders
+	ringSize = akRingSize
 	ClearAll(Bedrolls)
 	ForceAll(Seats, seats)
 	RegisterForSleep()
@@ -112,71 +122,59 @@ Event OnSleepStart(Float afSleepStartTime, Float afDesiredSleepEndTime)
 EndEvent
 
 ; Gives each follower a camp bedroll the player isn't lying in. Partners
-; choose first, taking the free bedrolls nearest the player's; everyone
-; else takes the rest in camp order, so followers spread across the tents.
+; choose first, taking the free bedrolls next to the player's; then each
+; follower couple takes two free bedrolls side by side; everyone else takes
+; the rest in camp order, so followers spread across the tents.
 Function AssignBedrolls()
-	ObjectReference playerBed = BedrollUnderPlayer()
-
-	ObjectReference[] free = new ObjectReference[16]
+	Bool[] taken = new Bool[16]
 	Int i = 0
-	While i < campBedrolls.Length && i < free.Length
-		If campBedrolls[i] != playerBed
-			free[i] = campBedrolls[i]
-		EndIf
+	While i < taken.Length
+		taken[i] = i >= campBedrolls.Length || !campBedrolls[i]
 		i += 1
 	EndWhile
 
-	ObjectReference[] chosen = new ObjectReference[3]
+	Int playerBed = BedrollUnderPlayer()
+	If playerBed >= 0
+		taken[playerBed] = True
+	EndIf
 
-	; The player's partners take the free bedrolls nearest the player's.
-	If playerBed
+	Int[] chosen = new Int[3]
+	i = 0
+	While i < chosen.Length
+		chosen[i] = -1
+		i += 1
+	EndWhile
+
+	; The player's partners take the free bedrolls next to the player's.
+	If playerBed >= 0
 		i = 0
 		While i < Followers.Length && i < chosen.Length
 			Actor follower = Followers[i].GetActorRef()
 			If follower && IsPartner(follower)
-				Int k = NearestFree(free, playerBed)
-				If k >= 0
-					chosen[i] = free[k]
-					free[k] = None
+				chosen[i] = NearestFree(taken, playerBed)
+				If chosen[i] >= 0
+					taken[chosen[i]] = True
 				EndIf
 			EndIf
 			i += 1
 		EndWhile
 	EndIf
 
-	; Each follower couple takes the two free bedrolls closest together:
-	; normally side by side in the tent set aside for them.
+	; Each follower couple takes two free bedrolls side by side, normally in
+	; the tent set aside for them.
 	Int[] mates = Mates()
 	i = 0
 	While i < mates.Length
 		Int j = mates[i]
-		If j > i && !chosen[i] && !chosen[j]
-			Int first = -1
-			Int second = -1
-			Float closest = 0.0
-			Int a = 0
-			While a < free.Length
-				If free[a]
-					Int b = a + 1
-					While b < free.Length
-						If free[b]
-							Float gap = free[a].GetDistance(free[b])
-							If first < 0 || gap < closest
-								first = a
-								second = b
-								closest = gap
-							EndIf
-						EndIf
-						b += 1
-					EndWhile
-				EndIf
-				a += 1
-			EndWhile
+		If j > i
+			Int first = FreePairStart(taken)
 			If first >= 0
-				chosen[i] = free[first]
-				chosen[j] = free[second]
-				free[first] = None
-				free[second] = None
+				chosen[i] = first
+				taken[first] = True
+				chosen[j] = NearestFree(taken, first)
+				If chosen[j] >= 0
+					taken[chosen[j]] = True
+				EndIf
 			EndIf
 		EndIf
 		i += 1
@@ -186,52 +184,103 @@ Function AssignBedrolls()
 	Int next = 0
 	i = 0
 	While i < Followers.Length && i < chosen.Length
-		If !chosen[i] && Followers[i].GetReference()
-			While next < free.Length && !free[next]
+		If chosen[i] < 0 && Followers[i].GetReference()
+			While next < taken.Length && taken[next]
 				next += 1
 			EndWhile
-			If next < free.Length
-				chosen[i] = free[next]
-				next += 1
+			If next < taken.Length
+				chosen[i] = next
+				taken[next] = True
 			EndIf
 		EndIf
 		i += 1
 	EndWhile
 
-	ForceAll(Bedrolls, chosen)
+	i = 0
+	While i < Bedrolls.Length
+		If i < chosen.Length && chosen[i] >= 0
+			Bedrolls[i].ForceRefTo(campBedrolls[chosen[i]])
+		Else
+			Bedrolls[i].Clear()
+		EndIf
+		i += 1
+	EndWhile
 EndFunction
 
-; The camp bedroll the player is lying in, or None.
-ObjectReference Function BedrollUnderPlayer()
-	ObjectReference playerBed = None
+; Index of the camp bedroll the player is lying in, or -1.
+Int Function BedrollUnderPlayer()
+	Int playerBed = -1
 	Float nearest = kInBedDistance
 	Int i = 0
 	While i < campBedrolls.Length
-		If campBedrolls[i] && PlayerRef.GetDistance(campBedrolls[i]) <= nearest
-			nearest = PlayerRef.GetDistance(campBedrolls[i])
-			playerBed = campBedrolls[i]
+		If campBedrolls[i]
+			Float distance = PlayerRef.GetDistance(campBedrolls[i])
+			If distance <= nearest
+				nearest = distance
+				playerBed = i
+			EndIf
 		EndIf
 		i += 1
 	EndWhile
 	Return playerBed
 EndFunction
 
-; Index of the free bedroll nearest akRef, or -1 if none are free.
-Int Function NearestFree(ObjectReference[] free, ObjectReference akRef)
+; Index of the free bedroll closest to bedroll `target` by position: in the
+; same group, with the nearest order. Falls back to any free bedroll, or -1.
+Int Function NearestFree(Bool[] taken, Int target)
 	Int best = -1
-	Float bestDistance = 0.0
+	Int bestGap = 0
 	Int i = 0
-	While i < free.Length
-		If free[i]
-			Float distance = free[i].GetDistance(akRef)
-			If best < 0 || distance < bestDistance
+	While i < taken.Length
+		If !taken[i]
+			Int gap = 1000 + i   ; another group: only if nothing in this one
+			If bedGroup[i] == bedGroup[target]
+				gap = OrderGap(bedOrder[i], bedOrder[target])
+			EndIf
+			If best < 0 || gap < bestGap
 				best = i
-				bestDistance = distance
+				bestGap = gap
 			EndIf
 		EndIf
 		i += 1
 	EndWhile
 	Return best
+EndFunction
+
+; Index of a free bedroll that has a free neighbour in its group, or of any
+; free bedroll if none does, or -1.
+Int Function FreePairStart(Bool[] taken)
+	Int anyFree = -1
+	Int i = 0
+	While i < taken.Length
+		If !taken[i]
+			If anyFree < 0
+				anyFree = i
+			EndIf
+			Int j = 0
+			While j < taken.Length
+				If j != i && !taken[j] && bedGroup[j] == bedGroup[i] && OrderGap(bedOrder[i], bedOrder[j]) == 1
+					Return i
+				EndIf
+				j += 1
+			EndWhile
+		EndIf
+		i += 1
+	EndWhile
+	Return anyFree
+EndFunction
+
+; How many places apart two bedrolls are within a group: along the row in a
+; tent, or either way round the ring without tents.
+Int Function OrderGap(Int a, Int b)
+	Int gap = a - b
+	If gap < 0
+		gap = -gap
+	EndIf
+	If ringSize > 0 && ringSize - gap < gap
+		gap = ringSize - gap
+	EndIf
+	Return gap
 EndFunction
 
 Int Function PartnerCount()
