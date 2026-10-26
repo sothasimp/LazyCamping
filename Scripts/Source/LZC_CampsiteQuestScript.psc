@@ -139,9 +139,6 @@ Float Property BedrollRingYaw = 90.0 Auto
 {Without tents: added to each bedroll's facing so it lies sideways along the
 circle, head clockwise. Use 270 to flip head and foot, or adjust if your
 bedroll model's long axis isn't its forward axis.}
-Float Property BedrollLength = 128.0 Auto
-{Without tents: a couple's bedrolls lie end to end, heads touching, this far
-apart centre to centre.}
 
 ; ---------------------------------------------------------------------------
 ; Followers
@@ -627,41 +624,35 @@ Function SetUpCamp()
 	Else
 		; Without tents, the bedrolls lie sideways in the same fan, just
 		; outside the seats: the player's behind their seat, the rest beside it.
-		; The player and a partner, and each follower couple, share a place:
-		; two bedrolls end to end along the ring, heads touching in the middle.
-		; Orders: the two of a pair are 1 apart, places 3 apart.
-		; Each bedroll's head end, half its length along the ring, meets the
-		; other's at the place's bearing.
-		Float spread = Math.atan(BedrollLength / 2.0 / BedrollRingRadius)
-		; Two pairs side by side need more room than kFanStep: they span
-		; 2 * spread to either side of their places.
-		Int pairs = couples
-		If partners > 0
-			pairs += 1
+		; The player and a partner, and a follower couple, get neighbouring
+		; places with their bedrolls head to head. The partner goes on the
+		; right, or on the left when a couple takes the two places on the right.
+		Bool partnerPair = partners > 0 && bedrolls >= 2
+		Bool couplePair = couples > 0 && ((partnerPair && bedrolls >= 4) || (!partnerPair && bedrolls >= 3))
+		Bool[] used = new Bool[5]   ; fan places -2 to 2, at place + 2
+		SetRingBedroll(forms, fwd, side, turn, bedOrder, dressSet, ringSeatTurn, used, 0, 0, partnerPair && couplePair)
+		Int r = 1
+		If partnerPair && couplePair
+			SetRingBedroll(forms, fwd, side, turn, bedOrder, dressSet, ringSeatTurn, used, r, -1, False)
+			r += 1
+		ElseIf partnerPair
+			SetRingBedroll(forms, fwd, side, turn, bedOrder, dressSet, ringSeatTurn, used, r, 1, True)
+			r += 1
 		EndIf
-		Float ringStep = kFanStep
-		If pairs >= 2 && bedrolls >= 4 && 4.0 * spread + 5.0 > ringStep
-			ringStep = 4.0 * spread + 5.0
+		If couplePair
+			SetRingBedroll(forms, fwd, side, turn, bedOrder, dressSet, ringSeatTurn, used, r, 1, False)
+			SetRingBedroll(forms, fwd, side, turn, bedOrder, dressSet, ringSeatTurn, used, r + 1, 2, True)
+			r += 2
 		EndIf
-		Int pairsLeft = couples
-		Int r = 0
-		Int place = 0
-		While r < bedrolls
-			Bool pair = bedrolls - r >= 2 && ((place == 0 && partners > 0) || (place > 0 && pairsLeft > 0))
-			Float placeBearing = FanPlace(place) * ringStep
-			Int order = FanPlace(place) * 3
-			If pair
-				If place > 0
-					pairsLeft -= 1
-				EndIf
-				SetRingBedroll(forms, fwd, side, turn, bedOrder, dressSet, ringSeatTurn, r, placeBearing - spread, 0.0, order)
-				SetRingBedroll(forms, fwd, side, turn, bedOrder, dressSet, ringSeatTurn, r + 1, placeBearing + spread, 180.0, order + 1)
-				r += 2
-			Else
-				SetRingBedroll(forms, fwd, side, turn, bedOrder, dressSet, ringSeatTurn, r, placeBearing, 0.0, order)
+		; Everyone else takes the free places in fan order.
+		Int k = 1
+		While r < bedrolls && k < 5
+			Int place = FanPlace(k)
+			If !used[place + 2]
+				SetRingBedroll(forms, fwd, side, turn, bedOrder, dressSet, ringSeatTurn, used, r, place, False)
 				r += 1
 			EndIf
-			place += 1
+			k += 1
 		EndWhile
 	EndIf
 
@@ -959,18 +950,26 @@ Function SetTentBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, I
 	turn[slot] = tentTurn
 EndFunction
 
-; A bedroll in the ring (without tents), lying sideways at `bearing` round the
-; fire, head clockwise (`flip` 180 turns it head anticlockwise), with its seat
-; facing the fire.
-Function SetRingBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] bedOrder, Int[] dressSet, Float[] ringSeatTurn, Int index, Float bearing, Float flip, Int order)
+; A bedroll in the ring (without tents), lying sideways at fan `place` round
+; the fire with its seat facing the fire. Its head points clockwise, or
+; anticlockwise if `pairHigh`: it's then the clockwise one of a head-to-head
+; pair with the place before it. Orders are 2 per place, and a pair's two
+; are 1 apart, so only pairs count as neighbours for couples.
+Function SetRingBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] bedOrder, Int[] dressSet, Float[] ringSeatTurn, Bool[] used, Int index, Int place, Bool pairHigh)
 	Int slot = kFirstBedroll + index
+	Float bearing = place * kFanStep
 	forms[slot] = LZC_BedrollPlaced
 	fwd[slot] = FireForward() + BedrollRingRadius * Math.Cos(bearing)
 	side[slot] = BedrollRingRadius * Math.Sin(bearing)
-	turn[slot] = bearing + BedrollRingYaw + flip
-	bedOrder[index] = order
+	turn[slot] = bearing + BedrollRingYaw
+	bedOrder[index] = place * 2
+	If pairHigh
+		turn[slot] = turn[slot] + 180.0
+		bedOrder[index] = place * 2 - 1
+	EndIf
 	dressSet[slot] = 4
 	ringSeatTurn[index] = bearing + 180.0
+	used[place + 2] = True
 EndFunction
 
 ; Where bedroll `index` lies across a tent's row, from the first one: in pairs
