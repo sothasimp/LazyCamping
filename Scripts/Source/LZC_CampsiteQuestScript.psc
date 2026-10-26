@@ -80,8 +80,8 @@ listed in their set). The first one in camp order is used; the storage
 returns to the first marker's spot in the holding cell on pack-up.}
 
 Message Property LZC_PackUpConfirmMsg Auto
-{Shown when the power is cast while a camp is up. Buttons: 0 "Pack up camp",
-1 "Cancel". If empty, casting packs up without asking.}
+{Shown when the power is cast while a camp is up. Buttons: 0 "Yes", 1 "No".
+If empty, casting packs up without asking.}
 
 ObjectReference Property LZC_CampMapMarker Auto
 {Optional. A persistent, initially disabled map marker reference kept in a

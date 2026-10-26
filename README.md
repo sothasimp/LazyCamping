@@ -177,7 +177,7 @@ When a camp goes up, the storage moves to the first storage marker in camp order
 3. **Message** `LZC_PackUpConfirmMsg`, shown when the power is cast while a camp is up
    - Check *Message Box*
    - Text: "Pack up your camp?"
-   - Menu Buttons, in this order: `Pack up camp` (0), `Cancel` (1)
+   - Menu Buttons, in this order: `Yes` (0), `No` (1)
 
 ### 2d. Controller quest
 
