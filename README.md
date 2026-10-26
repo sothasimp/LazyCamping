@@ -41,7 +41,7 @@ All EditorIDs use the prefix `LZC_`.
 
 ```
 Scripts/Source/
-  LZC_CampsiteQuestScript.psc   main logic: checks, placement, tent menu, pack-up, state
+  LZC_CampsiteQuestScript.psc   main logic: checks, layout, pack-up, state
   LZC_PrepareCampEffect.psc     on the magic effect; calls the quest
   LZC_TentActivatorScript.psc   on every tent; sneak-activating it from outside offers to pack up the camp
   LZC_BedrollAliasScript.psc    on the RingBedroll aliases; sneak-activating a bedroll offers to pack up a camp without tents
