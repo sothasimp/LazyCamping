@@ -274,9 +274,9 @@ namespace Papyrus
 
 		// Hides grass under the references (the camp), replacing any earlier
 		// camp's; see GrassHider.
-		void HideGrass(RE::StaticFunctionTag*, std::vector<RE::TESObjectREFR*> a_refs, float a_margin)
+		void HideGrass(RE::StaticFunctionTag*, std::vector<RE::TESObjectREFR*> a_refs)
 		{
-			GrassHider::Hide(a_refs, a_margin);
+			GrassHider::Hide(a_refs);
 		}
 
 		void ShowGrass(RE::StaticFunctionTag*)

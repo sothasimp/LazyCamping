@@ -384,7 +384,7 @@ namespace GrassHider
 		}).detach();
 	}
 
-	void Hide(const std::vector<RE::TESObjectREFR*>& a_refs, float a_margin)
+	void Hide(const std::vector<RE::TESObjectREFR*>& a_refs)
 	{
 		if (REL::Module::IsVR()) {
 			return;
@@ -439,7 +439,6 @@ namespace GrassHider
 			for (const auto& extent : extents) {
 				circle.radius = std::max(circle.radius, std::hypot(extent.centre.x - circle.x, extent.centre.y - circle.y) + extent.reach);
 			}
-			circle.radius += a_margin;
 			// The ground may fall away towards the edge: allow for a slope
 			// of about 27 degrees beyond the objects' own heights.
 			circle.minZ = bottom - circle.radius * 0.5f;

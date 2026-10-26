@@ -9,8 +9,8 @@ namespace GrassHider
 	void Install();
 
 	// Hides grass in a circle just big enough to hold every reference (by
-	// its object bounds), widened by a_margin, replacing any earlier camp's.
-	void Hide(const std::vector<RE::TESObjectREFR*>& a_refs, float a_margin);
+	// its object bounds), replacing any earlier camp's.
+	void Hide(const std::vector<RE::TESObjectREFR*>& a_refs);
 
 	// Brings the grass back: the camp's cells rebuild their grass.
 	void Show();

@@ -32,10 +32,10 @@ Int Function CheckCampSite(ObjectReference origin, Float heading, Int count, Flo
 ObjectReference[] Function PlaceCamp(ObjectReference origin, Float heading, Form[] forms, Float[] fwd, Float[] side, Float[] lift, Float[] turn, Bool alignToSlope, Float maxTilt, Int[] dressSet, ObjectReference[] setAnchors, ObjectReference[] setItems, Int[] itemSet, ObjectReference[] storageMarkers) Global Native
 
 ; Hides the grass in a circle just big enough to hold all the references (by
-; their object bounds), widened by margin, replacing any earlier camp's. Grass that
+; their object bounds), replacing any earlier camp's. Grass that
 ; loads later around them (coming back to the camp, loading a save) is hidden
 ; too, until ShowGrass. Works with No Grass In Objects' grass cache.
-Function HideGrass(ObjectReference[] refs, Float margin) Global Native
+Function HideGrass(ObjectReference[] refs) Global Native
 
 ; Brings back the grass hidden by HideGrass.
 Function ShowGrass() Global Native

@@ -154,9 +154,7 @@ Float Property MaxStep = 48.0 Auto
 Bool Property HideGrassUnderCamp = True Auto
 {Clear the grass in a circle around the camp while it's up, so it doesn't
 poke through the tents, bedrolls and dressing. The circle just holds every
-object the camp placed, plus GrassMargin.}
-Float Property GrassMargin = 16.0 Auto
-{How far the cleared circle reaches past the outermost objects.}
+object the camp placed.}
 
 ; ---------------------------------------------------------------------------
 ; Restrictions
@@ -716,7 +714,7 @@ Function SetUpCamp()
 	If HideGrassUnderCamp
 		; The storage borrows the spot's slot so its grass goes too.
 		placedRefs[kSlotCount] = LZC_CampStorage
-		LZC_Native.HideGrass(placedRefs, GrassMargin)
+		LZC_Native.HideGrass(placedRefs)
 		placedRefs[kSlotCount] = None
 	EndIf
 

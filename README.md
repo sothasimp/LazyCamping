@@ -195,7 +195,7 @@ The follower quest's `CampRadius` setting (default 1024, in the follower quest's
 
 ### 2c. Settings on the quest scripts
 
-The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `FadeToBlack`, `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, `GrassMargin`, the tent sizes, `SeatRadius`, `TentRingGap`, `BedrollRingRadius`, `BedrollSpacing`, `FirewoodRequired` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file.
+The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `FadeToBlack`, `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, the tent sizes, `SeatRadius`, `TentRingGap`, `BedrollRingRadius`, `BedrollSpacing`, `FirewoodRequired` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file.
 
 ### 2d. How players get the kits
 
@@ -269,7 +269,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 
 - **Testing the tilt**: the slope math matches the game's `EulerAnglesToAxesZXY` rotation, and I checked it numerically. It still needs an in-game check on a hillside. If objects lean the wrong way, set `AlignToSlope` to false while you report or fix it; ground snapping and the site checks don't depend on it.
 - **Hiding grass**: Skyrim builds a cell's grass when the cell loads, so grass doesn't move aside for objects placed later. `GrassHider.cpp` edits the grass that's already loaded:
-  - it puts a circle around the placed objects (by their bounds, plus `GrassMargin`), finds the grass instances inside it, then removes their group and adds it back without them. Grass well above or below the camp, such as on a cliff top, stays.
+  - it puts a circle around the placed objects (by their bounds), finds the grass instances inside it, then removes their group and adds it back without them. Grass well above or below the camp, such as on a cliff top, stays.
   - grass from *No Grass In Objects*' cache ends up in the same groups, so this works with it
   - while the camp is up, it checks once a second for grass loading in around the camp (walking back to it, loading a save) and hides that too
   - the camp is saved with the game through SKSE, so this survives a reload
