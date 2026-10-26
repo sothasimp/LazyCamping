@@ -753,7 +753,6 @@ Function PackUpCamp()
 
 	TentCount = 0
 	CampDeployed = False
-	Debug.Notification("You pack up your camp.")
 EndFunction
 
 ; How far in front of the player the fire goes: one seat radius, so the
