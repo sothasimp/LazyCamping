@@ -8,7 +8,7 @@ camp in one go.}
 ; Core
 ; ---------------------------------------------------------------------------
 Actor Property PlayerRef Auto
-Spell Property LZC_PrepareCampPower Auto
+Spell Property LZC_SetUpCampPower Auto
 {The Lesser Power. Granted to the player when this quest starts.}
 
 ; ---------------------------------------------------------------------------
@@ -198,7 +198,7 @@ Int[] tentSizesUsed
 Bool busy = False
 
 Event OnInit()
-	PlayerRef.AddSpell(LZC_PrepareCampPower, False)
+	PlayerRef.AddSpell(LZC_SetUpCampPower, False)
 EndEvent
 
 ; Called by the power's magic effect. Casting it while a camp is up asks
@@ -728,7 +728,7 @@ Function SetUpCamp()
 	TentCount = tents
 	CampDeployed = True
 	; The leading space sorts the power to the top of the magic menu.
-	LZC_Native.RenameForm(LZC_PrepareCampPower, " Pack Up Camp")
+	LZC_Native.RenameForm(LZC_SetUpCampPower, " Pack Up Camp")
 	FadeIn()
 EndFunction
 
@@ -790,7 +790,7 @@ Function PackUpCamp()
 
 	TentCount = 0
 	CampDeployed = False
-	LZC_Native.RenameForm(LZC_PrepareCampPower, "")
+	LZC_Native.RenameForm(LZC_SetUpCampPower, "")
 EndFunction
 
 ; How far in front of the player the fire goes: one seat radius, so the

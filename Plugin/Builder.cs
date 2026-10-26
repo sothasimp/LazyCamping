@@ -102,16 +102,16 @@ public sealed class Builder
         packUpMsg.MenuButtons.Add(new MessageButton { Text = "No" });
 
         // The power.
-        var effect = mod.MagicEffects.AddNew("LZC_PrepareCampEffect");
+        var effect = mod.MagicEffects.AddNew("LZC_SetUpCampEffect");
         effect.Name = " Set Up Camp";
         effect.Archetype = new MagicEffectArchetype { Type = MagicEffectArchetype.TypeEnum.Script };
         effect.CastType = CastType.FireAndForget;
         effect.TargetType = TargetType.Self;
         effect.Flags = MagicEffect.Flag.NoDuration | MagicEffect.Flag.NoMagnitude | MagicEffect.Flag.NoArea
             | MagicEffect.Flag.NoHitEvent | MagicEffect.Flag.Painless;
-        effect.VirtualMachineAdapter = Scripts(Script("LZC_PrepareCampEffect", Link("CampQuest", campQuest)));
+        effect.VirtualMachineAdapter = Scripts(Script("LZC_SetUpCampEffect", Link("CampQuest", campQuest)));
 
-        var power = mod.Spells.AddNew("LZC_PrepareCampPower");
+        var power = mod.Spells.AddNew("LZC_SetUpCampPower");
         // The leading space sorts the power to the top of the magic menu.
         power.Name = " Set Up Camp";
         power.Type = SpellType.LesserPower;
@@ -220,7 +220,7 @@ public sealed class Builder
 
         var campScript = Script("LZC_CampsiteQuestScript",
             Link("PlayerRef", PlayerRefKey),
-            Link("LZC_PrepareCampPower", power),
+            Link("LZC_SetUpCampPower", power),
             Links("LZC_SmallTentKits", smallKits),
             Links("LZC_LargeTentKits", largeKits),
             Link("LZC_BedrollKit", bedrollKit),

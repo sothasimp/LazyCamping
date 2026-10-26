@@ -44,7 +44,7 @@ All EditorIDs use the prefix `LZC_`.
 ```
 Scripts/Source/
   LZC_CampsiteQuestScript.psc   main logic: checks, layout, pack-up, state
-  LZC_PrepareCampEffect.psc     on the magic effect; calls the quest
+  LZC_SetUpCampEffect.psc       on the magic effect; calls the quest
   LZC_TentActivatorScript.psc   on every tent; sneak-activating it from outside offers to pack up the camp
   LZC_BedrollAliasScript.psc    on the RingBedroll aliases; sneak-activating a bedroll offers to pack up a camp without tents
   LZC_CampFollowersScript.psc   followers' seats and bedrolls; sit/sleep with the player
@@ -129,7 +129,7 @@ Once it's built:
 | Tents | `LZC_TentSmallBrown` … `LZC_TentLargeWhite` | 10 Activators with `LZC_TentActivatorScript` |
 | Seats | `LZC_SitMarkerPlayer`, `LZC_BedrollSitMarker` | copies of the vanilla cross-legged marker with the models from `settings.json` |
 | Storage | `LZC_CampStorageContainer` | a container that never respawns |
-| Power | `LZC_PrepareCampPower`, `LZC_PrepareCampEffect` | lesser power in the Voice slot; script magic effect |
+| Power | `LZC_SetUpCampPower`, `LZC_SetUpCampEffect` | lesser power in the Voice slot; script magic effect |
 | Message | `LZC_PackUpConfirmMsg` | *Pack up your camp?* with *Yes* / *No* |
 | Global | `LZC_CampActivity` | what followers are doing (see section 2b) |
 | Quests | `LZC_CampsiteQuest`, `LZC_CampFollowersQuest` | scripts, aliases, alias scripts and every property filled in |
@@ -254,7 +254,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
    ```
    LazyCamping.esp
    Scripts/LZC_CampsiteQuestScript.pex
-   Scripts/LZC_PrepareCampEffect.pex
+   Scripts/LZC_SetUpCampEffect.pex
    Scripts/LZC_TentActivatorScript.pex
    Scripts/LZC_BedrollAliasScript.pex
    Scripts/LZC_Native.pex
