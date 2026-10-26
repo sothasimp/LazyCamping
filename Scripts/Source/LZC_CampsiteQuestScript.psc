@@ -24,9 +24,13 @@ MiscObject Property LZC_BedrollKit Auto
 {At least one is needed to make camp; the campfire always comes with it.}
 
 MiscObject Property Firewood01 Auto
-{Optional. Vanilla firewood, consumed (not refunded) each time a fire is built.}
-Int Property FirewoodRequired = 0 Auto
-{How much firewood building the fire costs. 0 disables the requirement.}
+{Vanilla firewood: lighting the fire burns one when FirewoodMechanic is on.}
+Bool Property FirewoodMechanic = False Auto
+{The camp's fire starts out unlit. Sneak-activating the firepit with firewood
+in the inventory lights it, burning one; it burns for FireBurnHours, then goes
+out. A chopping block stands by the tents. Off: the fire is always lit.}
+Float Property FireBurnHours = 6.0 Auto
+{How long a fire lit with firewood burns, in game hours.}
 
 ; ---------------------------------------------------------------------------
 ; World objects placed when the camp is set up
@@ -46,6 +50,12 @@ Light Property LZC_CampfireLight Auto
 Bool Property PlaceCampfireLight = True Auto
 {Place LZC_CampfireLight. Turn off if a Light Placer config already gives the
 campfire its own light.}
+Form Property LZC_Firepit Auto
+{The unlit firepit placed when FirewoodMechanic is on: an Activator with
+LZC_FirepitScript. The fire and its light are placed hidden in its spot.}
+Form Property LZC_ChoppingBlock Auto
+{Optional. A woodcutting block placed beside the outermost tent (or along the
+bedroll fan without tents) when FirewoodMechanic is on. Can be the vanilla one.}
 Form Property LZC_SitMarkerPlayer Auto
 {Optional. Visible cross-legged seat by the fire that the player can use.}
 Form Property LZC_BedrollSitMarker Auto
@@ -181,7 +191,9 @@ Int Property kFirstFollowerSeat = 3 AutoReadOnly   ; 3-7
 Int Property kFirstTent = 8 AutoReadOnly           ; 8-10
 Int Property kFirstBedroll = 11 AutoReadOnly       ; 11-22, the player's first
 Int Property kFirstBedrollSeat = 23 AutoReadOnly   ; 23-34, one on each bedroll
-Int Property kSlotCount = 35 AutoReadOnly
+Int Property kFirepit = 35 AutoReadOnly            ; unlit, with FirewoodMechanic
+Int Property kChoppingBlock = 36 AutoReadOnly
+Int Property kSlotCount = 37 AutoReadOnly
 Int Property kMaxFollowerSeats = 5 AutoReadOnly    ; fire seats besides the player's
 
 Int Property kMaxFollowers = 3 AutoReadOnly
@@ -194,6 +206,7 @@ Int Property kColors = 5 AutoReadOnly
 Float Property kFireHalfSize = 50.0 AutoReadOnly     ; for the ground check
 Float Property kFanStep = 70.0 AutoReadOnly          ; degrees between neighbours
 Float Property kTentClearance = 15.0 AutoReadOnly    ; between neighbouring tents
+Float Property kChoppingBlockGap = 60.0 AutoReadOnly ; from a tent's side to the block
 Int Property kNativeVersion = 6 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
@@ -314,9 +327,6 @@ Bool Function HasAllKits()
 	String missing = ""
 	If PlayerRef.GetItemCount(LZC_BedrollKit) < 1
 		missing += LZC_BedrollKit.GetName() + ", "
-	EndIf
-	If FirewoodRequired > 0 && Firewood01 && PlayerRef.GetItemCount(Firewood01) < FirewoodRequired
-		missing += FirewoodRequired + " " + Firewood01.GetName() + ", "
 	EndIf
 
 	If missing != ""
@@ -517,11 +527,11 @@ Function SetUpCamp()
 	EndIf
 
 	; Slot layout (see placedRefs). Index 0, the campfire, is the camp's anchor.
-	Form[] forms = new Form[35]
-	Float[] fwd = new Float[35]
-	Float[] side = new Float[35]
-	Float[] lift = new Float[35]
-	Float[] turn = new Float[35]
+	Form[] forms = new Form[37]
+	Float[] fwd = new Float[37]
+	Float[] side = new Float[37]
+	Float[] lift = new Float[37]
+	Float[] turn = new Float[37]
 
 	forms[kCampfire] = LZC_CampfirePlaced
 	fwd[kCampfire] = FireForward()
@@ -531,11 +541,21 @@ Function SetUpCamp()
 	fwd[kLight] = FireForward()
 	lift[kLight] = LightHeight
 
+	; With the firewood mechanic, an unlit firepit stands in the fire's spot;
+	; the fire and its light are placed too, but hidden until it's lit.
+	If FirewoodMechanic && LZC_Firepit
+		forms[kFirepit] = LZC_Firepit
+		fwd[kFirepit] = FireForward()
+		If LZC_ChoppingBlock
+			SetChoppingBlock(forms, fwd, side, turn, tents, sizes, radius, bedrolls)
+		EndIf
+	EndIf
+
 	; Where each bedroll is, for matching partners and couples at bedtime: its
 	; group (the tent it's in, or 0 without tents) and its place in the row
 	; (neighbours differ by 1).
 	; Which dressing set (1-based; 0 = none) goes around each layout object.
-	Int[] dressSet = new Int[35]
+	Int[] dressSet = new Int[37]
 	dressSet[kCampfire] = 1
 
 	Int[] bedGroup = new Int[12]
@@ -650,11 +670,15 @@ Function SetUpCamp()
 	If placedRefs.Length <= kSlotCount
 		FadeIn()
 		Debug.Notification("Your camp couldn't be set up.")
-		placedRefs = new ObjectReference[35]
+		placedRefs = new ObjectReference[37]
 		If followers
 			LZC_CampFollowersQuest.Stop()
 		EndIf
 		Return
+	EndIf
+
+	If placedRefs[kFirepit]
+		SetFireLit(False)
 	EndIf
 
 	; Without tents, the bedrolls go into the RingBedroll aliases, whose
@@ -670,11 +694,6 @@ Function SetUpCamp()
 			EndIf
 			i += 1
 		EndWhile
-	EndIf
-
-	; The kits stay in the player's inventory; only firewood is burned.
-	If FirewoodRequired > 0 && Firewood01
-		PlayerRef.RemoveItem(Firewood01, FirewoodRequired, True)
 	EndIf
 
 	If followers
@@ -737,6 +756,48 @@ Function SetUpCamp()
 	FadeIn()
 EndFunction
 
+; Called by LZC_FirepitScript. Sneak-activating the camp's unlit firepit
+; lights the fire, burning one firewood, for FireBurnHours.
+Function OnFirepitActivated(ObjectReference akFirepit, ObjectReference akActionRef)
+	If akActionRef != PlayerRef || !PlayerRef.IsSneaking() || !CampDeployed || akFirepit != placedRefs[kFirepit]
+		Return
+	EndIf
+	If !Firewood01 || PlayerRef.GetItemCount(Firewood01) < 1
+		Debug.Notification("You need firewood to light the fire.")
+		Return
+	EndIf
+	PlayerRef.RemoveItem(Firewood01, 1)
+	SetFireLit(True)
+	RegisterForSingleUpdateGameTime(FireBurnHours)
+EndFunction
+
+; The fire lit with firewood burns out.
+Event OnUpdateGameTime()
+	If CampDeployed && placedRefs[kFirepit]
+		SetFireLit(False)
+	EndIf
+EndEvent
+
+; Shows the burning fire and its light, or the unlit firepit in their place.
+Function SetFireLit(Bool lit)
+	ObjectReference fire = placedRefs[kCampfire]
+	ObjectReference fireLight = placedRefs[kLight]
+	ObjectReference firepit = placedRefs[kFirepit]
+	If lit
+		fire.Enable()
+		If fireLight
+			fireLight.Enable()
+		EndIf
+		firepit.Disable()
+	Else
+		firepit.Enable()
+		fire.Disable()
+		If fireLight
+			fireLight.Disable()
+		EndIf
+	EndIf
+EndFunction
+
 ; Asks "Pack up your camp?" and packs up if the player says yes.
 Function ConfirmPackUp()
 	If PlayerRef.GetSitState() != 0
@@ -765,6 +826,7 @@ Function FadeIn()
 EndFunction
 
 Function PackUpCamp()
+	UnregisterForUpdateGameTime()
 	LZC_Native.ShowGrass()
 
 	If LZC_CampFollowersQuest && LZC_CampFollowersQuest.IsRunning()
@@ -796,6 +858,28 @@ Function PackUpCamp()
 	TentCount = 0
 	CampDeployed = False
 	LZC_Native.RenameForm(LZC_SetUpCampPower, "")
+EndFunction
+
+; The chopping block stands beside the outermost tent, on its far side from
+; the middle one; without tents, in the next place along the bedroll fan.
+Function SetChoppingBlock(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int tents, Int[] sizes, Float radius, Int bedrolls)
+	Float bearing = FanBearing(bedrolls)
+	Float distance = BedrollRingRadius
+	If tents > 0
+		Int outer = tents - 1
+		Float tentBearing = FanBearing(outer)
+		Float outward = 1.0
+		If tentBearing < 0.0
+			outward = -1.0
+		EndIf
+		; Along the tent ring, past the tent's side by kChoppingBlockGap.
+		bearing = tentBearing + outward * (TentHalfWidth(sizes[outer]) + kChoppingBlockGap) / radius * 57.29578
+		distance = radius
+	EndIf
+	forms[kChoppingBlock] = LZC_ChoppingBlock
+	fwd[kChoppingBlock] = FireForward() + distance * Math.Cos(bearing)
+	side[kChoppingBlock] = distance * Math.Sin(bearing)
+	turn[kChoppingBlock] = bearing + 180.0
 EndFunction
 
 ; How far in front of the player the fire goes: one seat radius, so the

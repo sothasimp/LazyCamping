@@ -23,6 +23,8 @@ public static class TestMaster
         mod.Statics.Add(new Static(Builder.XMarkerHeadingKey, SkyrimRelease.SkyrimSE) { EditorID = "XMarkerHeading" });
         mod.Activators.AddNew(v.Campfire); // Vanilla campfires are activators.
         mod.Lights.AddNew(v.CampfireLight);
+        mod.Statics.AddNew(v.CampfireUnlit).Model = new Model { File = @"Clutter\Campfire01Off.nif" };
+        mod.Furniture.AddNew(v.ChoppingBlock);
         mod.Furniture.AddNew(v.Bedroll);
         var sit = mod.Furniture.AddNew(v.SitCrossLegged);
         sit.Markers = [new FurnitureMarker { Enabled = true }];

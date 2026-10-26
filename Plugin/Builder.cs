@@ -51,6 +51,8 @@ public sealed class Builder
         // Vanilla records.
         var campfire = Find<IPlaceableObjectGetter>(settings.Vanilla.Campfire, "campfire");
         var campfireLight = Find<ILightGetter>(settings.Vanilla.CampfireLight, "fire");
+        var campfireUnlit = Find<IPlaceableObjectGetter>(settings.Vanilla.CampfireUnlit, "campfire");
+        var choppingBlock = Find<IFurnitureGetter>(settings.Vanilla.ChoppingBlock, "chopping");
         var bedroll = Find<IFurnitureGetter>(settings.Vanilla.Bedroll, "bedroll");
         var sitMarker = Find<IFurnitureGetter>(settings.Vanilla.SitCrossLegged, "crossleg");
         var sleepTemplate = Find<IPackageGetter>(settings.Vanilla.SleepTemplate, "sleep");
@@ -94,6 +96,17 @@ public sealed class Builder
         storageContainer.Name = "Backpack";
         storageContainer.Model = new Model { File = settings.Models.Storage };
         storageContainer.ObjectBounds = Bounds(25, 15, 40);
+
+        // The unlit firepit for the firewood mechanic: the vanilla model, with a script.
+        Activator? firepit = null;
+        if (campfireUnlit is not null)
+        {
+            firepit = mod.Activators.AddNew("LZC_Firepit");
+            firepit.Name = "Firepit";
+            firepit.Model = (campfireUnlit as IModeledGetter)?.Model?.DeepCopy();
+            firepit.ObjectBounds = (campfireUnlit as IObjectBoundedGetter)?.ObjectBounds.DeepCopy() ?? Bounds(50, 50, 30);
+            firepit.VirtualMachineAdapter = Scripts(Script("LZC_FirepitScript", Link("CampQuest", campQuest)));
+        }
 
         var packUpMsg = mod.Messages.AddNew("LZC_PackUpConfirmMsg");
         packUpMsg.Description = "Pack up your camp?";
@@ -246,6 +259,8 @@ public sealed class Builder
         AddIfFound(campScript, "LZC_BedrollPlaced", bedroll);
         AddIfFound(campScript, "LZC_CampfirePlaced", campfire);
         AddIfFound(campScript, "LZC_CampfireLight", campfireLight);
+        AddIfFound(campScript, "LZC_Firepit", firepit);
+        AddIfFound(campScript, "LZC_ChoppingBlock", choppingBlock);
         AddIfFound(campScript, "Firewood01", firewood);
         AddIfFound(campScript, "LocTypeCity", locTypeCity);
         AddIfFound(campScript, "LocTypeTown", locTypeTown);

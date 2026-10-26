@@ -3,6 +3,7 @@
 The mod adds a **Set Up Camp** Lesser Power, named " Set Up Camp" with a leading space so it sorts to the top of the magic menu. When the player has at least one **Bedroll** in their inventory, casting the power builds a camp in front of the player, always with a campfire. Tent kits are optional. The kits are **reusable**: setting up camp doesn't take them from the inventory. The mod requires **SKSE**, **Address Library for SKSE Plugins**, and its own `LazyCamping.dll`. The camp includes:
 
 - a burning campfire with flickering light. For cooking on it, use a mod that makes campfires usable, such as *Useable Campfires*.
+  - with the optional **firewood mechanic** (`FirewoodMechanic`), the fire starts out as an unlit firepit. Sneak-activating it with `Firewood01` in the inventory lights it, burning one; it burns for 6 game hours (`FireBurnHours`), then goes out and can be lit again. A woodcutting block stands beside the outermost tent (or along the bedroll fan without tents) for chopping more.
 - cross-legged seats around the fire, facing it:
   - one for the player, which the player can sit in. It's across the fire from where they stood to cast the power, in front of their tent's entrance.
   - one for followers per bedroll beyond the player's, up to 5, fanning out from the player's seat: 70° right, 70° left, 140° right, 140° left. A seat 70° out sits in front of a side tent. With all 5 follower seats, the six seats space out evenly every 60° instead, and the last lands on the near side, where the player stood.
@@ -35,7 +36,7 @@ In a camp without tents, **sneaking and activating any of the camp's bedrolls** 
 
 While a camp is up, the power is called **Pack Up Camp** (" Pack Up Camp"). It keeps its place in favourites and the voice slot. **Casting it** asks *Pack up your camp?* and packs it up if confirmed, from anywhere, so a camp left behind never stops the player making a new one.
 
-With **SKSE Menu Framework** installed (optional), its Mod Control Panel gets a *Lazy Camping* page for the firewood requirement, fading to black, clearing grass around the camp, and the campfire light marker (turn it off if a *Light Placer* config already lights the campfire). The settings are kept in the save. Without it, change them on the quest in the Creation Kit.
+With **SKSE Menu Framework** installed (optional), its Mod Control Panel gets a *Lazy Camping* page for the firewood mechanic, fading to black, clearing grass around the camp, and the campfire light marker (turn it off if a *Light Placer* config already lights the campfire). The settings are kept in the save. Without it, change them on the quest in the Creation Kit.
 
 All EditorIDs use the prefix `LZC_`.
 
@@ -48,6 +49,7 @@ Scripts/Source/
   LZC_CampsiteQuestScript.psc   main logic: checks, layout, pack-up, state
   LZC_SetUpCampEffect.psc       on the magic effect; calls the quest
   LZC_TentActivatorScript.psc   on every tent; sneak-activating it from outside offers to pack up the camp
+  LZC_FirepitScript.psc         on the unlit firepit; sneak-activating it with firewood lights the fire
   LZC_BedrollAliasScript.psc    on the RingBedroll aliases; sneak-activating a bedroll offers to pack up a camp without tents
   LZC_CampFollowersScript.psc   followers' seats and bedrolls; sit/sleep with the player
   LZC_CampPlayerAliasScript.psc on the follower quest's Player alias; notices the player sitting
@@ -121,7 +123,7 @@ Once it's built:
 
 ### Settings (`Plugin/settings.json`)
 
-- **`vanilla`:** EditorIDs of the vanilla records used: the burning campfire (an activator; any placeable type works), its light, the ground bedroll, the cross-legged sit marker, the *Sleep* and *Sit* package templates, the *Voice* equip slot, `Firewood01`, `LocTypeCity`, `LocTypeTown`, and an optional partner faction (for example `PlayerMarriedFaction`). **Some of the defaults are educated guesses.** If one isn't in `Skyrim.esm`, the builder stops and lists the closest EditorIDs it found, so you can correct it. To list every record whose EditorID contains some text, run `dotnet run --project Plugin -- --master "<Skyrim Data>\Skyrim.esm" --find campfire`.
+- **`vanilla`:** EditorIDs of the vanilla records used: the burning campfire (an activator; any placeable type works), its light, the unlit firepit (its model is used for `LZC_Firepit`), the woodcutting block, the ground bedroll, the cross-legged sit marker, the *Sleep* and *Sit* package templates, the *Voice* equip slot, `Firewood01`, `LocTypeCity`, `LocTypeTown`, and an optional partner faction (for example `PlayerMarriedFaction`). **Some of the defaults are educated guesses.** If one isn't in `Skyrim.esm`, the builder stops and lists the closest EditorIDs it found, so you can correct it. To list every record whose EditorID contains some text, run `dotnet run --project Plugin -- --master "<Skyrim Data>\Skyrim.esm" --find campfire`.
 - **`models`:** mesh paths, relative to `Data/Meshes`, for the kits, both tent sizes, the player's fire seat, the invisible bedroll seat, and the storage backpack.
 - **`tentTextures`:** how the colours are made (see below).
 - **`kits`:** inventory names, weights and values. `{Colour}` in a name becomes the tent's colour.
@@ -132,6 +134,7 @@ Once it's built:
 |---|---|---|
 | Kits | `LZC_BedrollKit`, `LZC_TentKitSmallBrown` … `LZC_TentKitLargeWhite` | 11 MiscItems |
 | Tents | `LZC_TentSmallBrown` … `LZC_TentLargeWhite` | 10 Activators with `LZC_TentActivatorScript` |
+| Firepit | `LZC_Firepit` | an Activator with the vanilla unlit firepit's model and `LZC_FirepitScript`, for the firewood mechanic |
 | Seats | `LZC_SitMarkerPlayer`, `LZC_BedrollSitMarker` | copies of the vanilla cross-legged marker with the models from `settings.json` |
 | Storage | `LZC_CampStorageContainer` | a container that never respawns |
 | Power | `LZC_SetUpCampPower`, `LZC_SetUpCampEffect` | lesser power in the Voice slot; script magic effect |
@@ -202,7 +205,7 @@ The follower quest's `CampRadius` setting (default 1024, in the follower quest's
 
 ### 2c. Settings on the quest scripts
 
-The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `FadeToBlack`, `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, `PlaceCampfireLight`, the tent sizes, `SeatRadius`, `TentRingGap`, `BedrollRingRadius`, `BedrollSpacing`, `FirewoodRequired` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file.
+The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `FadeToBlack`, `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, `PlaceCampfireLight`, the tent sizes, `SeatRadius`, `TentRingGap`, `BedrollRingRadius`, `BedrollSpacing`, `FirewoodMechanic`, `FireBurnHours` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file.
 
 ### 2d. How players get the kits
 
@@ -253,7 +256,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 
 ## 4. Compile scripts and package
 
-1. In the CK, compile all seven scripts (*Gameplay > Papyrus Script Manager*). `LZC_Native` compiles without the DLL; its functions are only bound at runtime.
+1. In the CK, compile all eight scripts (*Gameplay > Papyrus Script Manager*). `LZC_Native` compiles without the DLL; its functions are only bound at runtime.
 2. Build `LazyCamping.esp` with the builder (section 2). It adds only new records, so you can flag it as ESL with xEdit.
 3. Package these files:
    ```
@@ -261,6 +264,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
    Scripts/LZC_CampsiteQuestScript.pex
    Scripts/LZC_SetUpCampEffect.pex
    Scripts/LZC_TentActivatorScript.pex
+   Scripts/LZC_FirepitScript.pex
    Scripts/LZC_BedrollAliasScript.pex
    Scripts/LZC_Native.pex
    Scripts/LZC_CampFollowersScript.pex
@@ -296,6 +300,5 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 - **Expansion ideas**:
   - a "Well Rested" style bonus for sleeping in your own tent (check `OnSleepStop` with a player alias)
   - fire damage when standing in the fire (a hazard)
-  - chopping firewood as a requirement (already supported through `FirewoodRequired`)
   - a storage chest (place a container ref and empty it into the player on pack-up)
   - weather-dependent warmth for survival mode

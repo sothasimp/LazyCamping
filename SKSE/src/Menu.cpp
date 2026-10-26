@@ -18,7 +18,7 @@ namespace Menu
 
 		struct Values
 		{
-			std::int32_t firewoodRequired{ 0 };
+			bool         firewoodMechanic{ false };
 			bool         fadeToBlack{ true };
 			bool         hideGrassUnderCamp{ true };
 			bool         placeCampfireLight{ true };
@@ -45,13 +45,13 @@ namespace Menu
 			refreshQueued = false;
 			Values values;
 			auto   object = FindScript();
-			auto*  firewood = object ? AutoProperty(object.get(), "FirewoodRequired") : nullptr;
+			auto*  firewood = object ? AutoProperty(object.get(), "FirewoodMechanic") : nullptr;
 			auto*  fade = object ? AutoProperty(object.get(), "FadeToBlack") : nullptr;
 			auto*  grass = object ? AutoProperty(object.get(), "HideGrassUnderCamp") : nullptr;
 			auto*  light = object ? AutoProperty(object.get(), "PlaceCampfireLight") : nullptr;
 			const bool found = firewood && fade && grass && light;
 			if (found) {
-				values = { firewood->GetSInt(), fade->GetBool(), grass->GetBool(), light->GetBool() };
+				values = { firewood->GetBool(), fade->GetBool(), grass->GetBool(), light->GetBool() };
 			}
 
 			std::scoped_lock guard(lock);
@@ -65,8 +65,8 @@ namespace Menu
 		void Write(Values a_values)
 		{
 			if (auto object = FindScript()) {
-				if (auto* firewood = AutoProperty(object.get(), "FirewoodRequired")) {
-					firewood->SetSInt(a_values.firewoodRequired);
+				if (auto* firewood = AutoProperty(object.get(), "FirewoodMechanic")) {
+					firewood->SetBool(a_values.firewoodMechanic);
 				}
 				if (auto* fade = AutoProperty(object.get(), "FadeToBlack")) {
 					fade->SetBool(a_values.fadeToBlack);
@@ -108,8 +108,8 @@ namespace Menu
 			}
 
 			bool changed = false;
-			changed |= ImGuiMCP::SliderInt("Firewood required", &values.firewoodRequired, 0, 10);
-			ImGuiMCP::SetItemTooltip("Firewood used up each time a camp is set up. 0 turns the requirement off.");
+			changed |= ImGuiMCP::Checkbox("Firewood mechanic", &values.firewoodMechanic);
+			ImGuiMCP::SetItemTooltip("The fire starts out unlit: sneak-activate it with firewood to light it for 6 hours. Adds a chopping block. Takes effect at the next camp.");
 			changed |= ImGuiMCP::Checkbox("Fade to black", &values.fadeToBlack);
 			ImGuiMCP::SetItemTooltip("Fade the screen to black while the camp is set up or packed up.");
 			changed |= ImGuiMCP::Checkbox("Clear grass around the camp", &values.hideGrassUnderCamp);

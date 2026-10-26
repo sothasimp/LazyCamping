@@ -4,6 +4,8 @@
   "vanilla": {
     "campfire": "Campfire01Burning",
     "campfireLight": "WRFireLightNS",
+    "campfireUnlit": "Campfire01Off",
+    "choppingBlock": "WoodChoppingBlock",
     "bedroll": "Bedroll01",
     "sitCrossLegged": "SitCrossLeggedMarker",
     "sleepTemplate": "Sleep",
