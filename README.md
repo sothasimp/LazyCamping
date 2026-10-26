@@ -23,6 +23,8 @@ The mod adds a **Prepare Camp** Lesser Power. When the player has at least one *
 
 **Dressing sets** add clutter around the camp, such as pelts, packs, firewood and lanterns. You arrange each set by eye in the Creation Kit around a stand-in marker, and every fire, tent or tentless bedroll gets a copy, turned to match. One **backpack** can be the player's storage: it's a single real container that moves from camp to camp, so whatever's in it stays there.
 
+While a camp is up, **grass under it is hidden**: under the tents, bedrolls, fire, seats, dressing and storage, so it doesn't poke through them. It comes back when the camp is packed up. This works with or without *No Grass In Objects* and its grass cache.
+
 While a camp is up, a **map marker** shows where it is, and the player can fast travel to it, unless fast travel is disabled globally (for example in Survival Mode). Packing up removes the marker.
 
 Every bedroll also has a **seat on it**, facing the fire. Followers sit at the fire when the player sits in their fire seat, and on the other bedrolls when the player sits on a bedroll, matched the same way as at bedtime. Once seated, they stay seated after the player gets up, until the player goes to bed, packs up the camp, or leaves it. When the player sleeps at camp, in any of the camp's bedrolls, followers sleep in the bedrolls the player isn't using. A spouse or lover gets the bedroll next to the player's: the one beside them in the same tent, or the neighbouring one in a camp without tents. Two followers who are a couple get two free bedrolls side by side, normally in their own tent.
@@ -53,6 +55,7 @@ SKSE/                           C++ plugin (LazyCamping.dll), required
   src/main.cpp                  plugin entry point, logging
   src/Papyrus.cpp               native functions for LZC_Native
   src/Placement.cpp             ground raycast, slope tilt, water check
+  src/GrassHider.cpp            hides the grass under the camp
 Plugin/                         builds the starting LazyCamping.esp once, and checks it (.NET 8, Mutagen)
   settings.json                 vanilla EditorIDs, mesh paths, kit names (for the one-time build)
   dressing.json                 starting storage spots (and any starting clutter)
@@ -67,6 +70,8 @@ The Papyrus scripts decide the layout: which tents and bedrolls go up, and where
 
 1. **`CheckCampSite`** checks the ground under the fire and every tent's footprint, and refuses the camp if the ground is too steep, uneven, blocked by rocks or logs, underwater, or missing.
 2. **`PlaceCamp`** finds the ground under every object, tilts each one to the slope (up to `MaxSlope` degrees), and creates them all at their final positions in a single frame. It finds the ground for everything before placing anything, so a bedroll's ground check can't hit the tent standing over it.
+
+After that, **`HideGrass`** hides the grass under every placed object (see *Hiding grass* below), and packing up calls **`ShowGrass`**.
 
 If the DLL isn't loaded, or is older than the scripts expect, casting the power tells the player that Lazy Camping needs SKSE, and nothing is placed.
 
@@ -190,7 +195,7 @@ The follower quest's `CampRadius` setting (default 1024, in the follower quest's
 
 ### 2c. Settings on the quest scripts
 
-The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `FadeToBlack`, `AlignToSlope`, `MaxSlope`, `MaxStep`, the tent sizes, `SeatRadius`, `TentRingGap`, `BedrollRingRadius`, `BedrollSpacing`, `FirewoodRequired` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file.
+The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `FadeToBlack`, `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, `GrassMargin`, the tent sizes, `SeatRadius`, `TentRingGap`, `BedrollRingRadius`, `BedrollSpacing`, `FirewoodRequired` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file.
 
 ### 2d. How players get the kits
 
@@ -263,6 +268,14 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 ## 5. Known limitations and ideas
 
 - **Testing the tilt**: the slope math matches the game's `EulerAnglesToAxesZXY` rotation, and I checked it numerically. It still needs an in-game check on a hillside. If objects lean the wrong way, set `AlignToSlope` to false while you report or fix it; ground snapping and the site checks don't depend on it.
+- **Hiding grass**: Skyrim builds a cell's grass when the cell loads, so grass doesn't move aside for objects placed later. `GrassHider.cpp` edits the grass that's already loaded:
+  - it finds the grass instances inside each placed object's bounds (turned to its heading, widened by `GrassMargin`), then removes their group and adds it back without them
+  - grass from *No Grass In Objects*' cache ends up in the same groups, so this works with it
+  - while the camp is up, it checks once a second for grass loading in around the camp (walking back to it, loading a save) and hides that too
+  - the camp is saved with the game through SKSE, so this survives a reload
+  - on pack-up, the camp's cells rebuild their grass from scratch
+  
+  The grass layouts it relies on aren't in CommonLibSSE-NG; they come from *No Grass In Objects NG* (also GPL-3.0) and *Community Shaders*. **This is untested in game.** If grass isn't where the code expects (another game version, or a mod that changes grass), it stops and writes a warning to `LazyCamping.log` rather than removing the wrong grass. If grass flickers, the game stutters or crashes around a camp, set `HideGrassUnderCamp` to false. It doesn't run in Skyrim VR.
 - **Footprint check**: the check samples 5 points (the centre and four corners). Something small that sits between those points can still poke through the tent. You can add more sample points in `IsAreaClear` if needed.
 - **One camp at a time**: this is by design. Casting the power while a camp is up offers to pack that camp up, wherever it is; cast again to make a new one.
 - **Bedroll fan**: neighbouring bedrolls in a tentless camp are 70° apart, about 218 units between centres at the default `BedrollRingRadius` (190). With the vanilla bedroll (128 long, assumed up to 64 wide) that leaves about 90 units between their ends; the limit is the seats in front, which are assumed to need 35 units behind the marker. If seated people have room to spare in game, `BedrollRingRadius` can go down to about 180.

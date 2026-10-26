@@ -7,10 +7,14 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cmath>
 #include <limits>
 #include <numbers>
 #include <optional>
+#include <set>
+#include <thread>
+#include <tuple>
 #include <vector>
 
 namespace logger = SKSE::log;

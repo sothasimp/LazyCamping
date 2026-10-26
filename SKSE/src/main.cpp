@@ -1,3 +1,4 @@
+#include "GrassHider.h"
 #include "Papyrus.h"
 
 // SKSEPluginInfo (name, version, Address Library compatibility) is generated
@@ -31,6 +32,8 @@ SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
 		logger::critical("Failed to register Papyrus functions");
 		return false;
 	}
+
+	GrassHider::Install();
 
 	logger::info("LazyCamping loaded");
 	return true;

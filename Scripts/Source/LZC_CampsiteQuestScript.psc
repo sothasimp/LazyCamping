@@ -151,6 +151,11 @@ tilt by at most this much.}
 Float Property MaxStep = 48.0 Auto
 {Refuse to camp if the ground under a tent varies by more than this
 (catches rocks, logs and ledges).}
+Bool Property HideGrassUnderCamp = True Auto
+{Hide the grass under the tents, bedrolls, fire, seats, dressing and storage
+while the camp is up, so it doesn't poke through them.}
+Float Property GrassMargin = 16.0 Auto
+{How far past each object's edges grass is hidden too.}
 
 ; ---------------------------------------------------------------------------
 ; Restrictions
@@ -187,7 +192,7 @@ Int Property kColors = 5 AutoReadOnly
 Float Property kFireHalfSize = 50.0 AutoReadOnly     ; for the ground check
 Float Property kFanStep = 70.0 AutoReadOnly          ; degrees between neighbours
 Float Property kTentClearance = 15.0 AutoReadOnly    ; between neighbouring tents
-Int Property kNativeVersion = 3 AutoReadOnly         ; LazyCamping.dll needed
+Int Property kNativeVersion = 4 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
 Int[] tentSizesUsed
@@ -707,6 +712,13 @@ Function SetUpCamp()
 		placedRefs[kSlotCount] = None
 	EndIf
 
+	If HideGrassUnderCamp
+		; The storage borrows the spot's slot so its grass goes too.
+		placedRefs[kSlotCount] = LZC_CampStorage
+		LZC_Native.HideGrass(placedRefs, GrassMargin)
+		placedRefs[kSlotCount] = None
+	EndIf
+
 	If LZC_CampMapMarker
 		LZC_CampMapMarker.MoveTo(placedRefs[kCampfire])
 		LZC_CampMapMarker.Enable()
@@ -747,6 +759,7 @@ Function FadeIn()
 EndFunction
 
 Function PackUpCamp()
+	LZC_Native.ShowGrass()
 
 	If LZC_CampFollowersQuest && LZC_CampFollowersQuest.IsRunning()
 		(LZC_CampFollowersQuest as LZC_CampFollowersScript).Shutdown()

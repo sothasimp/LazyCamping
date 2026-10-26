@@ -1,5 +1,6 @@
 #include "Papyrus.h"
 
+#include "GrassHider.h"
 #include "Placement.h"
 
 // Native functions for LZC_Native.psc. They are registered as not callable
@@ -14,7 +15,7 @@ namespace Papyrus
 	namespace
 	{
 		constexpr auto         kClass = "LZC_Native"sv;
-		constexpr std::int32_t kVersion = 3;
+		constexpr std::int32_t kVersion = 4;
 
 		// How far above/below the origin to look for ground.
 		constexpr float kSearchUp = 256.0f;
@@ -270,6 +271,18 @@ namespace Papyrus
 			}
 			return refs;
 		}
+
+		// Hides grass under the references (the camp), replacing any earlier
+		// camp's; see GrassHider.
+		void HideGrass(RE::StaticFunctionTag*, std::vector<RE::TESObjectREFR*> a_refs, float a_margin)
+		{
+			GrassHider::Hide(a_refs, a_margin);
+		}
+
+		void ShowGrass(RE::StaticFunctionTag*)
+		{
+			GrassHider::Show();
+		}
 	}
 
 	bool Register(RE::BSScript::IVirtualMachine* a_vm)
@@ -277,6 +290,8 @@ namespace Papyrus
 		a_vm->RegisterFunction("GetVersion"sv, kClass, GetVersion);
 		a_vm->RegisterFunction("CheckCampSite"sv, kClass, CheckCampSite);
 		a_vm->RegisterFunction("PlaceCamp"sv, kClass, PlaceCamp);
+		a_vm->RegisterFunction("HideGrass"sv, kClass, HideGrass);
+		a_vm->RegisterFunction("ShowGrass"sv, kClass, ShowGrass);
 		logger::info("Registered {} native functions", kClass);
 		return true;
 	}
