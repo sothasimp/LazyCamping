@@ -31,15 +31,15 @@ public sealed class Builder
 
     readonly ISkyrimModGetter skyrim;
     readonly Settings settings;
-    readonly DressingSets dressing;
+    readonly ClutterSets clutter;
     readonly SkyrimMod mod;
     readonly List<string> problems = [];
 
-    public Builder(ISkyrimModGetter skyrim, Settings settings, DressingSets dressing)
+    public Builder(ISkyrimModGetter skyrim, Settings settings, ClutterSets clutter)
     {
         this.skyrim = skyrim;
         this.settings = settings;
-        this.dressing = dressing;
+        this.clutter = clutter;
         mod = new SkyrimMod(OutputKey, SkyrimRelease.SkyrimSE);
     }
 
@@ -140,7 +140,7 @@ public sealed class Builder
             Data = new EffectData { Magnitude = 0, Area = 0, Duration = 0 },
         });
 
-        // The holding cell: map marker, storage, and dressing sets.
+        // The holding cell: map marker, storage, and clutter sets.
         var holding = HoldingCell();
         var mapMarker = Place(holding, MapMarkerKey, new P3Float(0, 0, 0), new P3Float(0, 0, 0), 1, disabled: true);
         mapMarker.EditorID = "LZC_CampMapMarkerRef";
@@ -154,10 +154,10 @@ public sealed class Builder
         storage.EditorID = "LZC_CampStorageRef";
 
         var storageMarkers = new List<PlacedObject>();
-        var fireSet = DressingSet(holding, "Fire", 0, dressing.Fire, storageMarkers);
-        var smallSet = DressingSet(holding, "SmallTent", 1, dressing.SmallTent, storageMarkers);
-        var largeSet = DressingSet(holding, "LargeTent", 2, dressing.LargeTent, storageMarkers);
-        var ringSet = DressingSet(holding, "RingBedroll", 3, dressing.RingBedroll, storageMarkers);
+        var fireSet = ClutterSet(holding, "Fire", 0, clutter.Fire, storageMarkers);
+        var smallSet = ClutterSet(holding, "SmallTent", 1, clutter.SmallTent, storageMarkers);
+        var largeSet = ClutterSet(holding, "LargeTent", 2, clutter.LargeTent, storageMarkers);
+        var ringSet = ClutterSet(holding, "RingBedroll", 3, clutter.RingBedroll, storageMarkers);
 
         // Follower packages: sleep in BedrollN, sit in SeatN, by LZC_CampActivity.
         const uint playerAlias = 0;
@@ -242,14 +242,14 @@ public sealed class Builder
             Link("LZC_SitMarkerPlayer", playerSeat),
             Link("LZC_BedrollSitMarker", bedrollSeat),
             Link("LZC_SitMarkerFollower", sitMarker.FormKey),
-            Link("LZC_FireDressingAnchor", fireSet.Anchor),
-            Links("LZC_FireDressing", fireSet.Items),
-            Link("LZC_SmallTentDressingAnchor", smallSet.Anchor),
-            Links("LZC_SmallTentDressing", smallSet.Items),
-            Link("LZC_LargeTentDressingAnchor", largeSet.Anchor),
-            Links("LZC_LargeTentDressing", largeSet.Items),
-            Link("LZC_RingBedrollDressingAnchor", ringSet.Anchor),
-            Links("LZC_RingBedrollDressing", ringSet.Items),
+            Link("LZC_FireClutterAnchor", fireSet.Anchor),
+            Links("LZC_FireClutter", fireSet.Items),
+            Link("LZC_SmallTentClutterAnchor", smallSet.Anchor),
+            Links("LZC_SmallTentClutter", smallSet.Items),
+            Link("LZC_LargeTentClutterAnchor", largeSet.Anchor),
+            Links("LZC_LargeTentClutter", largeSet.Items),
+            Link("LZC_RingBedrollClutterAnchor", ringSet.Anchor),
+            Links("LZC_RingBedrollClutter", ringSet.Items),
             Link("LZC_CampStorage", storage),
             Links("LZC_CampStorageMarkers", storageMarkers),
             Link("LZC_PackUpConfirmMsg", packUpMsg),
@@ -447,12 +447,12 @@ public sealed class Builder
         return placed;
     }
 
-    (PlacedObject Anchor, List<PlacedObject> Items) DressingSet(Cell cell, string name, int slot, List<DressingItem> items, List<PlacedObject> storageMarkers)
+    (PlacedObject Anchor, List<PlacedObject> Items) ClutterSet(Cell cell, string name, int slot, List<ClutterItem> items, List<PlacedObject> storageMarkers)
     {
         // Sets sit 1000 units apart in the holding cell so they're easy to tell apart in the Creation Kit.
         var origin = new P3Float(slot * 1000, 1000, 0);
         var anchor = Place(cell, XMarkerHeadingKey, origin, new P3Float(0, 0, 0), 1);
-        anchor.EditorID = $"LZC_{name}DressingAnchor";
+        anchor.EditorID = $"LZC_{name}ClutterAnchor";
 
         var placed = new List<PlacedObject>();
         foreach (var item in items)

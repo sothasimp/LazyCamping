@@ -18,8 +18,8 @@ Int Function CheckCampSite(ObjectReference origin, Float heading, Int count, Flo
 ; Places every form in the layout on the ground (raised by lift), tilted to
 ; the slope if alignToSlope (by at most maxTilt degrees), all in one frame.
 ;
-; Dressing: a layout object with dressSet[i] = s + 1 also gets a copy of
-; dressing set s around it. Set s is setAnchors[s] (a marker standing in for
+; Clutter: a layout object with clutterSet[i] = s + 1 also gets a copy of
+; clutter set s around it. Set s is setAnchors[s] (a marker standing in for
 ; the camp object) plus the setItems whose itemSet entry is s + 1 (0 =
 ; unused); each item's offset and rotation relative to the anchor carry over,
 ; and items sit on the ground at their own spot, raised by their height above
@@ -27,9 +27,9 @@ Int Function CheckCampSite(ObjectReference origin, Float heading, Int count, Flo
 ; as clutter: a copy of it marks where the player's storage goes.
 ;
 ; Returns the layout's references (None where the form is None), then the
-; storage spot (or None), then the dressing; or an empty array if the arrays
+; storage spot (or None), then the clutter; or an empty array if the arrays
 ; don't line up.
-ObjectReference[] Function PlaceCamp(ObjectReference origin, Float heading, Form[] forms, Float[] fwd, Float[] side, Float[] lift, Float[] turn, Bool alignToSlope, Float maxTilt, Int[] dressSet, ObjectReference[] setAnchors, ObjectReference[] setItems, Int[] itemSet, ObjectReference[] storageMarkers) Global Native
+ObjectReference[] Function PlaceCamp(ObjectReference origin, Float heading, Form[] forms, Float[] fwd, Float[] side, Float[] lift, Float[] turn, Bool alignToSlope, Float maxTilt, Int[] clutterSet, ObjectReference[] setAnchors, ObjectReference[] setItems, Int[] itemSet, ObjectReference[] storageMarkers) Global Native
 
 ; Hides the grass in a circle just big enough to hold all the references (by
 ; their object bounds), replacing any earlier camp's. Grass that

@@ -76,18 +76,18 @@ public sealed class KitInfo
     public uint Value { get; set; }
 }
 
-/// <summary>Dressing sets from dressing.json.</summary>
-public sealed class DressingSets
+/// <summary>Clutter sets from clutter.json.</summary>
+public sealed class ClutterSets
 {
-    public List<DressingItem> Fire { get; set; } = new();
-    public List<DressingItem> SmallTent { get; set; } = new();
-    public List<DressingItem> LargeTent { get; set; } = new();
-    public List<DressingItem> RingBedroll { get; set; } = new();
+    public List<ClutterItem> Fire { get; set; } = new();
+    public List<ClutterItem> SmallTent { get; set; } = new();
+    public List<ClutterItem> LargeTent { get; set; } = new();
+    public List<ClutterItem> RingBedroll { get; set; } = new();
 
-    public static DressingSets Load(string path) => Settings.Read<DressingSets>(path);
+    public static ClutterSets Load(string path) => Settings.Read<ClutterSets>(path);
 }
 
-public sealed class DressingItem
+public sealed class ClutterItem
 {
     public string Base { get; set; } = "";
     public float[] Offset { get; set; } = [0, 0, 0];

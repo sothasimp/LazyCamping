@@ -49,7 +49,7 @@ try
     }
 
     var settings = Settings.Load(options.GetValueOrDefault("settings") ?? Path.Combine(here, "settings.json"));
-    var dressing = DressingSets.Load(options.GetValueOrDefault("dressing") ?? Path.Combine(here, "dressing.json"));
+    var clutter = ClutterSets.Load(options.GetValueOrDefault("clutter") ?? Path.Combine(here, "clutter.json"));
     var outPath = options.GetValueOrDefault("out") ?? "LazyCamping.esp";
     if (File.Exists(outPath) && !options.ContainsKey("force"))
     {
@@ -58,11 +58,11 @@ try
     }
 
     using var skyrim = SkyrimMod.CreateFromBinaryOverlay(masterPath, SkyrimRelease.SkyrimSE);
-    var builder = new Builder(skyrim, settings, dressing);
+    var builder = new Builder(skyrim, settings, clutter);
     var mod = builder.Build();
     if (builder.Problems.Count > 0)
     {
-        Console.Error.WriteLine("Couldn't build LazyCamping.esp. Fix these in settings.json or dressing.json:");
+        Console.Error.WriteLine("Couldn't build LazyCamping.esp. Fix these in settings.json or clutter.json:");
         foreach (var problem in builder.Problems)
         {
             Console.Error.WriteLine($"  - {problem}");

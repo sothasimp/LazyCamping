@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <None Update="settings.json" CopyToOutputDirectory="PreserveNewest" />
-    <None Update="dressing.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="clutter.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

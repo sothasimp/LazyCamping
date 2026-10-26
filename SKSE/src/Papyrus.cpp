@@ -158,12 +158,12 @@ namespace Papyrus
 		}
 
 		// Places every form in the layout on the ground, tilted to the slope if
-		// asked, plus the dressing (clutter) around each layout object.
+		// asked, plus the clutter around each layout object.
 		//
-		// Dressing sets are Creation Kit references in a holding cell: each set
+		// Clutter sets are Creation Kit references in a holding cell: each set
 		// has an anchor marker (a_setAnchors[s]) standing in for its camp object,
 		// and items (a_setItems[j], in set a_itemSet[j], 1-based; 0 = unused)
-		// arranged around it. A layout object with a_dressSet[i] = s + 1 gets a
+		// arranged around it. A layout object with a_clutterSet[i] = s + 1 gets a
 		// copy of set s, with each item's offset and rotation relative to the
 		// anchor carried over. Items sit on the ground at their own spot, raised
 		// by their height above the anchor.
@@ -173,20 +173,20 @@ namespace Papyrus
 		// count (or None there), for the script to move the storage onto.
 		//
 		// Returns the layout's references (None where the form is None), then
-		// the storage spot, then the dressing. The ground under every object is
+		// the storage spot, then the clutter. The ground under every object is
 		// found before anything is placed, so nothing lands on a tent's roof.
 		// Returns an empty array if the arguments don't line up.
 		std::vector<RE::TESObjectREFR*> PlaceCamp(RE::StaticFunctionTag*, RE::TESObjectREFR* a_origin, float a_headingDegrees,
 			std::vector<RE::TESForm*> a_forms, std::vector<float> a_fwd, std::vector<float> a_side,
 			std::vector<float> a_lift, std::vector<float> a_turn, bool a_alignToSlope, float a_maxTiltDegrees,
-			std::vector<std::int32_t> a_dressSet, std::vector<RE::TESObjectREFR*> a_setAnchors,
+			std::vector<std::int32_t> a_clutterSet, std::vector<RE::TESObjectREFR*> a_setAnchors,
 			std::vector<RE::TESObjectREFR*> a_setItems, std::vector<std::int32_t> a_itemSet,
 			std::vector<RE::TESObjectREFR*> a_storageMarkers)
 		{
 			const std::size_t count = a_forms.size();
 			auto*             dataHandler = RE::TESDataHandler::GetSingleton();
 			if (!a_origin || !dataHandler || a_fwd.size() < count || a_side.size() < count ||
-				a_lift.size() < count || a_turn.size() < count || a_dressSet.size() < count ||
+				a_lift.size() < count || a_turn.size() < count || a_clutterSet.size() < count ||
 				a_itemSet.size() < a_setItems.size()) {
 				return {};
 			}
@@ -194,7 +194,7 @@ namespace Papyrus
 			const float         heading = ToRadians(a_headingDegrees);
 			const RE::NiMatrix3 identity;
 
-			// Index 0..count-1: the layout. count: the storage spot. Then dressing.
+			// Index 0..count-1: the layout. count: the storage spot. Then clutter.
 			std::vector<PendingRef> pending(count + 1);
 			bool                    storageFound = false;
 
@@ -209,7 +209,7 @@ namespace Papyrus
 				const float yaw = heading + ToRadians(a_turn[i]);
 				GroundAndTilt(a_origin, ref, yaw, identity, a_lift[i], a_alignToSlope, a_maxTiltDegrees);
 
-				const std::int32_t set = a_dressSet[i] - 1;
+				const std::int32_t set = a_clutterSet[i] - 1;
 				if (set < 0 || static_cast<std::size_t>(set) >= a_setAnchors.size() || !a_setAnchors[set]) {
 					continue;
 				}
@@ -233,25 +233,25 @@ namespace Papyrus
 					const RE::NiPoint3  offset = toAnchor * (item->GetPosition() - anchor->GetPosition());
 					const RE::NiMatrix3 relative = toAnchor * Placement::MatrixFromAngles(item->GetAngle());
 
-					PendingRef dressing;
-					dressing.base = itemBase;
-					dressing.scale = item->GetReferenceRuntimeData().refScale;
-					dressing.position = {
+					PendingRef clutter;
+					clutter.base = itemBase;
+					clutter.scale = item->GetReferenceRuntimeData().refScale;
+					clutter.position = {
 						ref.position.x + offset.x * cosYaw + offset.y * sinYaw,
 						ref.position.y - offset.x * sinYaw + offset.y * cosYaw,
 						0.0f
 					};
-					GroundAndTilt(a_origin, dressing, yaw, relative, offset.z, a_alignToSlope, a_maxTiltDegrees);
+					GroundAndTilt(a_origin, clutter, yaw, relative, offset.z, a_alignToSlope, a_maxTiltDegrees);
 
 					const bool isStorage = std::ranges::find(a_storageMarkers, item) != a_storageMarkers.end();
 					if (isStorage) {
 						if (!storageFound) {
-							pending[count] = dressing;
+							pending[count] = clutter;
 							storageFound = true;
 						}
 						continue;
 					}
-					pending.push_back(dressing);
+					pending.push_back(clutter);
 				}
 			}
 

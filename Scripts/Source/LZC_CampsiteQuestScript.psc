@@ -66,29 +66,29 @@ Form Property LZC_SitMarkerFollower Auto
 {Optional. Cross-legged sit marker by the fire, one per follower.}
 
 ; ---------------------------------------------------------------------------
-; Dressing sets: clutter laid out in the Creation Kit (in a holding cell)
+; Clutter sets: clutter laid out in the Creation Kit (in a holding cell)
 ; around a marker that stands in for a camp object. Each fire, tent and
 ; tentless bedroll gets a copy of its set, turned to match. Leave a set's
-; anchor empty for no dressing.
+; anchor empty for no clutter.
 ; ---------------------------------------------------------------------------
-ObjectReference Property LZC_FireDressingAnchor Auto
-ObjectReference[] Property LZC_FireDressing Auto
-ObjectReference Property LZC_SmallTentDressingAnchor Auto
+ObjectReference Property LZC_FireClutterAnchor Auto
+ObjectReference[] Property LZC_FireClutter Auto
+ObjectReference Property LZC_SmallTentClutterAnchor Auto
 {Faces the way the tent's entrance does.}
-ObjectReference[] Property LZC_SmallTentDressing Auto
-ObjectReference Property LZC_LargeTentDressingAnchor Auto
+ObjectReference[] Property LZC_SmallTentClutter Auto
+ObjectReference Property LZC_LargeTentClutterAnchor Auto
 {Faces the way the tent's entrance does.}
-ObjectReference[] Property LZC_LargeTentDressing Auto
-ObjectReference Property LZC_RingBedrollDressingAnchor Auto
+ObjectReference[] Property LZC_LargeTentClutter Auto
+ObjectReference Property LZC_RingBedrollClutterAnchor Auto
 {For camps without tents; faces the way the bedroll does.}
-ObjectReference[] Property LZC_RingBedrollDressing Auto
+ObjectReference[] Property LZC_RingBedrollClutter Auto
 
 ObjectReference Property LZC_CampStorage Auto
 {Optional. A persistent, non-respawning, unowned container kept in the
 holding cell. It's moved to the camp while one is up, so its contents carry
 over from camp to camp.}
 ObjectReference[] Property LZC_CampStorageMarkers Auto
-{Items in the dressing sets that mark where the storage goes (they're also
+{Items in the clutter sets that mark where the storage goes (they're also
 listed in their set). The first one in camp order is used; the storage
 returns to the first marker's spot in the holding cell on pack-up.}
 
@@ -169,7 +169,7 @@ Float Property MaxStep = 48.0 Auto
 (catches rocks, logs and ledges).}
 Bool Property HideGrassUnderCamp = True Auto
 {Clear the grass in a circle around the camp while it's up, so it doesn't
-poke through the tents, bedrolls and dressing. The circle just holds every
+poke through the tents, bedrolls and clutter. The circle just holds every
 object the camp placed.}
 
 ; ---------------------------------------------------------------------------
@@ -557,9 +557,9 @@ Function SetUpCamp()
 	; Where each bedroll is, for matching partners and couples at bedtime: its
 	; group (the tent it's in, or 0 without tents) and its place in the row
 	; (neighbours differ by 1).
-	; Which dressing set (1-based; 0 = none) goes around each layout object.
-	Int[] dressSet = new Int[37]
-	dressSet[kCampfire] = 1
+	; Which clutter set (1-based; 0 = none) goes around each layout object.
+	Int[] clutterSet = new Int[37]
+	clutterSet[kCampfire] = 1
 
 	Int[] bedGroup = new Int[12]
 	Int[] bedOrder = new Int[12]
@@ -594,7 +594,7 @@ Function SetUpCamp()
 			fwd[kFirstTent + t] = tentFwd[t]
 			side[kFirstTent + t] = tentSide[t]
 			turn[kFirstTent + t] = tentTurn[t]
-			dressSet[kFirstTent + t] = 2 + sizes[t]   ; 2 small, 3 large
+			clutterSet[kFirstTent + t] = 2 + sizes[t]   ; 2 small, 3 large
 			t += 1
 		EndWhile
 
@@ -630,18 +630,18 @@ Function SetUpCamp()
 		Bool partnerPair = partners > 0 && bedrolls >= 2
 		Bool couplePair = couples > 0 && ((partnerPair && bedrolls >= 4) || (!partnerPair && bedrolls >= 3))
 		Bool[] used = new Bool[5]   ; fan places -2 to 2, at place + 2
-		SetRingBedroll(forms, fwd, side, turn, bedOrder, dressSet, ringSeatTurn, used, 0, 0, partnerPair && couplePair)
+		SetRingBedroll(forms, fwd, side, turn, bedOrder, clutterSet, ringSeatTurn, used, 0, 0, partnerPair && couplePair)
 		Int r = 1
 		If partnerPair && couplePair
-			SetRingBedroll(forms, fwd, side, turn, bedOrder, dressSet, ringSeatTurn, used, r, -1, False)
+			SetRingBedroll(forms, fwd, side, turn, bedOrder, clutterSet, ringSeatTurn, used, r, -1, False)
 			r += 1
 		ElseIf partnerPair
-			SetRingBedroll(forms, fwd, side, turn, bedOrder, dressSet, ringSeatTurn, used, r, 1, True)
+			SetRingBedroll(forms, fwd, side, turn, bedOrder, clutterSet, ringSeatTurn, used, r, 1, True)
 			r += 1
 		EndIf
 		If couplePair
-			SetRingBedroll(forms, fwd, side, turn, bedOrder, dressSet, ringSeatTurn, used, r, 1, False)
-			SetRingBedroll(forms, fwd, side, turn, bedOrder, dressSet, ringSeatTurn, used, r + 1, 2, True)
+			SetRingBedroll(forms, fwd, side, turn, bedOrder, clutterSet, ringSeatTurn, used, r, 1, False)
+			SetRingBedroll(forms, fwd, side, turn, bedOrder, clutterSet, ringSeatTurn, used, r + 1, 2, True)
 			r += 2
 		EndIf
 		; Everyone else takes the free places in fan order.
@@ -649,7 +649,7 @@ Function SetUpCamp()
 		While r < bedrolls && k < 5
 			Int place = FanPlace(k)
 			If !used[place + 2]
-				SetRingBedroll(forms, fwd, side, turn, bedOrder, dressSet, ringSeatTurn, used, r, place, False)
+				SetRingBedroll(forms, fwd, side, turn, bedOrder, clutterSet, ringSeatTurn, used, r, place, False)
 				r += 1
 			EndIf
 			k += 1
@@ -677,19 +677,19 @@ Function SetUpCamp()
 
 	; The plugin puts everything on the ground and places it in one frame.
 	ObjectReference[] setAnchors = new ObjectReference[4]
-	setAnchors[0] = LZC_FireDressingAnchor
-	setAnchors[1] = LZC_SmallTentDressingAnchor
-	setAnchors[2] = LZC_LargeTentDressingAnchor
-	setAnchors[3] = LZC_RingBedrollDressingAnchor
+	setAnchors[0] = LZC_FireClutterAnchor
+	setAnchors[1] = LZC_SmallTentClutterAnchor
+	setAnchors[2] = LZC_LargeTentClutterAnchor
+	setAnchors[3] = LZC_RingBedrollClutterAnchor
 	ObjectReference[] setItems = new ObjectReference[128]
 	Int[] itemSet = new Int[128]
-	Int itemCount = AddSet(setItems, itemSet, 0, LZC_FireDressing, 1)
-	itemCount = AddSet(setItems, itemSet, itemCount, LZC_SmallTentDressing, 2)
-	itemCount = AddSet(setItems, itemSet, itemCount, LZC_LargeTentDressing, 3)
-	itemCount = AddSet(setItems, itemSet, itemCount, LZC_RingBedrollDressing, 4)
+	Int itemCount = AddSet(setItems, itemSet, 0, LZC_FireClutter, 1)
+	itemCount = AddSet(setItems, itemSet, itemCount, LZC_SmallTentClutter, 2)
+	itemCount = AddSet(setItems, itemSet, itemCount, LZC_LargeTentClutter, 3)
+	itemCount = AddSet(setItems, itemSet, itemCount, LZC_RingBedrollClutter, 4)
 
 	FadeOut()
-	placedRefs = LZC_Native.PlaceCamp(PlayerRef, heading, forms, fwd, side, lift, turn, AlignToSlope, MaxSlope, dressSet, setAnchors, setItems, itemSet, LZC_CampStorageMarkers)
+	placedRefs = LZC_Native.PlaceCamp(PlayerRef, heading, forms, fwd, side, lift, turn, AlignToSlope, MaxSlope, clutterSet, setAnchors, setItems, itemSet, LZC_CampStorageMarkers)
 	If placedRefs.Length <= kSlotCount
 		FadeIn()
 		Debug.Notification("Your camp couldn't be set up.")
@@ -955,7 +955,7 @@ EndFunction
 ; anticlockwise if `pairHigh`: it's then the clockwise one of a head-to-head
 ; pair with the place before it. Orders are 2 per place, and a pair's two
 ; are 1 apart, so only pairs count as neighbours for couples.
-Function SetRingBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] bedOrder, Int[] dressSet, Float[] ringSeatTurn, Bool[] used, Int index, Int place, Bool pairHigh)
+Function SetRingBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] bedOrder, Int[] clutterSet, Float[] ringSeatTurn, Bool[] used, Int index, Int place, Bool pairHigh)
 	Int slot = kFirstBedroll + index
 	Float bearing = place * kFanStep
 	forms[slot] = LZC_BedrollPlaced
@@ -967,7 +967,7 @@ Function SetRingBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, I
 		turn[slot] = turn[slot] + 180.0
 		bedOrder[index] = place * 2 - 1
 	EndIf
-	dressSet[slot] = 4
+	clutterSet[slot] = 4
 	ringSeatTurn[index] = bearing + 180.0
 	used[place + 2] = True
 EndFunction
@@ -1081,7 +1081,7 @@ Bool Function IsInsideTent(ObjectReference akActor, ObjectReference akTent, Int 
 	Return Math.Abs(localRight) < TentHalfWidth(size) && Math.Abs(localForward) < TentHalfDepth(size)
 EndFunction
 
-; Appends a dressing set's items to the flattened lists for PlaceCamp,
+; Appends a clutter set's items to the flattened lists for PlaceCamp,
 ; tagged with the set's number. Returns the new count.
 Int Function AddSet(ObjectReference[] setItems, Int[] itemSet, Int count, ObjectReference[] items, Int setNumber)
 	Int i = 0
