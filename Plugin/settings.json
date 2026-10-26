@@ -28,8 +28,8 @@
 
   "tentTextures": {
     "_comment": "Each colour but brown swaps one texture on the tent mesh. shape is the name of the canvas shape in the .nif (see NifSkope); leave it empty to use the mesh's own texture for every colour.",
-    "smallShape": "aaaAMV\\lazycamping\\smallnordictent.nif",
-    "largeShape": "aaaAMV\\lazycamping\\largenordictent.nif",
+    "smallShape": "tentcloth",
+    "largeShape": "tent",
     "path": "aaaAMV\\tents\\{Size}nordictent{Colour}.dds"
   },
 
