@@ -14,4 +14,3 @@ SKSE/vsxmake*/
 # Plugin builder
 Plugin/bin/
 Plugin/obj/
-*.esp

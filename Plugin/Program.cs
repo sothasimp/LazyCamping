@@ -5,10 +5,13 @@ using Mutagen.Bethesda.Plugins.Cache;
 using Mutagen.Bethesda.Plugins.Records;
 using Mutagen.Bethesda.Skyrim;
 
+// Builds the starting LazyCamping.esp once; after that the plugin is edited in
+// the Creation Kit, and --verify checks it against the scripts.
+//
 // Usage:
-//   build:        dotnet run --project Plugin -- --master "<Skyrim>/Data/Skyrim.esm" [--out LazyCamping.esp]
+//   build:        dotnet run --project Plugin -- --master "<Skyrim>/Data/Skyrim.esm" [--out LazyCamping.esp] [--force]
+//   verify:       dotnet run --project Plugin -- --verify <LazyCamping.esp> --scripts Scripts/Source [--master <Skyrim.esm>]
 //   test master:  dotnet run --project Plugin -- --make-test-master <path>
-//   verify:       dotnet run --project Plugin -- --verify <LazyCamping.esp> --master <Skyrim.esm> [--scripts Scripts/Source]
 var options = ParseArgs(args);
 var here = AppContext.BaseDirectory;
 
@@ -22,22 +25,28 @@ try
         return 0;
     }
 
+    if (options.TryGetValue("verify", out var verifyPath))
+    {
+        // Links can only be checked with the master; script properties only need the plugin.
+        var linksOk = !options.TryGetValue("master", out var verifyMaster) || Verify(verifyPath, verifyMaster) == 0;
+        var scriptsOk = !options.TryGetValue("scripts", out var scriptDir) || ScriptCheck.Run(verifyPath, scriptDir);
+        return linksOk && scriptsOk ? 0 : 1;
+    }
+
     if (!options.TryGetValue("master", out var masterPath))
     {
         Console.Error.WriteLine("Pass --master with the path to Skyrim.esm (in the game's Data folder).");
         return 2;
     }
 
-    if (options.TryGetValue("verify", out var verifyPath))
-    {
-        var linksOk = Verify(verifyPath, masterPath) == 0;
-        var scriptsOk = !options.TryGetValue("scripts", out var scriptDir) || ScriptCheck.Run(verifyPath, scriptDir);
-        return linksOk && scriptsOk ? 0 : 1;
-    }
-
     var settings = Settings.Load(options.GetValueOrDefault("settings") ?? Path.Combine(here, "settings.json"));
     var dressing = DressingSets.Load(options.GetValueOrDefault("dressing") ?? Path.Combine(here, "dressing.json"));
     var outPath = options.GetValueOrDefault("out") ?? "LazyCamping.esp";
+    if (File.Exists(outPath) && !options.ContainsKey("force"))
+    {
+        Console.Error.WriteLine($"{outPath} already exists. It may have Creation Kit edits, so it won't be overwritten; pass --force to replace it.");
+        return 1;
+    }
 
     using var skyrim = SkyrimMod.CreateFromBinaryOverlay(masterPath, SkyrimRelease.SkyrimSE);
     var builder = new Builder(skyrim, settings, dressing);

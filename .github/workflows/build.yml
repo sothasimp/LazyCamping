@@ -77,3 +77,9 @@ jobs:
 
       - name: Check links and script properties
         run: dotnet run -c Release --no-build -- --verify "$RUNNER_TEMP/LazyCamping.esp" --master "$RUNNER_TEMP/Skyrim.esm" --scripts ../Scripts/Source
+
+      # Once LazyCamping.esp is committed (built once, then edited in the
+      # Creation Kit), check its script properties against the sources.
+      - name: Check the committed LazyCamping.esp
+        if: hashFiles('LazyCamping.esp') != ''
+        run: dotnet run -c Release --no-build -- --verify ../LazyCamping.esp --scripts ../Scripts/Source
