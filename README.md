@@ -35,6 +35,8 @@ In a camp without tents, **sneaking and activating any of the camp's bedrolls** 
 
 While a camp is up, the power is called **Pack Up Camp** (" Pack Up Camp"). It keeps its place in favourites and the voice slot. **Casting it** asks *Pack up your camp?* and packs it up if confirmed, from anywhere, so a camp left behind never stops the player making a new one.
 
+With **SKSE Menu Framework** installed (optional), its Mod Control Panel gets a *Lazy Camping* page for the firewood requirement, fading to black, and clearing grass around the camp. The settings are kept in the save. Without it, change them on the quest in the Creation Kit.
+
 All EditorIDs use the prefix `LZC_`.
 
 ---
@@ -58,6 +60,8 @@ SKSE/                           C++ plugin (LazyCamping.dll), required
   src/GrassHider.cpp            hides the grass under the camp
   src/FormNames.cpp             renames the power while a camp is up, kept in the save
   src/Serialization.cpp         the SKSE co-save
+  src/Menu.cpp                  the optional SKSE Menu Framework page
+  extern/SKSEMenuFramework/     SKSE Menu Framework 3's API header (LGPL-2.1)
 Plugin/                         builds the starting LazyCamping.esp once, and checks it (.NET 8, Mutagen)
   settings.json                 vanilla EditorIDs, mesh paths, kit names (for the one-time build)
   dressing.json                 starting storage spots (and any starting clutter)

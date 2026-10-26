@@ -25,6 +25,9 @@ target("LazyCamping")
     add_files("src/**.cpp")
     add_headerfiles("src/**.h")
     add_includedirs("src")
+    -- SKSE Menu Framework's API header (optional at runtime; see its README).
+    add_includedirs("extern/SKSEMenuFramework")
+    add_defines("_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING")
     set_pcxxheader("src/PCH.h")
 
     -- Copy the built DLL into a ready-to-zip mod folder.
