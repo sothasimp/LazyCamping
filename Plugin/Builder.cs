@@ -326,7 +326,8 @@ public sealed class Builder
         if (colour != "Brown" && !string.IsNullOrWhiteSpace(shape))
         {
             var textures = mod.TextureSets.AddNew($"LZC_TentTexture{size}{colour}");
-            textures.Diffuse = settings.TentTextures.Path.Replace("{Size}", size).Replace("{Colour}", colour);
+            textures.Diffuse = settings.TentTextures.Path.Replace("{Size}", size)
+                .Replace("{Colour}", settings.TentTextures.FileColours.GetValueOrDefault(colour, colour));
             tent.Model.AlternateTextures = [new AlternateTexture { Name = shape, NewTexture = textures.ToLink(), Index = 0 }];
         }
         return tent;

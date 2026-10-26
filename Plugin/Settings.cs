@@ -55,6 +55,9 @@ public sealed class TentTextureSettings
     public string SmallShape { get; set; } = "";
     public string LargeShape { get; set; } = "";
     public string Path { get; set; } = "";
+
+    /// <summary>What {Colour} becomes in Path, for colours whose files are named differently.</summary>
+    public Dictionary<string, string> FileColours { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
 public sealed class KitSettings
