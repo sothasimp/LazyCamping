@@ -31,6 +31,8 @@ Every bedroll also has a **seat on it**, facing the fire. Followers sit at the f
 
 In a camp without tents, **sneaking and activating any of the camp's bedrolls** packs the camp up. Activating a bedroll without sneaking opens the usual Sleep/Wait menu.
 
+**Casting the power again** while a camp is up also packs it up, from anywhere, so a camp left behind never stops the player making a new one.
+
 All EditorIDs use the prefix `LZC_`.
 
 ---
@@ -342,7 +344,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 
 - **Testing the tilt**: the slope math matches the game's `EulerAnglesToAxesZXY` rotation, and I checked it numerically. It still needs an in-game check on a hillside. If objects lean the wrong way, set `AlignToSlope` to false while you report or fix it; ground snapping and the site checks don't depend on it.
 - **Footprint check**: the check samples 5 points (the centre and four corners). Something small that sits between those points can still poke through the tent. You can add more sample points in `IsAreaClear` if needed.
-- **One camp at a time**: this is by design. Casting the power while a camp is up says so. A camp left far away has to be walked back to and packed up there.
+- **One camp at a time**: this is by design. Casting the power while a camp is up packs that camp up, wherever it is; cast again to make a new one.
 - **Bedroll fan**: neighbouring bedrolls in a tentless camp are 70° apart, about 218 units between centres at the default `BedrollRingRadius` (190). With the vanilla bedroll (128 long, assumed up to 64 wide) that leaves about 90 units between their ends; the limit is the seats in front, which are assumed to need 35 units behind the marker. If seated people have room to spare in game, `BedrollRingRadius` can go down to about 180.
 - **Sneak to pack up**: in a camp without tents, the bedrolls' normal activation is blocked and `LZC_BedrollAliasScript` passes it on itself. Followers should be unaffected, because anyone else's activation is passed straight through. If followers ever stop using the ring bedrolls, check this first.
 - **Cooking**: the camp doesn't place a cooking pot. Mods that make campfires usable, such as *Useable Campfires*, should work at the camp's fire if they apply to the vanilla campfire object it uses. That's untested.

@@ -188,13 +188,14 @@ Event OnInit()
 	PlayerRef.AddSpell(LZC_SetUpCampPower, False)
 EndEvent
 
-; Called by the power's magic effect.
+; Called by the power's magic effect. Casting it while a camp is up packs
+; the camp up, wherever the player is.
 Function HandlePowerCast()
 	If CampDeployed
-		If TentCount == 0
-			Debug.Notification("You already have a camp set up. Sneak and use a bedroll to pack it up.")
-		Else
-			Debug.Notification("You already have a camp set up. Sneak and use a tent to pack it up.")
+		If !busy
+			busy = True
+			PackUpCamp()
+			busy = False
 		EndIf
 		Return
 	EndIf
