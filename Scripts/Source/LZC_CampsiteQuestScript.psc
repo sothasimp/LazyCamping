@@ -126,8 +126,11 @@ Float Property LargeTentHalfWidth = 150.0 Auto
 Float Property LargeTentHalfDepth = 100.0 Auto
 Int Property LargeTentCapacity = 4 Auto
 {Most bedrolls a large tent holds (1-4).}
+Float Property PairedBedrollSpacing = 60.0 Auto
+{Bedrolls in a tent lie in pairs that touch, for couples: the side-to-side
+distance between the two of a pair. Set it to the bedroll's width.}
 Float Property BedrollSpacing = 70.0 Auto
-{Side-to-side distance between bedrolls in a tent.}
+{Side-to-side distance from one pair's bedroll to the next pair's, in a tent.}
 
 Float Property BedrollRingRadius = 190.0 Auto
 {Without tents: distance of the bedrolls from the centre of the fire, just
@@ -601,7 +604,7 @@ Function SetUpCamp()
 		While t < tents
 			SetTentBedroll(forms, fwd, side, turn, nextSlot, tentFwd[t], tentSide[t], tentTurn[t], 0, bedsInTent[t])
 			bedGroup[nextSlot - kFirstBedroll] = t
-			bedOrder[nextSlot - kFirstBedroll] = 0
+			bedOrder[nextSlot - kFirstBedroll] = PairedOrder(0)
 			nextSlot += 1
 			t += 1
 		EndWhile
@@ -611,7 +614,7 @@ Function SetUpCamp()
 			While b < bedsInTent[t]
 				SetTentBedroll(forms, fwd, side, turn, nextSlot, tentFwd[t], tentSide[t], tentTurn[t], b, bedsInTent[t])
 				bedGroup[nextSlot - kFirstBedroll] = t
-				bedOrder[nextSlot - kFirstBedroll] = b
+				bedOrder[nextSlot - kFirstBedroll] = PairedOrder(b)
 				nextSlot += 1
 				b += 1
 			EndWhile
@@ -918,12 +921,26 @@ EndFunction
 ; Puts bedroll `index` of `count` in a slot, side by side across the tent at
 ; (tentFwd, tentSide) facing the same way as the tent.
 Function SetTentBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int slot, Float tentFwd, Float tentSide, Float tentTurn, Int index, Int count)
-	; Offset along the tent's right axis, which points at tentTurn + 90.
-	Float offset = (index - (count - 1) / 2.0) * BedrollSpacing
+	; Offset along the tent's right axis, which points at tentTurn + 90. The
+	; row is centred in the tent.
+	Float offset = RowPosition(index) - RowPosition(count - 1) / 2.0
 	forms[slot] = LZC_BedrollPlaced
 	fwd[slot] = tentFwd + offset * Math.Cos(tentTurn + 90.0)
 	side[slot] = tentSide + offset * Math.Sin(tentTurn + 90.0)
 	turn[slot] = tentTurn
+EndFunction
+
+; Where bedroll `index` lies across a tent's row, from the first one: in pairs
+; that touch, PairedBedrollSpacing apart, with BedrollSpacing between pairs.
+Float Function RowPosition(Int index)
+	Return (index / 2) * (PairedBedrollSpacing + BedrollSpacing) + (index % 2) * PairedBedrollSpacing
+EndFunction
+
+; A tent bedroll's place in its row for matching couples, where neighbours
+; differ by 1: the two of a pair do, but pairs are 2 apart, so a couple
+; takes a pair that touches.
+Int Function PairedOrder(Int index)
+	Return index + index / 2
 EndFunction
 
 MiscObject Function TentKit(Int size, Int color)
