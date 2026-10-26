@@ -710,7 +710,6 @@ Function SetUpCamp()
 	tentSizesUsed = sizes
 	TentCount = tents
 	CampDeployed = True
-	Debug.Notification("You set up camp.")
 EndFunction
 
 ; Asks "Pack up your camp?" and packs up if the player says yes.
