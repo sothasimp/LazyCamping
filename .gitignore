@@ -10,3 +10,8 @@ SKSE/vsxmake*/
 
 # Compiled Papyrus
 *.pex
+
+# Plugin builder
+Plugin/bin/
+Plugin/obj/
+*.esp

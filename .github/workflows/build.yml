@@ -1,4 +1,4 @@
-name: Build SKSE plugin
+name: Build
 
 on:
   push:
@@ -13,6 +13,7 @@ concurrency:
 
 jobs:
   build:
+    name: SKSE plugin
     runs-on: windows-latest
     defaults:
       run:
@@ -48,3 +49,31 @@ jobs:
           name: LazyCamping
           path: SKSE/dist/
           if-no-files-found: error
+
+  esp-builder:
+    name: Plugin builder
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Plugin
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build the builder
+        run: dotnet build -c Release
+
+      # Skyrim.esm can't be in CI, so build against a stand-in that has just
+      # the records the builder looks up. This checks the code paths, not the
+      # real game data.
+      - name: Make a stand-in Skyrim.esm
+        run: dotnet run -c Release --no-build -- --make-test-master "$RUNNER_TEMP/Skyrim.esm"
+
+      - name: Build LazyCamping.esp against it
+        run: dotnet run -c Release --no-build -- --master "$RUNNER_TEMP/Skyrim.esm" --out "$RUNNER_TEMP/LazyCamping.esp"
+
+      - name: Check links and script properties
+        run: dotnet run -c Release --no-build -- --verify "$RUNNER_TEMP/LazyCamping.esp" --master "$RUNNER_TEMP/Skyrim.esm" --scripts ../Scripts/Source

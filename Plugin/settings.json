@@ -1,0 +1,41 @@
+{
+  "_comment": "Settings for building LazyCamping.esp. Vanilla records are looked up in Skyrim.esm by EditorID; if one isn't found, the builder stops and lists close matches. Paths are relative to Data/Meshes or Data/Textures.",
+
+  "vanilla": {
+    "campfire": "Campfire01LandBurning",
+    "campfireLight": "CampfireLight",
+    "bedroll": "BedrollGround01",
+    "sitCrossLegged": "SitCrossLeggedMarker",
+    "sleepTemplate": "Sleep",
+    "sitTemplate": "Sit",
+    "voiceEquipType": "Voice",
+    "firewood": "Firewood01",
+    "locTypeCity": "LocTypeCity",
+    "locTypeTown": "LocTypeTown",
+    "partnerFaction": ""
+  },
+
+  "models": {
+    "bedrollKit": "Clutter\\Bedroll\\BedrollRolled01.nif",
+    "smallTentKit": "Clutter\\Leather\\LeatherBundle01.nif",
+    "largeTentKit": "Clutter\\Leather\\LeatherBundle01.nif",
+    "smallTent": "LazyCamping\\TentSmall.nif",
+    "largeTent": "LazyCamping\\TentLarge.nif",
+    "playerSeat": "LazyCamping\\FireSeat.nif",
+    "bedrollSeat": "LazyCamping\\BedrollSeat.nif",
+    "storage": "LazyCamping\\Backpack.nif"
+  },
+
+  "tentTextures": {
+    "_comment": "Each colour but brown swaps one texture on the tent mesh. shape is the name of the canvas shape in the .nif (see NifSkope); leave it empty to use the mesh's own texture for every colour.",
+    "smallShape": "",
+    "largeShape": "",
+    "path": "LazyCamping\\Tent{Size}{Colour}_d.dds"
+  },
+
+  "kits": {
+    "bedroll": { "name": "Bedroll", "weight": 4, "value": 15 },
+    "smallTent": { "name": "Small {Colour} Tent", "weight": 8, "value": 40 },
+    "largeTent": { "name": "Large {Colour} Tent", "weight": 15, "value": 80 }
+  }
+}
