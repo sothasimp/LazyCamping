@@ -103,7 +103,7 @@ public sealed class Builder
 
         // The power.
         var effect = mod.MagicEffects.AddNew("LZC_PrepareCampEffect");
-        effect.Name = " Make Camp";
+        effect.Name = " Set Up Camp";
         effect.Archetype = new MagicEffectArchetype { Type = MagicEffectArchetype.TypeEnum.Script };
         effect.CastType = CastType.FireAndForget;
         effect.TargetType = TargetType.Self;
@@ -113,7 +113,7 @@ public sealed class Builder
 
         var power = mod.Spells.AddNew("LZC_PrepareCampPower");
         // The leading space sorts the power to the top of the magic menu.
-        power.Name = " Make Camp";
+        power.Name = " Set Up Camp";
         power.Type = SpellType.LesserPower;
         power.CastType = CastType.FireAndForget;
         power.TargetType = TargetType.Self;

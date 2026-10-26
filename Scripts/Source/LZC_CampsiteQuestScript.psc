@@ -1,5 +1,5 @@
 Scriptname LZC_CampsiteQuestScript extends Quest
-{Central controller for the Make Camp power. Tracks the deployed campsite,
+{Central controller for the Set Up Camp power. Tracks the deployed campsite,
 checks/consumes the camping kits in the player's inventory, lays out the camp
 and packs it back up. LazyCamping.dll (SKSE) checks the ground and places the
 camp in one go.}
@@ -10,9 +10,9 @@ camp in one go.}
 Actor Property PlayerRef Auto
 Spell Property LZC_PrepareCampPower Auto
 {The Lesser Power. Granted to the player when this quest starts.}
-String Property BreakCampName = " Break Camp" Auto
+String Property PackUpCampName = " Pack Up Camp" Auto
 {The power's name while a camp is up. Leave empty to keep its own name. The
-leading space sorts it to the top of the magic menu, like " Make Camp".}
+leading space sorts it to the top of the magic menu, like " Set Up Camp".}
 
 ; ---------------------------------------------------------------------------
 ; Inventory kits: MiscObjects the player carries. They're reusable: setting
@@ -730,7 +730,7 @@ Function SetUpCamp()
 	tentSizesUsed = sizes
 	TentCount = tents
 	CampDeployed = True
-	LZC_Native.RenameForm(LZC_PrepareCampPower, BreakCampName)
+	LZC_Native.RenameForm(LZC_PrepareCampPower, PackUpCampName)
 	FadeIn()
 EndFunction
 
