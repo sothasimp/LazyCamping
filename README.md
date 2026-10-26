@@ -31,7 +31,7 @@ Every bedroll also has a **seat on it**, facing the fire. Followers sit at the f
 
 In a camp without tents, **sneaking and activating any of the camp's bedrolls** packs the camp up. Activating a bedroll without sneaking opens the usual Sleep/Wait menu.
 
-**Casting the power again** while a camp is up also packs it up, from anywhere, so a camp left behind never stops the player making a new one.
+**Casting the power again** while a camp is up asks *Pack up your camp?* and packs it up if confirmed, from anywhere, so a camp left behind never stops the player making a new one.
 
 All EditorIDs use the prefix `LZC_`.
 
@@ -174,6 +174,10 @@ When a camp goes up, the storage moves to the first storage marker in camp order
    - Type: *Lesser Power*, Casting: *Fire and Forget*, Delivery: *Self*
    - Effects: `LZC_SetUpCampEffect`, magnitude 0, duration 0
    - Set Equip Type to *Voice*, the slot powers use
+3. **Message** `LZC_PackUpConfirmMsg`, shown when the power is cast while a camp is up
+   - Check *Message Box*
+   - Text: "Pack up your camp?"
+   - Menu Buttons, in this order: `Pack up camp` (0), `Cancel` (1)
 
 ### 2d. Controller quest
 
@@ -192,6 +196,7 @@ When a camp goes up, the storage moves to the first storage marker in camp order
 | `RingBedrollAliases` | the aliases `RingBedroll1`–`4`, in order (below) |
 | `LZC_CampfireLight` | optional; leave empty for no light |
 | `LZC_SitMarkerPlayer`, `LZC_SitMarkerFollower`, `LZC_BedrollSitMarker` | the seats; leave any empty to skip it |
+| `LZC_PackUpConfirmMsg` | the confirmation message from step 2c; leave empty to pack up without asking |
 | `LZC_CampMapMarker` | the map marker reference from step 2b; leave empty for no marker |
 | `LZC_*DressingAnchor`, `LZC_*Dressing` | the dressing sets from step 2b; leave a set's anchor empty for no dressing |
 | `LZC_CampStorage`, `LZC_CampStorageMarkers` | the storage container and its markers from step 2b; leave empty for no storage |
@@ -344,7 +349,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 
 - **Testing the tilt**: the slope math matches the game's `EulerAnglesToAxesZXY` rotation, and I checked it numerically. It still needs an in-game check on a hillside. If objects lean the wrong way, set `AlignToSlope` to false while you report or fix it; ground snapping and the site checks don't depend on it.
 - **Footprint check**: the check samples 5 points (the centre and four corners). Something small that sits between those points can still poke through the tent. You can add more sample points in `IsAreaClear` if needed.
-- **One camp at a time**: this is by design. Casting the power while a camp is up packs that camp up, wherever it is; cast again to make a new one.
+- **One camp at a time**: this is by design. Casting the power while a camp is up offers to pack that camp up, wherever it is; cast again to make a new one.
 - **Bedroll fan**: neighbouring bedrolls in a tentless camp are 70° apart, about 218 units between centres at the default `BedrollRingRadius` (190). With the vanilla bedroll (128 long, assumed up to 64 wide) that leaves about 90 units between their ends; the limit is the seats in front, which are assumed to need 35 units behind the marker. If seated people have room to spare in game, `BedrollRingRadius` can go down to about 180.
 - **Sneak to pack up**: in a camp without tents, the bedrolls' normal activation is blocked and `LZC_BedrollAliasScript` passes it on itself. Followers should be unaffected, because anyone else's activation is passed straight through. If followers ever stop using the ring bedrolls, check this first.
 - **Cooking**: the camp doesn't place a cooking pot. Mods that make campfires usable, such as *Useable Campfires*, should work at the camp's fire if they apply to the vanilla campfire object it uses. That's untested.

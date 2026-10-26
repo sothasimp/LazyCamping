@@ -79,6 +79,10 @@ ObjectReference[] Property LZC_CampStorageMarkers Auto
 listed in their set). The first one in camp order is used; the storage
 returns to the first marker's spot in the holding cell on pack-up.}
 
+Message Property LZC_PackUpConfirmMsg Auto
+{Shown when the power is cast while a camp is up. Buttons: 0 "Pack up camp",
+1 "Cancel". If empty, casting packs up without asking.}
+
 ObjectReference Property LZC_CampMapMarker Auto
 {Optional. A persistent, initially disabled map marker reference kept in a
 holding cell. It moves to the campfire while a camp is up and is disabled
@@ -188,13 +192,15 @@ Event OnInit()
 	PlayerRef.AddSpell(LZC_SetUpCampPower, False)
 EndEvent
 
-; Called by the power's magic effect. Casting it while a camp is up packs
-; the camp up, wherever the player is.
+; Called by the power's magic effect. Casting it while a camp is up asks
+; whether to pack the camp up, wherever the player is.
 Function HandlePowerCast()
 	If CampDeployed
 		If !busy
 			busy = True
-			PackUpCamp()
+			If !LZC_PackUpConfirmMsg || LZC_PackUpConfirmMsg.Show() == 0
+				PackUpCamp()
+			EndIf
 			busy = False
 		EndIf
 		Return
