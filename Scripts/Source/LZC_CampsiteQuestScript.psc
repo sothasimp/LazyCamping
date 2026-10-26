@@ -80,8 +80,9 @@ listed in their set). The first one in camp order is used; the storage
 returns to the first marker's spot in the holding cell on pack-up.}
 
 Message Property LZC_PackUpConfirmMsg Auto
-{Shown when the power is cast while a camp is up. Buttons: 0 "Yes", 1 "No".
-If empty, casting packs up without asking.}
+{Asks before packing up, whichever way the player does it (casting the
+power, or sneak-activating a tent or tentless bedroll). Buttons: 0 "Yes",
+1 "No". If empty, the camp packs up without asking.}
 
 ObjectReference Property LZC_CampMapMarker Auto
 {Optional. A persistent, initially disabled map marker reference kept in a
@@ -198,9 +199,7 @@ Function HandlePowerCast()
 	If CampDeployed
 		If !busy
 			busy = True
-			If !LZC_PackUpConfirmMsg || LZC_PackUpConfirmMsg.Show() == 0
-				PackUpCamp()
-			EndIf
+			ConfirmPackUp()
 			busy = False
 		EndIf
 		Return
@@ -221,7 +220,7 @@ Function HandlePowerCast()
 EndFunction
 
 ; Called by LZC_TentActivatorScript. Sneaking and activating any of the camp's
-; tents from outside packs up the camp. Anything else does nothing; in
+; tents from outside offers to pack up the camp. Anything else does nothing; in
 ; particular the player can't pack up by accident from inside a tent.
 Function OnTentActivated(ObjectReference akTent)
 	If !CampDeployed || busy || !PlayerRef.IsSneaking()
@@ -235,7 +234,7 @@ Function OnTentActivated(ObjectReference akTent)
 				Return
 			EndIf
 			busy = True
-			PackUpCamp()
+			ConfirmPackUp()
 			busy = False
 			Return
 		EndIf
@@ -254,7 +253,7 @@ Function OnBedrollActivated(ObjectReference akBedroll, ObjectReference akActionR
 	If akActionRef == PlayerRef && PlayerRef.IsSneaking()
 		If !busy
 			busy = True
-			PackUpCamp()
+			ConfirmPackUp()
 			busy = False
 		EndIf
 	Else
@@ -712,6 +711,13 @@ Function SetUpCamp()
 	TentCount = tents
 	CampDeployed = True
 	Debug.Notification("You set up camp.")
+EndFunction
+
+; Asks "Pack up your camp?" and packs up if the player says yes.
+Function ConfirmPackUp()
+	If !LZC_PackUpConfirmMsg || LZC_PackUpConfirmMsg.Show() == 0
+		PackUpCamp()
+	EndIf
 EndFunction
 
 Function PackUpCamp()

@@ -27,9 +27,9 @@ While a camp is up, a **map marker** shows where it is, and the player can fast 
 
 Every bedroll also has a **seat on it**, facing the fire. Followers sit at the fire when the player sits in their fire seat, and on the other bedrolls when the player sits on a bedroll, matched the same way as at bedtime. Once seated, they stay seated after the player gets up, until the player goes to bed, packs up the camp, or leaves it. When the player sleeps at camp, in any of the camp's bedrolls, followers sleep in the bedrolls the player isn't using. A spouse or lover gets the bedroll next to the player's: the one beside them in the same tent, or the neighbouring one in a camp without tents. Two followers who are a couple get two free bedrolls side by side, normally in their own tent.
 
-**Sneaking and activating any of the tents from outside** packs up the camp straight away, with no prompt: everything the camp placed is removed. Activating a tent without sneaking, or from inside, does nothing. So the player can't pack up by accident while getting into bed.
+**Sneaking and activating any of the tents from outside** asks *Pack up your camp?*; on *Yes*, everything the camp placed is removed. Activating a tent without sneaking, or from inside, does nothing. So the player can't pack up by accident while getting into bed.
 
-In a camp without tents, **sneaking and activating any of the camp's bedrolls** packs the camp up. Activating a bedroll without sneaking opens the usual Sleep/Wait menu.
+In a camp without tents, **sneaking and activating any of the camp's bedrolls** asks the same question. Activating a bedroll without sneaking opens the usual Sleep/Wait menu.
 
 **Casting the power again** while a camp is up asks *Pack up your camp?* and packs it up if confirmed, from anywhere, so a camp left behind never stops the player making a new one.
 
@@ -43,8 +43,8 @@ All EditorIDs use the prefix `LZC_`.
 Scripts/Source/
   LZC_CampsiteQuestScript.psc   main logic: checks, placement, tent menu, pack-up, state
   LZC_SetUpCampEffect.psc       on the magic effect; calls the quest
-  LZC_TentActivatorScript.psc   on every tent; sneak-activating it from outside packs up the camp
-  LZC_BedrollAliasScript.psc    on the RingBedroll aliases; sneak-activating a bedroll packs up a camp without tents
+  LZC_TentActivatorScript.psc   on every tent; sneak-activating it from outside offers to pack up the camp
+  LZC_BedrollAliasScript.psc    on the RingBedroll aliases; sneak-activating a bedroll offers to pack up a camp without tents
   LZC_CampFollowersScript.psc   followers' seats and bedrolls; sit/sleep with the player
   LZC_CampPlayerAliasScript.psc on the follower quest's Player alias; notices the player sitting
   LZC_Native.psc                declarations of the SKSE plugin's functions
@@ -174,7 +174,7 @@ When a camp goes up, the storage moves to the first storage marker in camp order
    - Type: *Lesser Power*, Casting: *Fire and Forget*, Delivery: *Self*
    - Effects: `LZC_SetUpCampEffect`, magnitude 0, duration 0
    - Set Equip Type to *Voice*, the slot powers use
-3. **Message** `LZC_PackUpConfirmMsg`, shown when the power is cast while a camp is up
+3. **Message** `LZC_PackUpConfirmMsg`, shown before packing up, whichever way the player does it
    - Check *Message Box*
    - Text: "Pack up your camp?"
    - Menu Buttons, in this order: `Yes` (0), `No` (1)
@@ -196,7 +196,7 @@ When a camp goes up, the storage moves to the first storage marker in camp order
 | `RingBedrollAliases` | the aliases `RingBedroll1`–`4`, in order (below) |
 | `LZC_CampfireLight` | optional; leave empty for no light |
 | `LZC_SitMarkerPlayer`, `LZC_SitMarkerFollower`, `LZC_BedrollSitMarker` | the seats; leave any empty to skip it |
-| `LZC_PackUpConfirmMsg` | the confirmation message from step 2c; leave empty to pack up without asking |
+| `LZC_PackUpConfirmMsg` | the pack-up confirmation from step 2c, used for the power, tents and tentless bedrolls; leave empty to pack up without asking |
 | `LZC_CampMapMarker` | the map marker reference from step 2b; leave empty for no marker |
 | `LZC_*DressingAnchor`, `LZC_*Dressing` | the dressing sets from step 2b; leave a set's anchor empty for no dressing |
 | `LZC_CampStorage`, `LZC_CampStorageMarkers` | the storage container and its markers from step 2b; leave empty for no storage |
@@ -217,7 +217,7 @@ When a camp goes up, the storage moves to the first storage marker in camp order
 - Check *Optional*
 - Attach `LZC_BedrollAliasScript`
 
-In a camp without tents, the script puts the bedrolls in these aliases, so sneaking and activating one packs up the camp. Using aliases instead of a script on the bedroll means the bedroll can stay the vanilla object.
+In a camp without tents, the script puts the bedrolls in these aliases, so sneaking and activating one offers to pack up the camp. Using aliases instead of a script on the bedroll means the bedroll can stay the vanilla object.
 
 When the quest starts, it gives the player the power.
 

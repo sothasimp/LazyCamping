@@ -1,6 +1,6 @@
 Scriptname LZC_TentActivatorScript extends ObjectReference
 {Attached to every tent Activator (both sizes, all colours). Sneaking and
-activating the tent from outside packs up the camp.}
+activating the tent from outside offers to pack up the camp.}
 
 LZC_CampsiteQuestScript Property CampQuest Auto
 
