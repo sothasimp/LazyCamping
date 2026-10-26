@@ -8,9 +8,10 @@
 // Grass In Objects' cache ends up in the same groups, so this works with or
 // without it.
 //
-// Hiding: every group in a camp cell with instances inside a footprint is
-// removed and added again without them. Grass that loads while the camp is up
-// (walking back to it, loading a save) is caught by a check once a second.
+// Hiding: the camp gets a circle just big enough to hold every object, and
+// every group in its cells with instances inside the circle is removed and
+// added again without them. Grass that loads while the camp is up (walking
+// back to it, loading a save) is caught by a check once a second.
 // Showing: the camp's cells rebuild their grass from scratch.
 //
 // The layouts below aren't in CommonLibSSE-NG. They follow No Grass In
@@ -22,16 +23,13 @@ namespace GrassHider
 		constexpr float         kCellSize = 4096.0f;
 		constexpr std::int32_t  kCellsPerBlock = 12;
 		constexpr std::uint32_t kHalvesPerInstance = 16;
-		// Grass blades lean and sway; this much height above and below an
-		// object's bounds still counts as under it.
-		constexpr float kHeightSlack = 64.0f;
 		// How far outside its cell an instance may sit before the layout is
 		// taken to be different from what this code expects.
 		constexpr float kCellSlack = 1024.0f;
 
 		constexpr std::uint32_t kRecordId = 'LZCG';
-		constexpr std::uint32_t kZonesRecord = 'ZONE';
-		constexpr std::uint32_t kZonesVersion = 1;
+		constexpr std::uint32_t kCircleRecord = 'CIRC';
+		constexpr std::uint32_t kCircleVersion = 1;
 
 		struct VertexBuffer
 		{
@@ -112,47 +110,30 @@ namespace GrassHider
 			return sign * std::ldexp(1.0f + static_cast<float>(mantissa) / 1024.0f, exponent - 15);
 		}
 
-		// An object's bounds in its own frame, turned to its heading. Saved
-		// as is, so keep it plain data.
-		struct Footprint
+		// The cleared area. Saved as is, so keep it plain data.
+		struct Circle
 		{
-			float x, y;
-			float sinYaw, cosYaw;
-			float minX, maxX, minY, maxY;
+			float x, y, radius;
+			// Grass above or below this (a cliff top over the camp, say) stays.
 			float minZ, maxZ;
 
 			[[nodiscard]] bool Contains(float a_x, float a_y, float a_z) const
 			{
-				if (a_z < minZ || a_z > maxZ) {
-					return false;
-				}
 				const float dx = a_x - x;
 				const float dy = a_y - y;
-				// Inverse of the heading turn: forward is (sin, cos), right is (cos, -sin).
-				const float right = dx * cosYaw - dy * sinYaw;
-				const float forward = dx * sinYaw + dy * cosYaw;
-				return right >= minX && right <= maxX && forward >= minY && forward <= maxY;
-			}
-
-			[[nodiscard]] float Reach() const
-			{
-				return std::sqrt(std::max(minX * minX, maxX * maxX) + std::max(minY * minY, maxY * maxY));
+				return a_z >= minZ && a_z <= maxZ && dx * dx + dy * dy <= radius * radius;
 			}
 		};
-		static_assert(std::is_trivially_copyable_v<Footprint>);
+		static_assert(std::is_trivially_copyable_v<Circle>);
 
 		struct State
 		{
-			RE::FormID             world{ 0 };
-			std::vector<Footprint> zones;
-			// A circle around all the zones, to skip most grass with one test.
-			float centreX{ 0.0f };
-			float centreY{ 0.0f };
-			float radiusSquared{ 0.0f };
+			RE::FormID            world{ 0 };
+			std::optional<Circle> circle;
 			// Cells whose grass is still to be rebuilt after Show().
 			std::vector<std::pair<std::int32_t, std::int32_t>> rebuild;
 			RE::FormID                                         rebuildWorld{ 0 };
-			// Groups already checked against the current zones.
+			// Groups already checked against the current circle.
 			std::set<std::tuple<const InstanceGroup*, const std::uint16_t*, std::uint32_t>> clean;
 			bool layoutBad{ false };
 		};
@@ -166,51 +147,22 @@ namespace GrassHider
 		// Read by the polling thread; everything else is main-thread only.
 		std::atomic<bool> busy{ false };
 
-		void UpdateCircle()
-		{
-			auto& state = GetState();
-			if (state.zones.empty()) {
-				state.radiusSquared = 0.0f;
-				return;
-			}
-			float minX = std::numeric_limits<float>::max();
-			float minY = std::numeric_limits<float>::max();
-			float maxX = std::numeric_limits<float>::lowest();
-			float maxY = std::numeric_limits<float>::lowest();
-			for (const auto& zone : state.zones) {
-				minX = std::min(minX, zone.x);
-				minY = std::min(minY, zone.y);
-				maxX = std::max(maxX, zone.x);
-				maxY = std::max(maxY, zone.y);
-			}
-			state.centreX = (minX + maxX) * 0.5f;
-			state.centreY = (minY + maxY) * 0.5f;
-			float radius = 0.0f;
-			for (const auto& zone : state.zones) {
-				radius = std::max(radius, std::hypot(zone.x - state.centreX, zone.y - state.centreY) + zone.Reach());
-			}
-			state.radiusSquared = radius * radius;
-		}
-
 		void UpdateBusy()
 		{
 			const auto& state = GetState();
-			busy = !state.zones.empty() || !state.rebuild.empty();
+			busy = state.circle.has_value() || !state.rebuild.empty();
 		}
 
-		std::set<std::pair<std::int32_t, std::int32_t>> CellsUnder(const std::vector<Footprint>& a_zones)
+		std::vector<std::pair<std::int32_t, std::int32_t>> CellsUnder(const Circle& a_circle)
 		{
-			std::set<std::pair<std::int32_t, std::int32_t>> cells;
-			for (const auto& zone : a_zones) {
-				const float reach = zone.Reach();
-				const auto  x0 = static_cast<std::int32_t>(std::floor((zone.x - reach) / kCellSize));
-				const auto  x1 = static_cast<std::int32_t>(std::floor((zone.x + reach) / kCellSize));
-				const auto  y0 = static_cast<std::int32_t>(std::floor((zone.y - reach) / kCellSize));
-				const auto  y1 = static_cast<std::int32_t>(std::floor((zone.y + reach) / kCellSize));
-				for (auto cx = x0; cx <= x1; ++cx) {
-					for (auto cy = y0; cy <= y1; ++cy) {
-						cells.emplace(cx, cy);
-					}
+			const auto x0 = static_cast<std::int32_t>(std::floor((a_circle.x - a_circle.radius) / kCellSize));
+			const auto x1 = static_cast<std::int32_t>(std::floor((a_circle.x + a_circle.radius) / kCellSize));
+			const auto y0 = static_cast<std::int32_t>(std::floor((a_circle.y - a_circle.radius) / kCellSize));
+			const auto y1 = static_cast<std::int32_t>(std::floor((a_circle.y + a_circle.radius) / kCellSize));
+			std::vector<std::pair<std::int32_t, std::int32_t>> cells;
+			for (auto cx = x0; cx <= x1; ++cx) {
+				for (auto cy = y0; cy <= y1; ++cy) {
+					cells.emplace_back(cx, cy);
 				}
 			}
 			return cells;
@@ -238,8 +190,8 @@ namespace GrassHider
 			return nullptr;
 		}
 
-		// Removes the cell's grass instances inside any of the zones.
-		void HideInCell(RE::TESObjectCELL* a_cell, std::int32_t a_cellX, std::int32_t a_cellY)
+		// Removes the cell's grass instances inside the circle.
+		void HideInCell(RE::TESObjectCELL* a_cell, std::int32_t a_cellX, std::int32_t a_cellY, const Circle& a_circle)
 		{
 			auto& state = GetState();
 			auto* extra = a_cell->extraList.GetByType<RE::ExtraCellGrassData>();
@@ -290,10 +242,7 @@ namespace GrassHider
 						if (x < cellMinX || x > cellMaxX || y < cellMinY || y > cellMaxY) {
 							++strays;
 						}
-						const float dx = x - state.centreX;
-						const float dy = y - state.centreY;
-						if (dx * dx + dy * dy <= state.radiusSquared &&
-							std::ranges::any_of(state.zones, [&](const Footprint& a_zone) { return a_zone.Contains(x, y, z); })) {
+						if (a_circle.Contains(x, y, z)) {
 							++removed;
 						} else {
 							kept.insert(kept.end(), instance, instance + kHalvesPerInstance);
@@ -356,58 +305,31 @@ namespace GrassHider
 			}
 			state.rebuild.clear();
 
-			if (!state.zones.empty() && !state.layoutBad) {
-				for (const auto& [x, y] : CellsUnder(state.zones)) {
+			if (state.circle && !state.layoutBad) {
+				for (const auto& [x, y] : CellsUnder(*state.circle)) {
 					if (auto* cell = LoadedCell(state.world, x, y)) {
-						HideInCell(cell, x, y);
+						HideInCell(cell, x, y, *state.circle);
 					}
 				}
 			}
 			UpdateBusy();
 		}
 
-		std::optional<Footprint> FootprintOf(RE::TESObjectREFR* a_ref, float a_margin)
-		{
-			auto* base = a_ref ? a_ref->GetBaseObject() : nullptr;
-			if (!base || base->Is(RE::FormType::Light)) {
-				return std::nullopt;
-			}
-			const auto& bounds = base->boundData;
-			if (bounds.boundMin.x == bounds.boundMax.x || bounds.boundMin.y == bounds.boundMax.y) {
-				return std::nullopt;
-			}
-
-			const float scale = a_ref->GetScale();
-			const auto  position = a_ref->GetPosition();
-			const float yaw = a_ref->GetAngleZ();
-			return Footprint{
-				position.x, position.y,
-				std::sin(yaw), std::cos(yaw),
-				bounds.boundMin.x * scale - a_margin, bounds.boundMax.x * scale + a_margin,
-				bounds.boundMin.y * scale - a_margin, bounds.boundMax.y * scale + a_margin,
-				position.z + bounds.boundMin.z * scale - kHeightSlack, position.z + bounds.boundMax.z * scale + kHeightSlack
-			};
-		}
-
 		void OnSave(SKSE::SerializationInterface* a_intfc)
 		{
 			const auto& state = GetState();
-			if (!a_intfc->OpenRecord(kZonesRecord, kZonesVersion)) {
+			if (!state.circle || !a_intfc->OpenRecord(kCircleRecord, kCircleVersion)) {
 				return;
 			}
-			const auto count = static_cast<std::uint32_t>(state.zones.size());
 			a_intfc->WriteRecordData(state.world);
-			a_intfc->WriteRecordData(count);
-			if (count > 0) {
-				a_intfc->WriteRecordData(state.zones.data(), static_cast<std::uint32_t>(count * sizeof(Footprint)));
-			}
+			a_intfc->WriteRecordData(*state.circle);
 		}
 
 		void OnRevert(SKSE::SerializationInterface*)
 		{
 			auto& state = GetState();
 			state.world = 0;
-			state.zones.clear();
+			state.circle.reset();
 			state.rebuild.clear();
 			state.clean.clear();
 			UpdateBusy();
@@ -420,23 +342,18 @@ namespace GrassHider
 			std::uint32_t version = 0;
 			std::uint32_t length = 0;
 			while (a_intfc->GetNextRecordInfo(type, version, length)) {
-				if (type != kZonesRecord || version != kZonesVersion) {
+				if (type != kCircleRecord || version != kCircleVersion) {
 					continue;
 				}
-				RE::FormID    world = 0;
-				std::uint32_t count = 0;
-				if (!a_intfc->ReadRecordData(world) || !a_intfc->ReadRecordData(count) || !a_intfc->ResolveFormID(world, world)) {
-					continue;
-				}
-				std::vector<Footprint> zones(count);
-				const auto             bytes = static_cast<std::uint32_t>(count * sizeof(Footprint));
-				if (count > 0 && a_intfc->ReadRecordData(zones.data(), bytes) != bytes) {
+				RE::FormID world = 0;
+				Circle     circle{};
+				if (a_intfc->ReadRecordData(world) != sizeof(world) || a_intfc->ReadRecordData(circle) != sizeof(circle) ||
+					!a_intfc->ResolveFormID(world, world)) {
 					continue;
 				}
 				state.world = world;
-				state.zones = std::move(zones);
+				state.circle = circle;
 				state.clean.clear();
-				UpdateCircle();
 			}
 			UpdateBusy();
 		}
@@ -472,21 +389,63 @@ namespace GrassHider
 		if (REL::Module::IsVR()) {
 			return;
 		}
-		auto& state = GetState();
-		state.zones.clear();
-		state.clean.clear();
-		state.world = 0;
+
+		// Each object as a centre and the distance to its furthest corner.
+		struct Extent
+		{
+			RE::NiPoint3 centre;
+			float        reach, bottom, top;
+		};
+		std::vector<Extent> extents;
+		RE::FormID          worldId = 0;
 		for (auto* ref : a_refs) {
 			auto* world = ref ? ref->GetWorldspace() : nullptr;
-			if (!world) {
-				continue;  // Interiors have no grass.
+			auto* base = ref ? ref->GetBaseObject() : nullptr;
+			// Interiors have no grass, and lights have no size.
+			if (!world || !base || base->Is(RE::FormType::Light)) {
+				continue;
 			}
-			if (auto footprint = FootprintOf(ref, a_margin)) {
-				state.world = world->GetFormID();
-				state.zones.push_back(*footprint);
-			}
+			const auto& bounds = base->boundData;
+			const float scale = ref->GetScale();
+			const float reachX = std::max(std::abs(bounds.boundMin.x), std::abs(bounds.boundMax.x)) * scale;
+			const float reachY = std::max(std::abs(bounds.boundMin.y), std::abs(bounds.boundMax.y)) * scale;
+			const auto  position = ref->GetPosition();
+			extents.push_back({ position, std::hypot(reachX, reachY), position.z + bounds.boundMin.z * scale, position.z + bounds.boundMax.z * scale });
+			worldId = world->GetFormID();
 		}
-		UpdateCircle();
+
+		auto& state = GetState();
+		state.circle.reset();
+		state.clean.clear();
+		state.world = worldId;
+		if (!extents.empty()) {
+			// Centred on the middle of the objects' spread; near enough the
+			// smallest circle for a camp's fan.
+			float minX = std::numeric_limits<float>::max();
+			float minY = std::numeric_limits<float>::max();
+			float maxX = std::numeric_limits<float>::lowest();
+			float maxY = std::numeric_limits<float>::lowest();
+			float bottom = std::numeric_limits<float>::max();
+			float top = std::numeric_limits<float>::lowest();
+			for (const auto& extent : extents) {
+				minX = std::min(minX, extent.centre.x - extent.reach);
+				minY = std::min(minY, extent.centre.y - extent.reach);
+				maxX = std::max(maxX, extent.centre.x + extent.reach);
+				maxY = std::max(maxY, extent.centre.y + extent.reach);
+				bottom = std::min(bottom, extent.bottom);
+				top = std::max(top, extent.top);
+			}
+			Circle circle{ (minX + maxX) * 0.5f, (minY + maxY) * 0.5f, 0.0f, 0.0f, 0.0f };
+			for (const auto& extent : extents) {
+				circle.radius = std::max(circle.radius, std::hypot(extent.centre.x - circle.x, extent.centre.y - circle.y) + extent.reach);
+			}
+			circle.radius += a_margin;
+			// The ground may fall away towards the edge: allow for a slope
+			// of about 27 degrees beyond the objects' own heights.
+			circle.minZ = bottom - circle.radius * 0.5f;
+			circle.maxZ = top + circle.radius * 0.5f;
+			state.circle = circle;
+		}
 		Update();
 	}
 
@@ -496,12 +455,11 @@ namespace GrassHider
 			return;
 		}
 		auto& state = GetState();
-		if (!state.zones.empty()) {
-			const auto cells = CellsUnder(state.zones);
-			state.rebuild.assign(cells.begin(), cells.end());
+		if (state.circle) {
+			state.rebuild = CellsUnder(*state.circle);
 			state.rebuildWorld = state.world;
 		}
-		state.zones.clear();
+		state.circle.reset();
 		state.clean.clear();
 		state.world = 0;
 		Update();

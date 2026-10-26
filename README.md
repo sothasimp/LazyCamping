@@ -23,7 +23,7 @@ The mod adds a **Prepare Camp** Lesser Power. When the player has at least one *
 
 **Dressing sets** add clutter around the camp, such as pelts, packs, firewood and lanterns. You arrange each set by eye in the Creation Kit around a stand-in marker, and every fire, tent or tentless bedroll gets a copy, turned to match. One **backpack** can be the player's storage: it's a single real container that moves from camp to camp, so whatever's in it stays there.
 
-While a camp is up, **grass under it is hidden**: under the tents, bedrolls, fire, seats, dressing and storage, so it doesn't poke through them. It comes back when the camp is packed up. This works with or without *No Grass In Objects* and its grass cache.
+While a camp is up, **the grass is cleared** in a circle around it, just big enough to hold the tents, bedrolls, fire, seats, dressing and storage, so nothing pokes through them. It comes back when the camp is packed up. This works with or without *No Grass In Objects* and its grass cache.
 
 While a camp is up, a **map marker** shows where it is, and the player can fast travel to it, unless fast travel is disabled globally (for example in Survival Mode). Packing up removes the marker.
 
@@ -71,7 +71,7 @@ The Papyrus scripts decide the layout: which tents and bedrolls go up, and where
 1. **`CheckCampSite`** checks the ground under the fire and every tent's footprint, and refuses the camp if the ground is too steep, uneven, blocked by rocks or logs, underwater, or missing.
 2. **`PlaceCamp`** finds the ground under every object, tilts each one to the slope (up to `MaxSlope` degrees), and creates them all at their final positions in a single frame. It finds the ground for everything before placing anything, so a bedroll's ground check can't hit the tent standing over it.
 
-After that, **`HideGrass`** hides the grass under every placed object (see *Hiding grass* below), and packing up calls **`ShowGrass`**.
+After that, **`HideGrass`** clears the grass in a circle around the placed objects (see *Hiding grass* below), and packing up calls **`ShowGrass`**.
 
 If the DLL isn't loaded, or is older than the scripts expect, casting the power tells the player that Lazy Camping needs SKSE, and nothing is placed.
 
@@ -269,7 +269,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 
 - **Testing the tilt**: the slope math matches the game's `EulerAnglesToAxesZXY` rotation, and I checked it numerically. It still needs an in-game check on a hillside. If objects lean the wrong way, set `AlignToSlope` to false while you report or fix it; ground snapping and the site checks don't depend on it.
 - **Hiding grass**: Skyrim builds a cell's grass when the cell loads, so grass doesn't move aside for objects placed later. `GrassHider.cpp` edits the grass that's already loaded:
-  - it finds the grass instances inside each placed object's bounds (turned to its heading, widened by `GrassMargin`), then removes their group and adds it back without them
+  - it puts a circle around the placed objects (by their bounds, plus `GrassMargin`), finds the grass instances inside it, then removes their group and adds it back without them. Grass well above or below the camp, such as on a cliff top, stays.
   - grass from *No Grass In Objects*' cache ends up in the same groups, so this works with it
   - while the camp is up, it checks once a second for grass loading in around the camp (walking back to it, loading a save) and hides that too
   - the camp is saved with the game through SKSE, so this survives a reload

@@ -152,10 +152,11 @@ Float Property MaxStep = 48.0 Auto
 {Refuse to camp if the ground under a tent varies by more than this
 (catches rocks, logs and ledges).}
 Bool Property HideGrassUnderCamp = True Auto
-{Hide the grass under the tents, bedrolls, fire, seats, dressing and storage
-while the camp is up, so it doesn't poke through them.}
+{Clear the grass in a circle around the camp while it's up, so it doesn't
+poke through the tents, bedrolls and dressing. The circle just holds every
+object the camp placed, plus GrassMargin.}
 Float Property GrassMargin = 16.0 Auto
-{How far past each object's edges grass is hidden too.}
+{How far the cleared circle reaches past the outermost objects.}
 
 ; ---------------------------------------------------------------------------
 ; Restrictions
