@@ -1,5 +1,5 @@
-Scriptname LZC_SetUpCampEffect extends ActiveMagicEffect
-{Attached to the Set Up Camp magic effect. Hands off to the quest script,
+Scriptname LZC_PrepareCampEffect extends ActiveMagicEffect
+{Attached to the Prepare Camp magic effect. Hands off to the quest script,
 which owns all campsite state.}
 
 LZC_CampsiteQuestScript Property CampQuest Auto

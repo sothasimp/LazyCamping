@@ -1,6 +1,6 @@
 # Lazy Camping: a mod for Skyrim Special Edition
 
-The mod adds a **Set Up Camp** Lesser Power. When the player has at least one **Bedroll** in their inventory, casting the power builds a camp in front of the player, always with a campfire. Tent kits are optional. The kits are **reusable**: setting up camp doesn't take them from the inventory. The mod requires **SKSE**, **Address Library for SKSE Plugins**, and its own `LazyCamping.dll`. The camp includes:
+The mod adds a **Prepare Camp** Lesser Power. When the player has at least one **Bedroll** in their inventory, casting the power builds a camp in front of the player, always with a campfire. Tent kits are optional. The kits are **reusable**: setting up camp doesn't take them from the inventory. The mod requires **SKSE**, **Address Library for SKSE Plugins**, and its own `LazyCamping.dll`. The camp includes:
 
 - a burning campfire with flickering light. For cooking on it, use a mod that makes campfires usable, such as *Useable Campfires*.
 - cross-legged seats around the fire, facing it:
@@ -42,7 +42,7 @@ All EditorIDs use the prefix `LZC_`.
 ```
 Scripts/Source/
   LZC_CampsiteQuestScript.psc   main logic: checks, placement, tent menu, pack-up, state
-  LZC_SetUpCampEffect.psc       on the magic effect; calls the quest
+  LZC_PrepareCampEffect.psc     on the magic effect; calls the quest
   LZC_TentActivatorScript.psc   on every tent; sneak-activating it from outside offers to pack up the camp
   LZC_BedrollAliasScript.psc    on the RingBedroll aliases; sneak-activating a bedroll offers to pack up a camp without tents
   LZC_CampFollowersScript.psc   followers' seats and bedrolls; sit/sleep with the player
@@ -166,13 +166,13 @@ When a camp goes up, the storage moves to the first storage marker in camp order
 
 ### 2c. The power
 
-1. **Magic Effect** `LZC_SetUpCampEffect`
+1. **Magic Effect** `LZC_PrepareCampEffect`
    - Archetype: *Script*, Casting Type: *Fire and Forget*, Delivery: *Self*
    - Check *No Duration*, *No Magnitude*, *No Area*, *No Hit Event*, *Painless*
-   - Papyrus Scripts: add `LZC_SetUpCampEffect`, then set the `CampQuest` property to `LZC_CampsiteQuest`
-2. **Spell** `LZC_SetUpCampPower`, named "Set Up Camp"
+   - Papyrus Scripts: add `LZC_PrepareCampEffect`, then set the `CampQuest` property to `LZC_CampsiteQuest`
+2. **Spell** `LZC_PrepareCampPower`, named "Prepare Camp"
    - Type: *Lesser Power*, Casting: *Fire and Forget*, Delivery: *Self*
-   - Effects: `LZC_SetUpCampEffect`, magnitude 0, duration 0
+   - Effects: `LZC_PrepareCampEffect`, magnitude 0, duration 0
    - Set Equip Type to *Voice*, the slot powers use
 3. **Message** `LZC_PackUpConfirmMsg`, shown before packing up, whichever way the player does it
    - Check *Message Box*
@@ -188,7 +188,7 @@ When a camp goes up, the storage moves to the first storage marker in camp order
 | Property | Value |
 |---|---|
 | `PlayerRef` | `PlayerRef` (use auto-fill) |
-| `LZC_SetUpCampPower` | the spell |
+| `LZC_PrepareCampPower` | the spell |
 | `LZC_SmallTentKits`, `LZC_LargeTentKits` | the five tent kits of each size, **in the order brown, blue, green, red, white** |
 | `LZC_SmallTents`, `LZC_LargeTents` | the five tents of each size, **in the same order** as the kits. Each kit pitches the tent at the same position in its list. |
 | `LZC_BedrollKit` | the bedroll kit |
@@ -331,7 +331,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
    ```
    LazyCamping.esp
    Scripts/LZC_CampsiteQuestScript.pex
-   Scripts/LZC_SetUpCampEffect.pex
+   Scripts/LZC_PrepareCampEffect.pex
    Scripts/LZC_TentActivatorScript.pex
    Scripts/LZC_BedrollAliasScript.pex
    Scripts/LZC_Native.pex

@@ -1,5 +1,5 @@
 Scriptname LZC_CampsiteQuestScript extends Quest
-{Central controller for the Set Up Camp power. Tracks the deployed campsite,
+{Central controller for the Prepare Camp power. Tracks the deployed campsite,
 checks/consumes the camping kits in the player's inventory, lays out the camp
 and packs it back up. LazyCamping.dll (SKSE) checks the ground and places the
 camp in one go.}
@@ -8,7 +8,7 @@ camp in one go.}
 ; Core
 ; ---------------------------------------------------------------------------
 Actor Property PlayerRef Auto
-Spell Property LZC_SetUpCampPower Auto
+Spell Property LZC_PrepareCampPower Auto
 {The Lesser Power. Granted to the player when this quest starts.}
 
 ; ---------------------------------------------------------------------------
@@ -190,7 +190,7 @@ Int[] tentSizesUsed
 Bool busy = False
 
 Event OnInit()
-	PlayerRef.AddSpell(LZC_SetUpCampPower, False)
+	PlayerRef.AddSpell(LZC_PrepareCampPower, False)
 EndEvent
 
 ; Called by the power's magic effect. Casting it while a camp is up asks
