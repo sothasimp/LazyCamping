@@ -145,6 +145,10 @@ namespace GrassHider
 		{
 			RE::FormID             world{ 0 };
 			std::vector<Footprint> zones;
+			// A circle around all the zones, to skip most grass with one test.
+			float centreX{ 0.0f };
+			float centreY{ 0.0f };
+			float radiusSquared{ 0.0f };
 			// Cells whose grass is still to be rebuilt after Show().
 			std::vector<std::pair<std::int32_t, std::int32_t>> rebuild;
 			RE::FormID                                         rebuildWorld{ 0 };
@@ -161,6 +165,32 @@ namespace GrassHider
 
 		// Read by the polling thread; everything else is main-thread only.
 		std::atomic<bool> busy{ false };
+
+		void UpdateCircle()
+		{
+			auto& state = GetState();
+			if (state.zones.empty()) {
+				state.radiusSquared = 0.0f;
+				return;
+			}
+			float minX = std::numeric_limits<float>::max();
+			float minY = std::numeric_limits<float>::max();
+			float maxX = std::numeric_limits<float>::lowest();
+			float maxY = std::numeric_limits<float>::lowest();
+			for (const auto& zone : state.zones) {
+				minX = std::min(minX, zone.x);
+				minY = std::min(minY, zone.y);
+				maxX = std::max(maxX, zone.x);
+				maxY = std::max(maxY, zone.y);
+			}
+			state.centreX = (minX + maxX) * 0.5f;
+			state.centreY = (minY + maxY) * 0.5f;
+			float radius = 0.0f;
+			for (const auto& zone : state.zones) {
+				radius = std::max(radius, std::hypot(zone.x - state.centreX, zone.y - state.centreY) + zone.Reach());
+			}
+			state.radiusSquared = radius * radius;
+		}
 
 		void UpdateBusy()
 		{
@@ -260,7 +290,10 @@ namespace GrassHider
 						if (x < cellMinX || x > cellMaxX || y < cellMinY || y > cellMaxY) {
 							++strays;
 						}
-						if (std::ranges::any_of(state.zones, [&](const Footprint& a_zone) { return a_zone.Contains(x, y, z); })) {
+						const float dx = x - state.centreX;
+						const float dy = y - state.centreY;
+						if (dx * dx + dy * dy <= state.radiusSquared &&
+							std::ranges::any_of(state.zones, [&](const Footprint& a_zone) { return a_zone.Contains(x, y, z); })) {
 							++removed;
 						} else {
 							kept.insert(kept.end(), instance, instance + kHalvesPerInstance);
@@ -403,6 +436,7 @@ namespace GrassHider
 				state.world = world;
 				state.zones = std::move(zones);
 				state.clean.clear();
+				UpdateCircle();
 			}
 			UpdateBusy();
 		}
@@ -452,6 +486,7 @@ namespace GrassHider
 				state.zones.push_back(*footprint);
 			}
 		}
+		UpdateCircle();
 		Update();
 	}
 
