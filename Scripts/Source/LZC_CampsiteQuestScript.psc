@@ -137,8 +137,11 @@ Float Property BedrollRingRadius = 190.0 Auto
 outside the seats.}
 Float Property BedrollRingYaw = 90.0 Auto
 {Without tents: added to each bedroll's facing so it lies sideways along the
-circle. Use 270 to flip head and foot, or adjust if your bedroll model's long
-axis isn't its forward axis.}
+circle, head clockwise. Use 270 to flip head and foot, or adjust if your
+bedroll model's long axis isn't its forward axis.}
+Float Property BedrollLength = 128.0 Auto
+{Without tents: a couple's bedrolls lie end to end, heads touching, this far
+apart centre to centre.}
 
 ; ---------------------------------------------------------------------------
 ; Followers
@@ -563,6 +566,7 @@ Function SetUpCamp()
 
 	Int[] bedGroup = new Int[12]
 	Int[] bedOrder = new Int[12]
+	Float[] ringSeatTurn = new Float[12]   ; without tents: each bedroll seat's facing
 
 	; Seats ring the fire and face it. The player's is at 0, across the fire
 	; in front of their tent. There's a follower seat for each bedroll beyond
@@ -623,16 +627,41 @@ Function SetUpCamp()
 	Else
 		; Without tents, the bedrolls lie sideways in the same fan, just
 		; outside the seats: the player's behind their seat, the rest beside it.
+		; The player and a partner, and each follower couple, share a place:
+		; two bedrolls end to end along the ring, heads touching in the middle.
+		; Orders: the two of a pair are 1 apart, places 3 apart.
+		; Each bedroll's head end, half its length along the ring, meets the
+		; other's at the place's bearing.
+		Float spread = Math.atan(BedrollLength / 2.0 / BedrollRingRadius)
+		; Two pairs side by side need more room than kFanStep: they span
+		; 2 * spread to either side of their places.
+		Int pairs = couples
+		If partners > 0
+			pairs += 1
+		EndIf
+		Float ringStep = kFanStep
+		If pairs >= 2 && bedrolls >= 4 && 4.0 * spread + 5.0 > ringStep
+			ringStep = 4.0 * spread + 5.0
+		EndIf
+		Int pairsLeft = couples
 		Int r = 0
+		Int place = 0
 		While r < bedrolls
-			Float ringBearing = FanBearing(r)
-			forms[kFirstBedroll + r] = LZC_BedrollPlaced
-			fwd[kFirstBedroll + r] = FireForward() + BedrollRingRadius * Math.Cos(ringBearing)
-			side[kFirstBedroll + r] = BedrollRingRadius * Math.Sin(ringBearing)
-			turn[kFirstBedroll + r] = ringBearing + BedrollRingYaw
-			bedOrder[r] = FanPlace(r)
-			dressSet[kFirstBedroll + r] = 4
-			r += 1
+			Bool pair = bedrolls - r >= 2 && ((place == 0 && partners > 0) || (place > 0 && pairsLeft > 0))
+			Float placeBearing = FanPlace(place) * ringStep
+			Int order = FanPlace(place) * 3
+			If pair
+				If place > 0
+					pairsLeft -= 1
+				EndIf
+				SetRingBedroll(forms, fwd, side, turn, bedOrder, dressSet, ringSeatTurn, r, placeBearing - spread, 0.0, order)
+				SetRingBedroll(forms, fwd, side, turn, bedOrder, dressSet, ringSeatTurn, r + 1, placeBearing + spread, 180.0, order + 1)
+				r += 2
+			Else
+				SetRingBedroll(forms, fwd, side, turn, bedOrder, dressSet, ringSeatTurn, r, placeBearing, 0.0, order)
+				r += 1
+			EndIf
+			place += 1
 		EndWhile
 	EndIf
 
@@ -648,7 +677,7 @@ Function SetUpCamp()
 				If tents > 0
 					turn[kFirstBedrollSeat + bs] = turn[kFirstBedroll + bs]
 				Else
-					turn[kFirstBedrollSeat + bs] = FanBearing(bs) + 180.0
+					turn[kFirstBedrollSeat + bs] = ringSeatTurn[bs]
 				EndIf
 			EndIf
 			bs += 1
@@ -928,6 +957,20 @@ Function SetTentBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, I
 	fwd[slot] = tentFwd + offset * Math.Cos(tentTurn + 90.0)
 	side[slot] = tentSide + offset * Math.Sin(tentTurn + 90.0)
 	turn[slot] = tentTurn
+EndFunction
+
+; A bedroll in the ring (without tents), lying sideways at `bearing` round the
+; fire, head clockwise (`flip` 180 turns it head anticlockwise), with its seat
+; facing the fire.
+Function SetRingBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] bedOrder, Int[] dressSet, Float[] ringSeatTurn, Int index, Float bearing, Float flip, Int order)
+	Int slot = kFirstBedroll + index
+	forms[slot] = LZC_BedrollPlaced
+	fwd[slot] = FireForward() + BedrollRingRadius * Math.Cos(bearing)
+	side[slot] = BedrollRingRadius * Math.Sin(bearing)
+	turn[slot] = bearing + BedrollRingYaw + flip
+	bedOrder[index] = order
+	dressSet[slot] = 4
+	ringSeatTurn[index] = bearing + 180.0
 EndFunction
 
 ; Where bedroll `index` lies across a tent's row, from the first one: in pairs
