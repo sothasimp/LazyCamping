@@ -39,3 +39,7 @@ Function HideGrass(ObjectReference[] refs) Global Native
 
 ; Brings back the grass hidden by HideGrass.
 Function ShowGrass() Global Native
+
+; Renames a form (a spell, say), or gives it its own name back if name is
+; empty. Unlike SKSE's Form.SetName, the name is kept in the save.
+Function RenameForm(Form akForm, String name) Global Native

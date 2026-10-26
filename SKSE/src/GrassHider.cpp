@@ -27,7 +27,6 @@ namespace GrassHider
 		// taken to be different from what this code expects.
 		constexpr float kCellSlack = 1024.0f;
 
-		constexpr std::uint32_t kRecordId = 'LZCG';
 		constexpr std::uint32_t kCircleRecord = 'CIRC';
 		constexpr std::uint32_t kCircleVersion = 1;
 
@@ -315,48 +314,45 @@ namespace GrassHider
 			UpdateBusy();
 		}
 
-		void OnSave(SKSE::SerializationInterface* a_intfc)
-		{
-			const auto& state = GetState();
-			if (!state.circle || !a_intfc->OpenRecord(kCircleRecord, kCircleVersion)) {
-				return;
-			}
-			a_intfc->WriteRecordData(state.world);
-			a_intfc->WriteRecordData(*state.circle);
-		}
+	}
 
-		void OnRevert(SKSE::SerializationInterface*)
-		{
-			auto& state = GetState();
-			state.world = 0;
-			state.circle.reset();
-			state.rebuild.clear();
+	void Save(SKSE::SerializationInterface* a_intfc)
+	{
+		const auto& state = GetState();
+		if (!state.circle || !a_intfc->OpenRecord(kCircleRecord, kCircleVersion)) {
+			return;
+		}
+		a_intfc->WriteRecordData(state.world);
+		a_intfc->WriteRecordData(*state.circle);
+	}
+
+	bool Load(SKSE::SerializationInterface* a_intfc, std::uint32_t a_type, std::uint32_t a_version)
+	{
+		if (a_type != kCircleRecord) {
+			return false;
+		}
+		auto&      state = GetState();
+		RE::FormID world = 0;
+		Circle     circle{};
+		if (a_version == kCircleVersion && !REL::Module::IsVR() &&
+			a_intfc->ReadRecordData(world) == sizeof(world) && a_intfc->ReadRecordData(circle) == sizeof(circle) &&
+			a_intfc->ResolveFormID(world, world)) {
+			state.world = world;
+			state.circle = circle;
 			state.clean.clear();
 			UpdateBusy();
 		}
+		return true;
+	}
 
-		void OnLoad(SKSE::SerializationInterface* a_intfc)
-		{
-			auto&         state = GetState();
-			std::uint32_t type = 0;
-			std::uint32_t version = 0;
-			std::uint32_t length = 0;
-			while (a_intfc->GetNextRecordInfo(type, version, length)) {
-				if (type != kCircleRecord || version != kCircleVersion) {
-					continue;
-				}
-				RE::FormID world = 0;
-				Circle     circle{};
-				if (a_intfc->ReadRecordData(world) != sizeof(world) || a_intfc->ReadRecordData(circle) != sizeof(circle) ||
-					!a_intfc->ResolveFormID(world, world)) {
-					continue;
-				}
-				state.world = world;
-				state.circle = circle;
-				state.clean.clear();
-			}
-			UpdateBusy();
-		}
+	void Revert()
+	{
+		auto& state = GetState();
+		state.world = 0;
+		state.circle.reset();
+		state.rebuild.clear();
+		state.clean.clear();
+		UpdateBusy();
 	}
 
 	void Install()
@@ -365,12 +361,6 @@ namespace GrassHider
 			logger::info("Grass hiding isn't supported in Skyrim VR");
 			return;
 		}
-
-		auto* serialization = SKSE::GetSerializationInterface();
-		serialization->SetUniqueID(kRecordId);
-		serialization->SetSaveCallback(OnSave);
-		serialization->SetRevertCallback(OnRevert);
-		serialization->SetLoadCallback(OnLoad);
 
 		std::thread([] {
 			for (;;) {

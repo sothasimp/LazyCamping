@@ -1,5 +1,6 @@
 #include "GrassHider.h"
 #include "Papyrus.h"
+#include "Serialization.h"
 
 // SKSEPluginInfo (name, version, Address Library compatibility) is generated
 // by the commonlibsse-ng.plugin xmake rule.
@@ -33,6 +34,7 @@ SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
 		return false;
 	}
 
+	Serialization::Install();
 	GrassHider::Install();
 
 	logger::info("LazyCamping loaded");

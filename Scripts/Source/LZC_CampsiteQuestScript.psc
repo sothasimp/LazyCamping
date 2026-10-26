@@ -10,6 +10,8 @@ camp in one go.}
 Actor Property PlayerRef Auto
 Spell Property LZC_PrepareCampPower Auto
 {The Lesser Power. Granted to the player when this quest starts.}
+String Property BreakCampName = "Break Camp" Auto
+{The power's name while a camp is up. Leave empty to keep its own name.}
 
 ; ---------------------------------------------------------------------------
 ; Inventory kits: MiscObjects the player carries. They're reusable: setting
@@ -191,7 +193,7 @@ Int Property kColors = 5 AutoReadOnly
 Float Property kFireHalfSize = 50.0 AutoReadOnly     ; for the ground check
 Float Property kFanStep = 70.0 AutoReadOnly          ; degrees between neighbours
 Float Property kTentClearance = 15.0 AutoReadOnly    ; between neighbouring tents
-Int Property kNativeVersion = 4 AutoReadOnly         ; LazyCamping.dll needed
+Int Property kNativeVersion = 5 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
 Int[] tentSizesUsed
@@ -727,6 +729,7 @@ Function SetUpCamp()
 	tentSizesUsed = sizes
 	TentCount = tents
 	CampDeployed = True
+	LZC_Native.RenameForm(LZC_PrepareCampPower, BreakCampName)
 	FadeIn()
 EndFunction
 
@@ -788,6 +791,7 @@ Function PackUpCamp()
 
 	TentCount = 0
 	CampDeployed = False
+	LZC_Native.RenameForm(LZC_PrepareCampPower, "")
 EndFunction
 
 ; How far in front of the player the fire goes: one seat radius, so the

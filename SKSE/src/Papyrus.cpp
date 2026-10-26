@@ -1,5 +1,6 @@
 #include "Papyrus.h"
 
+#include "FormNames.h"
 #include "GrassHider.h"
 #include "Placement.h"
 
@@ -15,7 +16,7 @@ namespace Papyrus
 	namespace
 	{
 		constexpr auto         kClass = "LZC_Native"sv;
-		constexpr std::int32_t kVersion = 4;
+		constexpr std::int32_t kVersion = 5;
 
 		// How far above/below the origin to look for ground.
 		constexpr float kSearchUp = 256.0f;
@@ -283,6 +284,13 @@ namespace Papyrus
 		{
 			GrassHider::Show();
 		}
+
+		// Renames a form, or gives it its own name back if a_name is empty.
+		// The name is kept in the save; see FormNames.
+		void RenameForm(RE::StaticFunctionTag*, RE::TESForm* a_form, RE::BSFixedString a_name)
+		{
+			FormNames::Rename(a_form, a_name.c_str());
+		}
 	}
 
 	bool Register(RE::BSScript::IVirtualMachine* a_vm)
@@ -292,6 +300,7 @@ namespace Papyrus
 		a_vm->RegisterFunction("PlaceCamp"sv, kClass, PlaceCamp);
 		a_vm->RegisterFunction("HideGrass"sv, kClass, HideGrass);
 		a_vm->RegisterFunction("ShowGrass"sv, kClass, ShowGrass);
+		a_vm->RegisterFunction("RenameForm"sv, kClass, RenameForm);
 		logger::info("Registered {} native functions", kClass);
 		return true;
 	}
