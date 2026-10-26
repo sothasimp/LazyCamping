@@ -2,6 +2,7 @@
 #include "Menu.h"
 #include "Papyrus.h"
 #include "Serialization.h"
+#include "Shelter.h"
 
 // SKSEPluginInfo (name, version, Address Library compatibility) is generated
 // by the commonlibsse-ng.plugin xmake rule.
@@ -37,6 +38,7 @@ SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
 
 	Serialization::Install();
 	GrassHider::Install();
+	Shelter::Install();
 
 	// SKSE Menu Framework loads after this plugin, if it's installed at all.
 	SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message* a_message) {

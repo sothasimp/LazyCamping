@@ -3,6 +3,7 @@
 #include "FormNames.h"
 #include "GrassHider.h"
 #include "Placement.h"
+#include "Shelter.h"
 
 // Native functions for LZC_Native.psc. They are registered as not callable
 // from tasklets, so the VM runs them in sync with the main thread, which is
@@ -16,7 +17,7 @@ namespace Papyrus
 	namespace
 	{
 		constexpr auto         kClass = "LZC_Native"sv;
-		constexpr std::int32_t kVersion = 5;
+		constexpr std::int32_t kVersion = 6;
 
 		// How far above/below the origin to look for ground.
 		constexpr float kSearchUp = 256.0f;
@@ -285,6 +286,17 @@ namespace Papyrus
 			GrassHider::Show();
 		}
 
+		// The camp's tents, for Frostfall's shelter (through Campfire); see Shelter.
+		void SetCampTents(RE::StaticFunctionTag*, std::vector<RE::TESObjectREFR*> a_tents)
+		{
+			Shelter::SetTents(a_tents);
+		}
+
+		void ClearCampTents(RE::StaticFunctionTag*)
+		{
+			Shelter::ClearTents();
+		}
+
 		// Renames a form, or gives it its own name back if a_name is empty.
 		// The name is kept in the save; see FormNames.
 		void RenameForm(RE::StaticFunctionTag*, RE::TESForm* a_form, RE::BSFixedString a_name)
@@ -301,6 +313,8 @@ namespace Papyrus
 		a_vm->RegisterFunction("HideGrass"sv, kClass, HideGrass);
 		a_vm->RegisterFunction("ShowGrass"sv, kClass, ShowGrass);
 		a_vm->RegisterFunction("RenameForm"sv, kClass, RenameForm);
+		a_vm->RegisterFunction("SetCampTents"sv, kClass, SetCampTents);
+		a_vm->RegisterFunction("ClearCampTents"sv, kClass, ClearCampTents);
 		logger::info("Registered {} native functions", kClass);
 		return true;
 	}

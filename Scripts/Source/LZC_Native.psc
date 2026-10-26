@@ -40,6 +40,15 @@ Function HideGrass(ObjectReference[] refs) Global Native
 ; Brings back the grass hidden by HideGrass.
 Function ShowGrass() Global Native
 
+; The camp's tents (None entries are skipped), replacing any earlier camp's.
+; With Campfire installed (it's not a master), they get its warm and
+; waterproof keywords and become Campfire's current tent while the player is
+; inside one, so Frostfall treats them as warm, rainproof shelter.
+Function SetCampTents(ObjectReference[] tents) Global Native
+
+; Forgets the tents given to SetCampTents.
+Function ClearCampTents() Global Native
+
 ; Renames a form (a spell, say), or gives it its own name back if name is
 ; empty. Unlike SKSE's Form.SetName, the name is kept in the save.
 Function RenameForm(Form akForm, String name) Global Native

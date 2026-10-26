@@ -297,7 +297,7 @@ public sealed class Builder
     public static IEnumerable<string> Search(ISkyrimModGetter mod, string text) =>
         mod.EnumerateMajorRecords()
             .Where(r => r.EditorID is not null && r.EditorID.Contains(text, StringComparison.OrdinalIgnoreCase))
-            .Select(r => $"{r.EditorID} ({r.GetType().Name.Replace("BinaryOverlay", "")})")
+            .Select(r => $"{r.EditorID} ({r.GetType().Name.Replace("BinaryOverlay", "")}, {r.FormKey})")
             .OrderBy(s => s, StringComparer.OrdinalIgnoreCase);
 
     // ---------------------------------------------------------------------

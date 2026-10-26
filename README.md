@@ -35,6 +35,8 @@ In a camp without tents, **sneaking and activating any of the camp's bedrolls** 
 
 While a camp is up, the power is called **Pack Up Camp** (" Pack Up Camp"). It keeps its place in favourites and the voice slot. **Casting it** asks *Pack up your camp?* and packs it up if confirmed, from anywhere, so a camp left behind never stops the player making a new one.
 
+With **Frostfall** (and the **Campfire** it needs) installed, the camp's tents are **warm, rainproof shelter**: standing or sleeping in one keeps you dry and warms you, like Campfire's own tents. Neither is a master of `LazyCamping.esp`; the DLL looks for `Campfire.esm` when the game runs.
+
 With **SKSE Menu Framework** installed (optional), its Mod Control Panel gets a *Lazy Camping* page for the firewood requirement, fading to black, and clearing grass around the camp. The settings are kept in the save. Without it, change them on the quest in the Creation Kit.
 
 All EditorIDs use the prefix `LZC_`.
@@ -61,6 +63,8 @@ SKSE/                           C++ plugin (LazyCamping.dll), required
   src/FormNames.cpp             renames the power while a camp is up, kept in the save
   src/Serialization.cpp         the SKSE co-save
   src/Menu.cpp                  the optional SKSE Menu Framework page
+  src/Shelter.cpp               warm, rainproof tents for Frostfall, through Campfire (optional)
+  src/ScriptObjects.cpp         reading and writing other scripts' properties
   extern/SKSEMenuFramework/     SKSE Menu Framework 3's API header (LGPL-2.1)
 Plugin/                         builds the starting LazyCamping.esp once, and checks it (.NET 8, Mutagen)
   settings.json                 vanilla EditorIDs, mesh paths, kit names (for the one-time build)
@@ -282,6 +286,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
   - on pack-up, the camp's cells rebuild their grass from scratch
   
   The grass layouts it relies on aren't in CommonLibSSE-NG; they come from *No Grass In Objects NG* (also GPL-3.0) and *Community Shaders*. **This is untested in game.** If grass isn't where the code expects (another game version, or a mod that changes grass), it stops and writes a warning to `LazyCamping.log` rather than removing the wrong grass. If grass flickers, the game stutters or crashes around a camp, set `HideGrassUnderCamp` to false. It doesn't run in Skyrim VR.
+- **Frostfall**: Frostfall asks Campfire which tent the player is in (`CampfireAPI`'s `CurrentTent`), and whether its base object has Campfire's `isCampfireTentWarm` and `isCampfireTentWaterproof` keywords. With `Campfire.esm` loaded, `Shelter.cpp` adds those keywords to the camp's tents when the game runs, and once a second sets `CurrentTent` to the camp's tent the player is inside (by the tent's object bounds), clearing it when they leave. It never replaces one of Campfire's own tents. The keywords are found by EditorID, falling back to Campfire 1.12's FormIDs. **This is untested in game.** *Survival Mode* has no shelter or rain; its warmth comes from heat sources, and the camp's fire is the vanilla one.
 - **Footprint check**: the check samples 5 points (the centre and four corners). Something small that sits between those points can still poke through the tent. You can add more sample points in `IsAreaClear` if needed.
 - **One camp at a time**: this is by design. Casting the power while a camp is up offers to pack that camp up, wherever it is; cast again to make a new one.
 - **Bedroll fan**: neighbouring bedrolls in a tentless camp are 70° apart, about 218 units between centres at the default `BedrollRingRadius` (190). With the vanilla bedroll (128 long, assumed up to 64 wide) that leaves about 90 units between their ends; the limit is the seats in front, which are assumed to need 35 units behind the marker. If seated people have room to spare in game, `BedrollRingRadius` can go down to about 180.

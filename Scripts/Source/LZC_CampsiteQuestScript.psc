@@ -191,7 +191,7 @@ Int Property kColors = 5 AutoReadOnly
 Float Property kFireHalfSize = 50.0 AutoReadOnly     ; for the ground check
 Float Property kFanStep = 70.0 AutoReadOnly          ; degrees between neighbours
 Float Property kTentClearance = 15.0 AutoReadOnly    ; between neighbouring tents
-Int Property kNativeVersion = 5 AutoReadOnly         ; LazyCamping.dll needed
+Int Property kNativeVersion = 6 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
 Int[] tentSizesUsed
@@ -718,6 +718,15 @@ Function SetUpCamp()
 		placedRefs[kSlotCount] = None
 	EndIf
 
+	; With Campfire installed, Frostfall counts the tents as warm, rainproof shelter.
+	ObjectReference[] tentRefs = new ObjectReference[3]
+	i = 0
+	While i < kMaxTents
+		tentRefs[i] = placedRefs[kFirstTent + i]
+		i += 1
+	EndWhile
+	LZC_Native.SetCampTents(tentRefs)
+
 	If LZC_CampMapMarker
 		LZC_CampMapMarker.MoveTo(placedRefs[kCampfire])
 		LZC_CampMapMarker.Enable()
@@ -761,6 +770,7 @@ EndFunction
 
 Function PackUpCamp()
 	LZC_Native.ShowGrass()
+	LZC_Native.ClearCampTents()
 
 	If LZC_CampFollowersQuest && LZC_CampFollowersQuest.IsRunning()
 		(LZC_CampFollowersQuest as LZC_CampFollowersScript).Shutdown()
