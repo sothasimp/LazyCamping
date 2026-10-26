@@ -1,6 +1,6 @@
 # Lazy Camping: a mod for Skyrim Special Edition
 
-The mod adds a **Prepare Camp** Lesser Power. When the player has at least one **Bedroll** in their inventory, casting the power builds a camp in front of the player, always with a campfire. Tent kits are optional. The kits are **reusable**: setting up camp doesn't take them from the inventory. The mod requires **SKSE**, **Address Library for SKSE Plugins**, and its own `LazyCamping.dll`. The camp includes:
+The mod adds a **Make Camp** Lesser Power, named " Make Camp" with a leading space so it sorts to the top of the magic menu. When the player has at least one **Bedroll** in their inventory, casting the power builds a camp in front of the player, always with a campfire. Tent kits are optional. The kits are **reusable**: setting up camp doesn't take them from the inventory. The mod requires **SKSE**, **Address Library for SKSE Plugins**, and its own `LazyCamping.dll`. The camp includes:
 
 - a burning campfire with flickering light. For cooking on it, use a mod that makes campfires usable, such as *Useable Campfires*.
 - cross-legged seats around the fire, facing it:
@@ -33,7 +33,7 @@ Every bedroll also has a **seat on it**, facing the fire. Followers sit at the f
 
 In a camp without tents, **sneaking and activating any of the camp's bedrolls** asks the same question. Activating a bedroll without sneaking opens the usual Sleep/Wait menu.
 
-While a camp is up, the power is called **Break Camp** (set by `BreakCampName`). It keeps its place in favourites and the voice slot. **Casting it** asks *Pack up your camp?* and packs it up if confirmed, from anywhere, so a camp left behind never stops the player making a new one.
+While a camp is up, the power is called **Break Camp** (" Break Camp", set by `BreakCampName`). It keeps its place in favourites and the voice slot. **Casting it** asks *Pack up your camp?* and packs it up if confirmed, from anywhere, so a camp left behind never stops the player making a new one.
 
 All EditorIDs use the prefix `LZC_`.
 
