@@ -11,6 +11,7 @@ using Mutagen.Bethesda.Skyrim;
 // Usage:
 //   build:        dotnet run --project Plugin -- --master "<Skyrim>/Data/Skyrim.esm" [--out LazyCamping.esp] [--force]
 //   verify:       dotnet run --project Plugin -- --verify <LazyCamping.esp> --scripts Scripts/Source [--master <Skyrim.esm>]
+//   search:       dotnet run --project Plugin -- --master <Skyrim.esm> --find <text>
 //   test master:  dotnet run --project Plugin -- --make-test-master <path>
 var options = ParseArgs(args);
 var here = AppContext.BaseDirectory;
@@ -37,6 +38,14 @@ try
     {
         Console.Error.WriteLine("Pass --master with the path to Skyrim.esm (in the game's Data folder).");
         return 2;
+    }
+
+    if (options.TryGetValue("find", out var findText))
+    {
+        using var searched = SkyrimMod.CreateFromBinaryOverlay(masterPath, SkyrimRelease.SkyrimSE);
+        var found = Builder.Search(searched, findText).ToList();
+        Console.WriteLine(found.Count == 0 ? $"No EditorID contains \"{findText}\"." : string.Join(Environment.NewLine, found));
+        return 0;
     }
 
     var settings = Settings.Load(options.GetValueOrDefault("settings") ?? Path.Combine(here, "settings.json"));

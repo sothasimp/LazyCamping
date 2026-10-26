@@ -21,7 +21,7 @@ public static class TestMaster
 
         mod.Statics.Add(new Static(Builder.MapMarkerKey, SkyrimRelease.SkyrimSE) { EditorID = "MapMarker" });
         mod.Statics.Add(new Static(Builder.XMarkerHeadingKey, SkyrimRelease.SkyrimSE) { EditorID = "XMarkerHeading" });
-        mod.Statics.AddNew(v.Campfire);
+        mod.Activators.AddNew(v.Campfire); // Vanilla campfires are activators.
         mod.Lights.AddNew(v.CampfireLight);
         mod.Furniture.AddNew(v.Bedroll);
         var sit = mod.Furniture.AddNew(v.SitCrossLegged);

@@ -49,7 +49,7 @@ public sealed class Builder
     public SkyrimMod Build()
     {
         // Vanilla records.
-        var campfire = Find<IStaticGetter>(settings.Vanilla.Campfire, "campfire");
+        var campfire = Find<IPlaceableObjectGetter>(settings.Vanilla.Campfire, "campfire");
         var campfireLight = Find<ILightGetter>(settings.Vanilla.CampfireLight, "fire");
         var bedroll = Find<IFurnitureGetter>(settings.Vanilla.Bedroll, "bedroll");
         var sitMarker = Find<IFurnitureGetter>(settings.Vanilla.SitCrossLegged, "crossleg");
@@ -276,16 +276,28 @@ public sealed class Builder
             .FirstOrDefault(r => string.Equals(r.EditorID, editorId, StringComparison.OrdinalIgnoreCase));
         if (hit is null)
         {
+            // Suggest matches of the right type first, then of any type.
             var near = skyrim.EnumerateMajorRecords<T>()
                 .Select(r => r.EditorID)
                 .Where(id => id is not null && id.Contains(hint, StringComparison.OrdinalIgnoreCase))
                 .Take(15)
                 .ToList();
-            problems.Add($"No {typeof(T).Name.TrimStart('I').Replace("Getter", "")} \"{editorId}\" in Skyrim.esm." +
-                (near.Count > 0 ? $" Close matches: {string.Join(", ", near)}" : ""));
+            var other = near.Count > 0 ? [] : Search(skyrim, hint).Take(15).ToList();
+            var kind = typeof(T).Name.TrimStart('I').Replace("Getter", "");
+            problems.Add($"No {kind} \"{editorId}\" in Skyrim.esm." +
+                (near.Count > 0 ? $" Close matches: {string.Join(", ", near)}." : "") +
+                (other.Count > 0 ? $" No {kind} contains \"{hint}\", but these other records do: {string.Join(", ", other)}." : "") +
+                $" Run with --find {hint} to list them all.");
         }
         return hit;
     }
+
+    /// <summary>Every record whose EditorID contains the text, as "EditorID (Type)".</summary>
+    public static IEnumerable<string> Search(ISkyrimModGetter mod, string text) =>
+        mod.EnumerateMajorRecords()
+            .Where(r => r.EditorID is not null && r.EditorID.Contains(text, StringComparison.OrdinalIgnoreCase))
+            .Select(r => $"{r.EditorID} ({r.GetType().Name.Replace("BinaryOverlay", "")})")
+            .OrderBy(s => s, StringComparer.OrdinalIgnoreCase);
 
     // ---------------------------------------------------------------------
     // Records
