@@ -208,6 +208,7 @@ When a camp goes up, the storage moves to the first storage marker in camp order
 | `BedrollSpacing` | side-to-side gap between bedrolls; check that 4 bedrolls fit in the large tent |
 | `SeatRadius`, `LightHeight` | how far the seats are from the fire (default 110), and the light's height. The fire goes `SeatRadius` in front of the player, so they stand at the near edge of the seat ring. |
 | `BedrollRingRadius`, `BedrollRingYaw` | without tents: how far the bedrolls are from the fire (default 190, just outside the seats), and the turn that lays them sideways (default 90; use 270 to swap head and foot) |
+| `FadeToBlack` | fade the screen to black for about a second while the camp is set up or packed up (default on) |
 | `AlignToSlope` | tilt objects to match the ground (default on) |
 | `MaxSlope`, `MaxStep` | steepest ground allowed, which is also the most an object will tilt (default 25°), and how uneven a tent's footprint may be (default 48) |
 | `LZC_CampFollowersQuest` | the follower quest from step 2e; leave empty to skip follower seats and behaviour |

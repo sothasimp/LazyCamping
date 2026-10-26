@@ -139,6 +139,10 @@ Leave empty to place only the player's seat and the bedrolls.}
 ; ---------------------------------------------------------------------------
 ; Ground
 ; ---------------------------------------------------------------------------
+Bool Property FadeToBlack = True Auto
+{Fade the screen to black while the camp is set up or packed up.}
+Float Property kFadeSeconds = 1.0 AutoReadOnly
+
 Bool Property AlignToSlope = True Auto
 {Tilt the tents, bedrolls, seats and fire to match the ground.}
 Float Property MaxSlope = 25.0 Auto
@@ -632,8 +636,10 @@ Function SetUpCamp()
 	itemCount = AddSet(setItems, itemSet, itemCount, LZC_LargeTentDressing, 3)
 	itemCount = AddSet(setItems, itemSet, itemCount, LZC_RingBedrollDressing, 4)
 
+	FadeOut()
 	placedRefs = LZC_Native.PlaceCamp(PlayerRef, heading, forms, fwd, side, lift, turn, AlignToSlope, MaxSlope, dressSet, setAnchors, setItems, itemSet, LZC_CampStorageMarkers)
 	If placedRefs.Length <= kSlotCount
+		FadeIn()
 		Debug.Notification("Your camp couldn't be set up.")
 		placedRefs = new ObjectReference[35]
 		If followers
@@ -710,20 +716,37 @@ Function SetUpCamp()
 	tentSizesUsed = sizes
 	TentCount = tents
 	CampDeployed = True
+	FadeIn()
 EndFunction
 
 ; Asks "Pack up your camp?" and packs up if the player says yes.
 Function ConfirmPackUp()
-	If !LZC_PackUpConfirmMsg || LZC_PackUpConfirmMsg.Show() == 0
-		PackUpCamp()
-	EndIf
-EndFunction
-
-Function PackUpCamp()
 	If PlayerRef.GetSitState() != 0
 		Debug.Notification("You must get up before packing up camp.")
 		Return
 	EndIf
+	If !LZC_PackUpConfirmMsg || LZC_PackUpConfirmMsg.Show() == 0
+		FadeOut()
+		PackUpCamp()
+		FadeIn()
+	EndIf
+EndFunction
+
+; Fades the screen to black (if FadeToBlack) and waits until it's dark.
+Function FadeOut()
+	If FadeToBlack
+		Game.FadeOutGame(True, True, 0.0, kFadeSeconds)
+		Utility.Wait(kFadeSeconds)
+	EndIf
+EndFunction
+
+Function FadeIn()
+	If FadeToBlack
+		Game.FadeOutGame(False, True, 0.0, kFadeSeconds)
+	EndIf
+EndFunction
+
+Function PackUpCamp()
 
 	If LZC_CampFollowersQuest && LZC_CampFollowersQuest.IsRunning()
 		(LZC_CampFollowersQuest as LZC_CampFollowersScript).Shutdown()
