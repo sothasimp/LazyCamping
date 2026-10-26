@@ -718,15 +718,6 @@ Function SetUpCamp()
 		placedRefs[kSlotCount] = None
 	EndIf
 
-	; With Campfire installed, Frostfall counts the tents as warm, rainproof shelter.
-	ObjectReference[] tentRefs = new ObjectReference[3]
-	i = 0
-	While i < kMaxTents
-		tentRefs[i] = placedRefs[kFirstTent + i]
-		i += 1
-	EndWhile
-	LZC_Native.SetCampTents(tentRefs)
-
 	If LZC_CampMapMarker
 		LZC_CampMapMarker.MoveTo(placedRefs[kCampfire])
 		LZC_CampMapMarker.Enable()
@@ -770,7 +761,6 @@ EndFunction
 
 Function PackUpCamp()
 	LZC_Native.ShowGrass()
-	LZC_Native.ClearCampTents()
 
 	If LZC_CampFollowersQuest && LZC_CampFollowersQuest.IsRunning()
 		(LZC_CampFollowersQuest as LZC_CampFollowersScript).Shutdown()
