@@ -43,6 +43,9 @@ Form Property LZC_CampfirePlaced Auto
 {Static or Activator: the burning campfire. Can be the vanilla one.}
 Light Property LZC_CampfireLight Auto
 {Optional. Flickering firelight placed above the campfire.}
+Bool Property PlaceCampfireLight = True Auto
+{Place LZC_CampfireLight. Turn off if a Light Placer config already gives the
+campfire its own light.}
 Form Property LZC_SitMarkerPlayer Auto
 {Optional. Visible cross-legged seat by the fire that the player can use.}
 Form Property LZC_BedrollSitMarker Auto
@@ -522,7 +525,9 @@ Function SetUpCamp()
 
 	forms[kCampfire] = LZC_CampfirePlaced
 	fwd[kCampfire] = FireForward()
-	forms[kLight] = LZC_CampfireLight
+	If PlaceCampfireLight
+		forms[kLight] = LZC_CampfireLight
+	EndIf
 	fwd[kLight] = FireForward()
 	lift[kLight] = LightHeight
 
