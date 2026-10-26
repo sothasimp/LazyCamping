@@ -10,9 +10,6 @@ camp in one go.}
 Actor Property PlayerRef Auto
 Spell Property LZC_PrepareCampPower Auto
 {The Lesser Power. Granted to the player when this quest starts.}
-String Property PackUpCampName = " Pack Up Camp" Auto
-{The power's name while a camp is up. Leave empty to keep its own name. The
-leading space sorts it to the top of the magic menu, like " Set Up Camp".}
 
 ; ---------------------------------------------------------------------------
 ; Inventory kits: MiscObjects the player carries. They're reusable: setting
@@ -730,7 +727,8 @@ Function SetUpCamp()
 	tentSizesUsed = sizes
 	TentCount = tents
 	CampDeployed = True
-	LZC_Native.RenameForm(LZC_PrepareCampPower, PackUpCampName)
+	; The leading space sorts the power to the top of the magic menu.
+	LZC_Native.RenameForm(LZC_PrepareCampPower, " Pack Up Camp")
 	FadeIn()
 EndFunction
 

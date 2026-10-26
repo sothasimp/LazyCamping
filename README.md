@@ -33,7 +33,7 @@ Every bedroll also has a **seat on it**, facing the fire. Followers sit at the f
 
 In a camp without tents, **sneaking and activating any of the camp's bedrolls** asks the same question. Activating a bedroll without sneaking opens the usual Sleep/Wait menu.
 
-While a camp is up, the power is called **Pack Up Camp** (" Pack Up Camp", set by `PackUpCampName`). It keeps its place in favourites and the voice slot. **Casting it** asks *Pack up your camp?* and packs it up if confirmed, from anywhere, so a camp left behind never stops the player making a new one.
+While a camp is up, the power is called **Pack Up Camp** (" Pack Up Camp"). It keeps its place in favourites and the voice slot. **Casting it** asks *Pack up your camp?* and packs it up if confirmed, from anywhere, so a camp left behind never stops the player making a new one.
 
 All EditorIDs use the prefix `LZC_`.
 
@@ -197,7 +197,7 @@ The follower quest's `CampRadius` setting (default 1024, in the follower quest's
 
 ### 2c. Settings on the quest scripts
 
-The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `FadeToBlack`, `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, `PackUpCampName`, the tent sizes, `SeatRadius`, `TentRingGap`, `BedrollRingRadius`, `BedrollSpacing`, `FirewoodRequired` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file.
+The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `FadeToBlack`, `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, the tent sizes, `SeatRadius`, `TentRingGap`, `BedrollRingRadius`, `BedrollSpacing`, `FirewoodRequired` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file.
 
 ### 2d. How players get the kits
 
