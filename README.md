@@ -39,7 +39,7 @@ Every bedroll also has a **seat on it**, facing the fire. Followers sit at the f
 
 While a camp is up, the power is called **Pack Up Camp** (" Pack Up Camp"). It keeps its place in favourites and the voice slot. **Casting it** asks *Pack up your camp?* and packs it up if confirmed, from anywhere, so a camp left behind never stops the player making a new one.
 
-With **SKSE Menu Framework** installed (optional), its Mod Control Panel gets a *Lazy Camping* page for the firewood mechanic, how long a fire burns, the chopping block, the bathtub, fading to black, clearing grass around the camp, and the campfire light marker (turn it off if a *Light Placer* config already lights the campfire). The settings are kept in the save. Without it, change them on the quest in the Creation Kit.
+With **SKSE Menu Framework** installed (optional), its Mod Control Panel gets a *Lazy Camping* page for the firewood mechanic, how long a fire burns, the chopping block, the bathtub, clearing grass around the camp, and the campfire light marker (turn it off if a *Light Placer* config already lights the campfire). The settings are kept in the save. Without it, change them on the quest in the Creation Kit.
 
 All EditorIDs use the prefix `LZC_`.
 
@@ -51,10 +51,7 @@ All EditorIDs use the prefix `LZC_`.
 Scripts/Source/
   LZC_CampsiteQuestScript.psc   main logic: checks, layout, pack-up, state
   LZC_SetUpCampEffect.psc       on the magic effect; calls the quest
-  LZC_TentActivatorScript.psc   on every tent; sneak-activating it from outside offers to pack up the camp
-  LZC_FirepitScript.psc         on the unlit firepit; sneak-activating it with firewood lights the fire
-  LZC_CampfireScript.psc        on the cook box over the camp's fire; activating it opens the Cook menu
-  LZC_ClothesBasketScript.psc   on the clothes basket by the tub; activating it undresses the player, and again dresses them
+  LZC_CampObjectScript.psc      on the tents, unlit firepit, cook box and clothes basket; passes activation to the quest
   LZC_CampFollowersScript.psc   followers' seats and bedrolls; sit/sleep with the player
   LZC_CampPlayerAliasScript.psc on the follower quest's Player alias; notices the player sitting
   LZC_Native.psc                declarations of the SKSE plugin's functions
@@ -138,10 +135,10 @@ Once it's built:
 | Records | EditorIDs | Notes |
 |---|---|---|
 | Kits | `LZC_BedrollKit`, `LZC_TentKitSmallBrown` … `LZC_TentKitLargeWhite` | 11 MiscItems |
-| Tents | `LZC_TentSmallBrown` … `LZC_TentLargeWhite` | 10 Activators with `LZC_TentActivatorScript` |
-| Bath | `LZC_Tub`, `LZC_ClothesBasket` | the tub (static, your mesh); a clothes basket activator (*Use*: undress, then dress again; `LZC_ClothesBasketScript`; give it a model in the CK or `models.clothesBasket`) |
-| Cooking | `LZC_CookActivator`, `LZC_CookingStation` | the base for the cook box (named *Campfire*, shows *Cook*, with `LZC_CampfireScript`); a copy of the vanilla cooking pot furniture with an empty model, placed hidden at the fire, which activating the box activates |
-| Firepit | `LZC_Firepit` | an Activator with the vanilla unlit firepit's model and `LZC_FirepitScript`, for the firewood mechanic |
+| Tents | `LZC_TentSmallBrown` … `LZC_TentLargeWhite` | 10 Activators with `LZC_CampObjectScript` |
+| Bath | `LZC_Tub`, `LZC_ClothesBasket` | the tub (static, your mesh); a clothes basket activator (*Use*: undress, then dress again; `LZC_CampObjectScript`; give it a model in the CK or `models.clothesBasket`) |
+| Cooking | `LZC_CookActivator`, `LZC_CookingStation` | the base for the cook box (named *Campfire*, shows *Cook*, with `LZC_CampObjectScript`); a copy of the vanilla cooking pot furniture with an empty model, placed hidden at the fire, which activating the box activates |
+| Firepit | `LZC_Firepit` | an Activator with the vanilla unlit firepit's model and `LZC_CampObjectScript`, for the firewood mechanic |
 | Seats | `LZC_SitMarkerPlayer`, `LZC_BedrollSitMarker` | copies of the vanilla cross-legged marker with the models from `settings.json` |
 | Storage | `LZC_CampStorageContainer` | a container that never respawns |
 | Power | `LZC_SetUpCampPower`, `LZC_SetUpCampEffect` | lesser power in the Voice slot; script magic effect |
@@ -218,7 +215,7 @@ The follower quest's `CampRadius` setting (default 1024, in the follower quest's
 
 ### 2c. Settings on the quest scripts
 
-The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `FadeToBlack`, `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, `PlaceCampfireLight`, the tent sizes, `SeatRadius`, `TentRingGap`, `TentSetback`, `BedrollRingRadius`, `BedrollSpacing`, `PairedBedrollSpacing`, `FirewoodMechanic`, `FireBurnHours`, `PlaceChoppingBlock`, `PlaceTub`, `TubHalfWidth` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file.
+The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, `PlaceCampfireLight`, the tent sizes, `SeatRadius`, `TentRingGap`, `TentSetback`, `BedrollRingRadius`, `BedrollSpacing`, `PairedBedrollSpacing`, `FirewoodMechanic`, `FireBurnHours`, `PlaceChoppingBlock`, `PlaceTub`, `TubHalfWidth` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file.
 
 ### 2d. How players get the kits
 
@@ -269,17 +266,14 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 
 ## 4. Compile scripts and package
 
-1. In the CK, compile all nine scripts (*Gameplay > Papyrus Script Manager*). `LZC_Native` compiles without the DLL; its functions are only bound at runtime.
+1. In the CK, compile all six scripts (*Gameplay > Papyrus Script Manager*). `LZC_Native` compiles without the DLL; its functions are only bound at runtime.
 2. Build `LazyCamping.esp` with the builder (section 2). It adds only new records, so you can flag it as ESL with xEdit.
 3. Package these files:
    ```
    LazyCamping.esp
    Scripts/LZC_CampsiteQuestScript.pex
    Scripts/LZC_SetUpCampEffect.pex
-   Scripts/LZC_TentActivatorScript.pex
-   Scripts/LZC_FirepitScript.pex
-   Scripts/LZC_CampfireScript.pex
-   Scripts/LZC_ClothesBasketScript.pex
+   Scripts/LZC_CampObjectScript.pex
    Scripts/LZC_Native.pex
    Scripts/LZC_CampFollowersScript.pex
    Scripts/LZC_CampPlayerAliasScript.pex

@@ -106,7 +106,7 @@ public sealed class Builder
             firepit.Name = "Firepit";
             firepit.Model = (campfireUnlit as IModeledGetter)?.Model?.DeepCopy();
             firepit.ObjectBounds = (campfireUnlit as IObjectBoundedGetter)?.ObjectBounds.DeepCopy() ?? Bounds(50, 50, 30);
-            firepit.VirtualMachineAdapter = Scripts(Script("LZC_FirepitScript", Link("CampQuest", campQuest)));
+            firepit.VirtualMachineAdapter = Scripts(Script("LZC_CampObjectScript", Link("CampQuest", campQuest)));
         }
 
         // Cooking at the camp's (vanilla) fire: an invisible activator box,
@@ -117,7 +117,7 @@ public sealed class Builder
         var cookActivator = mod.Activators.AddNew("LZC_CookActivator");
         cookActivator.Name = "Campfire";
         cookActivator.ActivateTextOverride = "Cook";
-        cookActivator.VirtualMachineAdapter = Scripts(Script("LZC_CampfireScript", Link("CampQuest", campQuest)));
+        cookActivator.VirtualMachineAdapter = Scripts(Script("LZC_CampObjectScript", Link("CampQuest", campQuest)));
         Furniture? cookingStation = null;
         if (cookingPot is not null)
         {
@@ -144,7 +144,7 @@ public sealed class Builder
             basket.Model = new Model { File = settings.Models.ClothesBasket };
         }
         basket.ObjectBounds = Bounds(20, 20, 20);
-        basket.VirtualMachineAdapter = Scripts(Script("LZC_ClothesBasketScript", Link("PlayerRef", PlayerRefKey)));
+        basket.VirtualMachineAdapter = Scripts(Script("LZC_CampObjectScript", Link("CampQuest", campQuest)));
 
         var unpackSound = Sound("LZC_UnpackSound", settings.Vanilla.UnpackSound, "clothing");
 
@@ -294,6 +294,7 @@ public sealed class Builder
         AddIfFound(campScript, "LZC_CampfirePlaced", campfire);
         AddIfFound(campScript, "LZC_CookingStation", cookingStation);
         AddIfFound(campScript, "LZC_Tub", tub);
+        AddIfFound(campScript, "LZC_ClothesBasket", basket);
         AddIfFound(campScript, "LZC_CampfireLight", campfireLight);
         AddIfFound(campScript, "LZC_Firepit", firepit);
         AddIfFound(campScript, "LZC_ChoppingBlock", choppingBlock);
@@ -367,7 +368,7 @@ public sealed class Builder
         tent.Name = "Tent";
         tent.Model = new Model { File = model };
         tent.ObjectBounds = Bounds(halfWidth, halfDepth, 180);
-        tent.VirtualMachineAdapter = Scripts(Script("LZC_TentActivatorScript", Link("CampQuest", campQuest)));
+        tent.VirtualMachineAdapter = Scripts(Script("LZC_CampObjectScript", Link("CampQuest", campQuest)));
 
         // Brown is the mesh's own texture; other colours swap the canvas.
         if (colour != "Brown" && !string.IsNullOrWhiteSpace(shape))

@@ -21,7 +21,6 @@ namespace Menu
 			bool         firewoodMechanic{ false };
 			float        fireBurnHours{ 6.0f };
 			bool         placeChoppingBlock{ true };
-			bool         fadeToBlack{ true };
 			bool         hideGrassUnderCamp{ true };
 			bool         placeCampfireLight{ true };
 			bool         placeTub{ true };
@@ -51,13 +50,12 @@ namespace Menu
 			auto*  firewood = object ? AutoProperty(object.get(), "FirewoodMechanic") : nullptr;
 			auto*  burnHours = object ? AutoProperty(object.get(), "FireBurnHours") : nullptr;
 			auto*  block = object ? AutoProperty(object.get(), "PlaceChoppingBlock") : nullptr;
-			auto*  fade = object ? AutoProperty(object.get(), "FadeToBlack") : nullptr;
 			auto*  grass = object ? AutoProperty(object.get(), "HideGrassUnderCamp") : nullptr;
 			auto*  light = object ? AutoProperty(object.get(), "PlaceCampfireLight") : nullptr;
 			auto*  tub = object ? AutoProperty(object.get(), "PlaceTub") : nullptr;
-			const bool found = firewood && burnHours && block && fade && grass && light && tub;
+			const bool found = firewood && burnHours && block && grass && light && tub;
 			if (found) {
-				values = { firewood->GetBool(), burnHours->GetFloat(), block->GetBool(), fade->GetBool(), grass->GetBool(), light->GetBool(), tub->GetBool() };
+				values = { firewood->GetBool(), burnHours->GetFloat(), block->GetBool(), grass->GetBool(), light->GetBool(), tub->GetBool() };
 			}
 
 			std::scoped_lock guard(lock);
@@ -79,9 +77,6 @@ namespace Menu
 				}
 				if (auto* block = AutoProperty(object.get(), "PlaceChoppingBlock")) {
 					block->SetBool(a_values.placeChoppingBlock);
-				}
-				if (auto* fade = AutoProperty(object.get(), "FadeToBlack")) {
-					fade->SetBool(a_values.fadeToBlack);
 				}
 				if (auto* grass = AutoProperty(object.get(), "HideGrassUnderCamp")) {
 					grass->SetBool(a_values.hideGrassUnderCamp);
@@ -131,8 +126,6 @@ namespace Menu
 			changed |= ImGuiMCP::Checkbox("Wood chopping block", &values.placeChoppingBlock);
 			ImGuiMCP::SetItemTooltip("Place a woodcutting block beside the tents, for chopping firewood. Takes effect at the next camp.");
 			ImGuiMCP::EndDisabled();
-			changed |= ImGuiMCP::Checkbox("Fade to black", &values.fadeToBlack);
-			ImGuiMCP::SetItemTooltip("Fade the screen to black while the camp is set up or packed up.");
 			changed |= ImGuiMCP::Checkbox("Clear grass around the camp", &values.hideGrassUnderCamp);
 			ImGuiMCP::SetItemTooltip("Clear the grass in a circle around the camp while it's up. Takes effect at the next camp.");
 			changed |= ImGuiMCP::Checkbox("Campfire light marker", &values.placeCampfireLight);

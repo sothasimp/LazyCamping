@@ -39,7 +39,7 @@ Bool Property PlaceChoppingBlock = True Auto
 ; ---------------------------------------------------------------------------
 Form[] Property LZC_SmallTents Auto
 {Small tent Activators, same colour order as LZC_SmallTentKits. Each needs
-LZC_TentActivatorScript.}
+LZC_CampObjectScript.}
 Form[] Property LZC_LargeTents Auto
 {Large tent Activators, same colour order as LZC_SmallTents.}
 Form Property LZC_BedrollPlaced Auto
@@ -54,7 +54,7 @@ LZC_CookBox activates it, which opens the Cook menu without an animation.}
 ObjectReference Property LZC_CookBox Auto
 {Optional. A persistent, initially disabled activator box in the holding cell:
 a box primitive on the L_ACTIVATOR collision layer, base LZC_CookActivator
-(LZC_CampfireScript). It moves onto the fire while the fire is lit, so looking
+(LZC_CampObjectScript). It moves onto the fire while the fire is lit, so looking
 at the fire shows "Cook".}
 Light Property LZC_CampfireLight Auto
 {Optional. Flickering firelight placed above the campfire.}
@@ -63,7 +63,7 @@ Bool Property PlaceCampfireLight = True Auto
 campfire its own light.}
 Form Property LZC_Firepit Auto
 {The unlit firepit placed when FirewoodMechanic is on: an Activator with
-LZC_FirepitScript. The fire and its light are placed hidden in its spot.}
+LZC_CampObjectScript. The fire and its light are placed hidden in its spot.}
 Form Property LZC_ChoppingBlock Auto
 {Optional. A woodcutting block placed beside the outermost tent (or along the
 bedroll fan without tents) when FirewoodMechanic is on. Can be the vanilla one.}
@@ -74,6 +74,9 @@ on. Its water, steps and so on are the tub clutter set.}
 Bool Property PlaceTub = True Auto
 Float Property TubHalfWidth = 50.0 Auto
 {Half the tub's length along the tent ring, for keeping it clear of the tent.}
+Form Property LZC_ClothesBasket Auto
+{The clothes basket's base (in the tub clutter set). Activating one takes off
+everything the player is wearing; activating it again puts it back on.}
 Form Property LZC_SitMarkerPlayer Auto
 {Optional. Visible cross-legged seat by the fire that the player can use.}
 Form Property LZC_BedrollSitMarker Auto
@@ -175,9 +178,6 @@ Leave empty to place only the player's seat and the bedrolls.}
 ; ---------------------------------------------------------------------------
 ; Ground
 ; ---------------------------------------------------------------------------
-Bool Property FadeToBlack = True Auto
-{Fade the screen to black while the camp is set up or packed up.}
-Float Property kFadeSeconds = 1.0 AutoReadOnly
 Sound Property LZC_UnpackSound Auto
 {Optional. Played as the camp is set up and packed up, like gear being put
 down or gathered.}
@@ -238,6 +238,8 @@ Float Property kChoppingBlockGap = 60.0 AutoReadOnly ; from a tent's side to the
 Int Property kNativeVersion = 7 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
+Form[] clothesTaken   ; what a clothes basket took off, until it's put back on
+Bool undressed = False
 Int[] tentSizesUsed
 Bool busy = False
 
@@ -277,11 +279,29 @@ Function HandlePowerCast()
 	busy = False
 EndFunction
 
-; Called by LZC_TentActivatorScript. Sneaking and activating any of the camp's
-; tents from outside offers to pack up the camp. Anything else does nothing; in
-; particular the player can't pack up by accident from inside a tent.
+; Called by LZC_CampObjectScript, on every camp object the player can use:
+; the tents, the unlit firepit, the cook box over the fire and the clothes
+; basket. Works out which one it is and reacts.
+Function OnCampObjectActivated(ObjectReference akRef, ObjectReference akActionRef)
+	If akActionRef != PlayerRef || !CampDeployed || !akRef
+		Return
+	EndIf
+	If akRef == LZC_CookBox
+		Cook()
+	ElseIf akRef == placedRefs[kFirepit]
+		LightFire()
+	ElseIf LZC_ClothesBasket && akRef.GetBaseObject() == LZC_ClothesBasket
+		ChangeClothes()
+	Else
+		OnTentActivated(akRef)
+	EndIf
+EndFunction
+
+; Sneaking and activating any of the camp's tents from outside offers to pack
+; up the camp. Anything else does nothing; in particular the player can't pack
+; up by accident from inside a tent.
 Function OnTentActivated(ObjectReference akTent)
-	If !CampDeployed || busy || !PlayerRef.IsSneaking()
+	If busy || !PlayerRef.IsSneaking()
 		Return
 	EndIf
 
@@ -698,10 +718,8 @@ Function SetUpCamp()
 	itemCount = AddSet(setItems, itemSet, itemCount, LZC_RingBedrollClutter, 4)
 	itemCount = AddSet(setItems, itemSet, itemCount, LZC_TubClutter, 5)
 
-	FadeOut()
 	placedRefs = LZC_Native.PlaceCamp(PlayerRef, heading, forms, fwd, side, lift, turn, AlignToSlope, MaxSlope, clutterSet, setAnchors, setItems, itemSet, LZC_CampStorageMarkers)
 	If placedRefs.Length <= kSlotCount
-		FadeIn()
 		Debug.Notification("Your camp couldn't be set up.")
 		placedRefs = new ObjectReference[39]
 		If followers
@@ -791,25 +809,21 @@ Function SetUpCamp()
 	If LZC_UnpackSound
 		LZC_UnpackSound.Play(PlayerRef)
 	EndIf
-	FadeIn()
 EndFunction
 
-; Called by LZC_CampfireScript, on the cook box over the fire. Activating it
-; opens the Cook menu, through the hidden cooking station at the fire.
-Function OnCampfireActivated(ObjectReference akBox, ObjectReference akActionRef)
-	If akActionRef != PlayerRef || !CampDeployed || akBox != LZC_CookBox
-		Return
-	EndIf
+; The cook box over the fire opens the Cook menu, through the hidden cooking
+; station at the fire.
+Function Cook()
 	ObjectReference station = placedRefs[kCookingStation]
 	If station
 		station.Activate(PlayerRef)
 	EndIf
 EndFunction
 
-; Called by LZC_FirepitScript. Sneak-activating the camp's unlit firepit
-; lights the fire, burning one firewood, for FireBurnHours.
-Function OnFirepitActivated(ObjectReference akFirepit, ObjectReference akActionRef)
-	If akActionRef != PlayerRef || !PlayerRef.IsSneaking() || !CampDeployed || akFirepit != placedRefs[kFirepit]
+; Sneak-activating the camp's unlit firepit lights the fire, burning one
+; firewood, for FireBurnHours.
+Function LightFire()
+	If !PlayerRef.IsSneaking()
 		Return
 	EndIf
 	If !Firewood01 || PlayerRef.GetItemCount(Firewood01) < 1
@@ -819,6 +833,39 @@ Function OnFirepitActivated(ObjectReference akFirepit, ObjectReference akActionR
 	PlayerRef.RemoveItem(Firewood01, 1)
 	SetFireLit(True)
 	RegisterForSingleUpdateGameTime(FireBurnHours)
+EndFunction
+
+; A clothes basket takes off whatever is worn in every armour slot (30-61),
+; each piece once even if it covers several slots; the next activation puts
+; it back on, if the player still has it.
+Function ChangeClothes()
+	Int i = 0
+	If undressed
+		While i < clothesTaken.Length
+			If clothesTaken[i] && PlayerRef.GetItemCount(clothesTaken[i]) > 0
+				PlayerRef.EquipItem(clothesTaken[i], False, True)
+			EndIf
+			i += 1
+		EndWhile
+		undressed = False
+		Return
+	EndIf
+	clothesTaken = new Form[32]
+	Int count = 0
+	While i < 32
+		Form item = PlayerRef.GetWornForm(Math.LeftShift(1, i))
+		If item && clothesTaken.Find(item) < 0
+			clothesTaken[count] = item
+			count += 1
+		EndIf
+		i += 1
+	EndWhile
+	i = 0
+	While i < count
+		PlayerRef.UnequipItem(clothesTaken[i], False, True)
+		i += 1
+	EndWhile
+	undressed = True
 EndFunction
 
 ; The fire lit with firewood burns out.
@@ -861,23 +908,7 @@ Function ConfirmPackUp()
 		Return
 	EndIf
 	If !LZC_PackUpConfirmMsg || LZC_PackUpConfirmMsg.Show() == 0
-		FadeOut()
 		PackUpCamp()
-		FadeIn()
-	EndIf
-EndFunction
-
-; Fades the screen to black (if FadeToBlack) and waits until it's dark.
-Function FadeOut()
-	If FadeToBlack
-		Game.FadeOutGame(True, True, 0.0, kFadeSeconds)
-		Utility.Wait(kFadeSeconds)
-	EndIf
-EndFunction
-
-Function FadeIn()
-	If FadeToBlack
-		Game.FadeOutGame(False, True, 0.0, kFadeSeconds)
 	EndIf
 EndFunction
 
