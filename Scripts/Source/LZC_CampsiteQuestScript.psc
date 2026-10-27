@@ -44,12 +44,16 @@ Form Property LZC_BedrollPlaced Auto
 {Furniture with a sleep marker, so the player can sleep / wait in it. Can be
 the vanilla bedroll: this script needs nothing on it.}
 Form Property LZC_CampfirePlaced Auto
-{The burning campfire: LZC_Campfire, the vanilla campfire's look with
-LZC_CampfireScript, so activating it opens the Cook menu.}
+{Static or Activator: the burning campfire. Can be the vanilla one.}
 Form Property LZC_CookingStation Auto
 {Optional. Furniture with the cooking pot's crafting keyword and an empty
-model (no furniture marker), placed hidden at the fire. Activating the fire
-activates it, which opens the Cook menu without an animation.}
+model (no furniture marker), placed hidden at the fire. Activating
+LZC_CookBox activates it, which opens the Cook menu without an animation.}
+ObjectReference Property LZC_CookBox Auto
+{Optional. A persistent, initially disabled activator box in the holding cell:
+a box primitive on the L_ACTIVATOR collision layer, base LZC_CookActivator
+(LZC_CampfireScript). It moves onto the fire while the fire is lit, so looking
+at the fire shows "Cook".}
 Light Property LZC_CampfireLight Auto
 {Optional. Flickering firelight placed above the campfire.}
 Bool Property PlaceCampfireLight = True Auto
@@ -687,6 +691,11 @@ Function SetUpCamp()
 		Return
 	EndIf
 
+	; The cook box goes over the fire, enabled only while the fire is lit.
+	If LZC_CookBox
+		LZC_CookBox.MoveTo(placedRefs[kCampfire])
+		LZC_CookBox.Enable()
+	EndIf
 	If placedRefs[kFirepit]
 		SetFireLit(False)
 	EndIf
@@ -766,10 +775,10 @@ Function SetUpCamp()
 	FadeIn()
 EndFunction
 
-; Called by LZC_CampfireScript. Activating the camp's fire opens the Cook
-; menu, through the hidden cooking station at the fire.
-Function OnCampfireActivated(ObjectReference akFire, ObjectReference akActionRef)
-	If akActionRef != PlayerRef || !CampDeployed || akFire != placedRefs[kCampfire]
+; Called by LZC_CampfireScript, on the cook box over the fire. Activating it
+; opens the Cook menu, through the hidden cooking station at the fire.
+Function OnCampfireActivated(ObjectReference akBox, ObjectReference akActionRef)
+	If akActionRef != PlayerRef || !CampDeployed || akBox != LZC_CookBox
 		Return
 	EndIf
 	ObjectReference station = placedRefs[kCookingStation]
@@ -811,11 +820,17 @@ Function SetFireLit(Bool lit)
 			fireLight.Enable()
 		EndIf
 		firepit.Disable()
+		If LZC_CookBox
+			LZC_CookBox.Enable()
+		EndIf
 	Else
 		firepit.Enable()
 		fire.Disable()
 		If fireLight
 			fireLight.Disable()
+		EndIf
+		If LZC_CookBox
+			LZC_CookBox.Disable()
 		EndIf
 	EndIf
 EndFunction
@@ -853,6 +868,9 @@ Function PackUpCamp()
 	EndIf
 	UnregisterForUpdateGameTime()
 	LZC_Native.ShowGrass()
+	If LZC_CookBox
+		LZC_CookBox.Disable()
+	EndIf
 
 	If LZC_CampFollowersQuest && LZC_CampFollowersQuest.IsRunning()
 		(LZC_CampFollowersQuest as LZC_CampFollowersScript).Shutdown()

@@ -1,6 +1,7 @@
 Scriptname LZC_CampfireScript extends ObjectReference
-{On the camp's campfire (LZC_Campfire). Hands activation to the quest script,
-which opens the Cook menu.}
+{On LZC_CookActivator, the base of the invisible activator box that sits over
+the camp's fire. Hands activation to the quest script, which opens the Cook
+menu.}
 
 LZC_CampsiteQuestScript Property CampQuest Auto
 

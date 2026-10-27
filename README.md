@@ -51,7 +51,7 @@ Scripts/Source/
   LZC_SetUpCampEffect.psc       on the magic effect; calls the quest
   LZC_TentActivatorScript.psc   on every tent; sneak-activating it from outside offers to pack up the camp
   LZC_FirepitScript.psc         on the unlit firepit; sneak-activating it with firewood lights the fire
-  LZC_CampfireScript.psc        on the camp's campfire; activating it opens the Cook menu
+  LZC_CampfireScript.psc        on the cook box over the camp's fire; activating it opens the Cook menu
   LZC_CampFollowersScript.psc   followers' seats and bedrolls; sit/sleep with the player
   LZC_CampPlayerAliasScript.psc on the follower quest's Player alias; notices the player sitting
   LZC_Native.psc                declarations of the SKSE plugin's functions
@@ -125,7 +125,7 @@ Once it's built:
 
 ### Settings (`Plugin/settings.json`)
 
-- **`vanilla`:** EditorIDs of the vanilla records used: the burning campfire (its model is used for `LZC_Campfire`), the cooking pot furniture (copied as the hidden `LZC_CookingStation`), its light, the unlit firepit (its model is used for `LZC_Firepit`), the woodcutting block, an optional sound played as the camp is set up and packed up (by default `ITMClothingDownSD`; a vanilla *Sound Marker* is used as it is, and a *Sound Descriptor* gets a sound marker of its own, `LZC_UnpackSound`), the ground bedroll, the cross-legged sit marker, the *Voice* equip slot, `Firewood01`, `LocTypeCity`, `LocTypeTown`, and an optional partner faction (for example `PlayerMarriedFaction`). **Some of the defaults are educated guesses.** If one isn't in `Skyrim.esm`, the builder stops and lists the closest EditorIDs it found, so you can correct it. To list every record whose EditorID contains some text, run `dotnet run --project Plugin -- --master "<Skyrim Data>\Skyrim.esm" --find campfire`.
+- **`vanilla`:** EditorIDs of the vanilla records used: the burning campfire (an activator; any placeable type works), the cooking pot furniture (copied as the hidden `LZC_CookingStation`), its light, the unlit firepit (its model is used for `LZC_Firepit`), the woodcutting block, an optional sound played as the camp is set up and packed up (by default `ITMClothingDownSD`; a vanilla *Sound Marker* is used as it is, and a *Sound Descriptor* gets a sound marker of its own, `LZC_UnpackSound`), the ground bedroll, the cross-legged sit marker, the *Voice* equip slot, `Firewood01`, `LocTypeCity`, `LocTypeTown`, and an optional partner faction (for example `PlayerMarriedFaction`). **Some of the defaults are educated guesses.** If one isn't in `Skyrim.esm`, the builder stops and lists the closest EditorIDs it found, so you can correct it. To list every record whose EditorID contains some text, run `dotnet run --project Plugin -- --master "<Skyrim Data>\Skyrim.esm" --find campfire`.
 - **`models`:** mesh paths, relative to `Data/Meshes`, for the kits, both tent sizes, the player's fire seat, the bedroll seat, the empty cooking station model, and the storage backpack.
 - **`tentTextures`:** how the colours are made (see below).
 - **`kits`:** inventory names, weights and values. `{Colour}` in a name becomes the tent's colour.
@@ -136,7 +136,7 @@ Once it's built:
 |---|---|---|
 | Kits | `LZC_BedrollKit`, `LZC_TentKitSmallBrown` … `LZC_TentKitLargeWhite` | 11 MiscItems |
 | Tents | `LZC_TentSmallBrown` … `LZC_TentLargeWhite` | 10 Activators with `LZC_TentActivatorScript` |
-| Campfire | `LZC_Campfire`, `LZC_CookingStation` | an Activator with the vanilla burning campfire's model and `LZC_CampfireScript` (shows *Cook*); a copy of the vanilla cooking pot furniture with an empty model, placed hidden at the fire, which activating the campfire activates |
+| Cooking | `LZC_CookActivator`, `LZC_CookingStation` | the base for the cook box (named *Campfire*, shows *Cook*, with `LZC_CampfireScript`); a copy of the vanilla cooking pot furniture with an empty model, placed hidden at the fire, which activating the box activates |
 | Firepit | `LZC_Firepit` | an Activator with the vanilla unlit firepit's model and `LZC_FirepitScript`, for the firewood mechanic |
 | Seats | `LZC_SitMarkerPlayer`, `LZC_BedrollSitMarker` | copies of the vanilla cross-legged marker with the models from `settings.json` |
 | Storage | `LZC_CampStorageContainer` | a container that never respawns |
@@ -146,7 +146,7 @@ Once it's built:
 | Quests | `LZC_CampsiteQuest`, `LZC_CampFollowersQuest` | scripts, aliases, alias scripts and every property filled in |
 | Holding cell | `LZC_HoldingCell` | the camp map marker (`LZC_CampMapMarkerRef`), the storage backpack (`LZC_CampStorageRef`), and the clutter sets |
 
-The light, bedroll and follower sit marker are the vanilla objects themselves, not copies, so mods that change those objects also change the camp's. The campfire is the mod's own `LZC_Campfire` (so it can open the Cook menu), with the vanilla campfire's model.
+The campfire, light, bedroll and follower sit marker are the vanilla objects themselves, not copies, so mods that change those objects also change the camp's.
 
 Not generated: crafting recipes and merchant lists for the kits (see 2d). For testing, run `help LZC_ 4` in the console to find the kits' form IDs, then `player.additem <id> 1`.
 
@@ -299,7 +299,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 - **One camp at a time**: this is by design. Casting the power while a camp is up offers to pack that camp up, wherever it is; cast again to make a new one.
 - **Bedroll fan**: neighbouring bedrolls in a tentless camp are 70° apart, about 218 units between centres at the default `BedrollRingRadius` (190). With the vanilla bedroll (128 long, assumed up to 64 wide) that leaves about 90 units between their ends; the limit is the seats in front, which are assumed to need 35 units behind the marker. If seated people have room to spare in game, `BedrollRingRadius` can go down to about 180.
 - **Sneak to sit**: `BedrollSeats.cpp` hooks furniture activation. When the player sneaks and activates a camp bedroll, it activates that bedroll's seat instead, so the bedroll stays the plain vanilla one and anyone else (followers) uses it as normal.
-- **Cooking**: activating the camp's fire activates `LZC_CookingStation`, which has the cooking pot's crafting keyword and no furniture marker. Activating marker-less crafting furniture from a script should open its menu without moving the player; check in game that the Cook menu opens and the player stays standing.
+- **Cooking**: the vanilla campfire can't be activated, so a **cook box** does it: make it once in the Creation Kit. In `LZC_HoldingCell`, place an activator box (*Create Trigger*-style primitive box, about 80 × 80 × 60) whose base is `LZC_CookActivator`, set its collision layer to **L_ACTIVATOR** so the crosshair picks it up, tick *Persistent* and *Initially Disabled*, and fill `LZC_CookBox` on `LZC_CampsiteQuest` with it. While a camp's fire is lit, the box sits over it and shows *Cook*; activating it activates `LZC_CookingStation`, which has the cooking pot's crafting keyword and no furniture marker, so the Cook menu should open without moving the player. Check that in game.
 - **Base Object Swapper**: in testing, BOS didn't swap the references the camp places at runtime, so variance mods don't change the camp's bedrolls. The camp's scripts don't depend on the base object, so this only affects looks.
 - **Map marker**: moving a persistent map marker is how other camping mods do it. Still, check in game that the marker appears at the camp on the world map, moves with each new camp, and disappears when you pack up.
 - **Clutter**: each copy takes its scale from its clutter item, set as the copy is created. Check in game that scaled items appear at the right size. A camp with many cluttered tents can place well over 100 objects; that's fine for the game, but keep sets modest.

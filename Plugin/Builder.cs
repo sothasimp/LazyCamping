@@ -109,20 +109,15 @@ public sealed class Builder
             firepit.VirtualMachineAdapter = Scripts(Script("LZC_FirepitScript", Link("CampQuest", campQuest)));
         }
 
-        // The camp's fire: the vanilla burning campfire's look, but the player
-        // can activate it, which opens the Cook menu through a hidden cooking
-        // station (a copy of the vanilla cooking pot with an empty model, so
-        // there's nothing to see and no animation).
-        Activator? campfireActivator = null;
-        if (campfire is not null)
-        {
-            campfireActivator = mod.Activators.AddNew("LZC_Campfire");
-            campfireActivator.Name = "Campfire";
-            campfireActivator.ActivateTextOverride = "Cook";
-            campfireActivator.Model = (campfire as IModeledGetter)?.Model?.DeepCopy();
-            campfireActivator.ObjectBounds = (campfire as IObjectBoundedGetter)?.ObjectBounds.DeepCopy() ?? Bounds(50, 50, 30);
-            campfireActivator.VirtualMachineAdapter = Scripts(Script("LZC_CampfireScript", Link("CampQuest", campQuest)));
-        }
+        // Cooking at the camp's (vanilla) fire: an invisible activator box,
+        // placed in the Creation Kit, moves onto the fire and shows "Cook";
+        // activating it activates a hidden cooking station (a copy of the
+        // vanilla cooking pot with an empty model, so there's nothing to see
+        // and no animation). This is the box's base.
+        var cookActivator = mod.Activators.AddNew("LZC_CookActivator");
+        cookActivator.Name = "Campfire";
+        cookActivator.ActivateTextOverride = "Cook";
+        cookActivator.VirtualMachineAdapter = Scripts(Script("LZC_CampfireScript", Link("CampQuest", campQuest)));
         Furniture? cookingStation = null;
         if (cookingPot is not null)
         {
@@ -273,7 +268,7 @@ public sealed class Builder
             Link("LZC_CampMapMarker", mapMarker),
             Link("LZC_CampFollowersQuest", followersQuest));
         AddIfFound(campScript, "LZC_BedrollPlaced", bedroll);
-        AddIfFound(campScript, "LZC_CampfirePlaced", campfireActivator);
+        AddIfFound(campScript, "LZC_CampfirePlaced", campfire);
         AddIfFound(campScript, "LZC_CookingStation", cookingStation);
         AddIfFound(campScript, "LZC_CampfireLight", campfireLight);
         AddIfFound(campScript, "LZC_Firepit", firepit);
