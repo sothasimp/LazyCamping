@@ -7,3 +7,5 @@ load. Delete this folder once we know.
 2. no-esl-no-packages: also without the 6 follower packages
 3. no-esl-no-quests-packages: also without the 2 quests
 4. no-esl-no-cell-furniture: without the holding cell and the 2 seat records
+5. no-esl-packages-without-input-names: the ESL flag cleared, and each
+   package without the template's named data inputs (UNAM/BNAM/PNAM after XNAM)
