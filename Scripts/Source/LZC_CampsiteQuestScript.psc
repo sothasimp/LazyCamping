@@ -976,7 +976,7 @@ EndFunction
 ; chopping block (left of the middle tent with up to two tents, right of the
 ; right-hand tent with three), or in the bedroll fan after the chopping
 ; block's place without tents. The tub clutter set (water, steps...) goes
-around it.
+; around it.
 Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clutterSet, Int tents, Int[] sizes, Float radius, Int bedrolls)
 	Float bearing = FanBearing(bedrolls + 1)
 	Float distance = BedrollRingRadius
