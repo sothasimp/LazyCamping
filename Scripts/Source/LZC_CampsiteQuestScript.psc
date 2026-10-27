@@ -118,9 +118,9 @@ Float Property TentRingGap = 40.0 Auto
 ring: SeatRadius + TentRingGap + the largest HalfDepth among them, widened
 when needed so neighbouring tents don't touch. The default leaves the tent
 fronts just behind the seats; raise it if seated people brush the tents.}
-Float Property MiddleTentExtraGap = 10.0 Auto
-{The player's tent, in the middle, stands this much further from the fire
-than the tent ring.}
+Float Property TentSetback = 10.0 Auto
+{Moves every tent this much further from the fire, after the ring is widened
+to fit them.}
 Float Property SmallTentHalfWidth = 85.0 Auto
 Float Property SmallTentHalfDepth = 85.0 Auto
 Int Property SmallTentCapacity = 2 Auto
@@ -157,7 +157,8 @@ Bool Property FadeToBlack = True Auto
 {Fade the screen to black while the camp is set up or packed up.}
 Float Property kFadeSeconds = 1.0 AutoReadOnly
 Sound Property LZC_UnpackSound Auto
-{Optional. Played as the camp is set up, like gear being put down.}
+{Optional. Played as the camp is set up and packed up, like gear being put
+down or gathered.}
 
 Bool Property AlignToSlope = True Auto
 {Tilt the tents, bedrolls, seats and fire to match the ground.}
@@ -466,18 +467,16 @@ Function SetUpCamp()
 		t += 1
 	EndWhile
 
+	radius += TentSetback
+
 	Float[] tentFwd = new Float[4]
 	Float[] tentSide = new Float[4]
 	Float[] tentTurn = new Float[4]
 	t = 0
 	While t < tents
 		Float bearing = FanBearing(t)
-		Float tentRadius = radius
-		If t == 0
-			tentRadius += MiddleTentExtraGap
-		EndIf
-		tentFwd[t] = FireForward() + tentRadius * Math.Cos(bearing)
-		tentSide[t] = tentRadius * Math.Sin(bearing)
+		tentFwd[t] = FireForward() + radius * Math.Cos(bearing)
+		tentSide[t] = radius * Math.Sin(bearing)
 		tentTurn[t] = bearing + 180.0
 		t += 1
 	EndWhile
@@ -829,6 +828,9 @@ Function FadeIn()
 EndFunction
 
 Function PackUpCamp()
+	If LZC_UnpackSound
+		LZC_UnpackSound.Play(PlayerRef)
+	EndIf
 	UnregisterForUpdateGameTime()
 	LZC_Native.ShowGrass()
 
