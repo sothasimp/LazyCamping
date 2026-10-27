@@ -158,6 +158,9 @@ Leave empty to place only the player's seat and the bedrolls.}
 Bool Property FadeToBlack = True Auto
 {Fade the screen to black while the camp is set up or packed up.}
 Float Property kFadeSeconds = 1.0 AutoReadOnly
+Sound Property LZC_UnpackSound Auto
+{Optional. Played once as the camp is set up, before the build sounds, like
+gear being put down.}
 Sound Property LZC_BuildSound Auto
 {Optional. Played BuildSoundRepeats times as the camp is set up, like stakes
 being driven in.}
@@ -786,8 +789,13 @@ Function SetUpCamp()
 	FadeIn()
 EndFunction
 
-; The build sound, BuildSoundRepeats times, while the screen is still black.
+; The unpack sound, then the build sound BuildSoundRepeats times, while the
+; screen is still black.
 Function PlayBuildSound()
+	If LZC_UnpackSound
+		LZC_UnpackSound.Play(PlayerRef)
+		Utility.Wait(BuildSoundInterval)
+	EndIf
 	Int i = 0
 	While LZC_BuildSound && i < BuildSoundRepeats
 		LZC_BuildSound.Play(PlayerRef)
