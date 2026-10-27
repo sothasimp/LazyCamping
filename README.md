@@ -123,6 +123,20 @@ Once it's built:
 
 **On GitHub:** the builder can't run for real there, because `Skyrim.esm` can't be in the repository. Instead, the build compiles the builder and test-runs it against a small stand-in `Skyrim.esm`. Once `LazyCamping.esp` is committed, it also checks that plugin's script properties against the `.psc` files on every push.
 
+### Updating it after Creation Kit edits
+
+When the mod gains records or script properties, bring your edited plugin up to date instead of rebuilding it:
+
+```
+dotnet run --project Plugin -- --master "<Skyrim Data>\Skyrim.esm" --update
+```
+
+Run it in the repo folder, next to `LazyCamping.esp`. It matches records by EditorID and only:
+- **adds** records the builder makes and the plugin lacks, with links pointed at your existing records. Holding-cell references are added only if they have an EditorID, or belong to a clutter set the plugin doesn't have yet, so hand-placed clutter is never duplicated;
+- on records you already have, **attaches** the `LZC_` scripts the builder attaches, **removes** `LZC_` scripts it no longer uses, **adds** missing script properties, and **drops** properties the scripts in `Scripts/Source` no longer declare.
+
+Everything else stays as you made it: models, bounds, texture sets (normal maps and all), packages, aliases, quest settings and any non-`LZC_` scripts. It keeps the old plugin as `LazyCamping.esp.bak`, prints what it changed, and refuses to write if a link would point at nothing. Running it again when nothing's new changes nothing.
+
 ### Settings (`Plugin/settings.json`)
 
 - **`vanilla`:** EditorIDs of the vanilla records used: the burning campfire (an activator; any placeable type works), the cooking pot furniture (copied as the hidden `LZC_CookingStation`), its light, the unlit firepit (its model is used for `LZC_Firepit`), the woodcutting block, an optional sound played as the camp is set up and packed up (by default `ITMClothingDownSD`; a vanilla *Sound Marker* is used as it is, and a *Sound Descriptor* gets a sound marker of its own, `LZC_UnpackSound`), the ground bedroll, the cross-legged sit marker, the *Voice* equip slot, `Firewood01`, `LocTypeCity`, `LocTypeTown`, and an optional partner faction (for example `PlayerMarriedFaction`). **Some of the defaults are educated guesses.** If one isn't in `Skyrim.esm`, the builder stops and lists the closest EditorIDs it found, so you can correct it. To list every record whose EditorID contains some text, run `dotnet run --project Plugin -- --master "<Skyrim Data>\Skyrim.esm" --find campfire`.

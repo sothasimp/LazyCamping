@@ -718,6 +718,10 @@ Function SetUpCamp()
 	itemCount = AddSet(setItems, itemSet, itemCount, LZC_RingBedrollClutter, 4)
 	itemCount = AddSet(setItems, itemSet, itemCount, LZC_TubClutter, 5)
 
+	; The cloth sound plays as the camp appears.
+	If LZC_UnpackSound
+		LZC_UnpackSound.Play(PlayerRef)
+	EndIf
 	placedRefs = LZC_Native.PlaceCamp(PlayerRef, heading, forms, fwd, side, lift, turn, AlignToSlope, MaxSlope, clutterSet, setAnchors, setItems, itemSet, LZC_CampStorageMarkers)
 	If placedRefs.Length <= kSlotCount
 		Debug.Notification("Your camp couldn't be set up.")
@@ -806,9 +810,6 @@ Function SetUpCamp()
 	CampDeployed = True
 	; The leading space sorts the power to the top of the magic menu.
 	LZC_Native.RenameForm(LZC_SetUpCampPower, " Pack Up Camp")
-	If LZC_UnpackSound
-		LZC_UnpackSound.Play(PlayerRef)
-	EndIf
 EndFunction
 
 ; The cook box over the fire opens the Cook menu, through the hidden cooking

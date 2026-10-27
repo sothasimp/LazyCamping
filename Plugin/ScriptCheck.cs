@@ -72,7 +72,7 @@ public static class ScriptCheck
     }
 
     /// <summary>Declared properties, mapped to whether they're objects that need filling in.</summary>
-    static Dictionary<string, bool> Declared(string path)
+    public static Dictionary<string, bool> Declared(string path)
     {
         var result = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
         foreach (var line in File.ReadLines(path))

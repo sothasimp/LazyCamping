@@ -1,6 +1,7 @@
 using LazyCamping.PluginBuilder;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Plugins;
+using Mutagen.Bethesda.Plugins.Binary.Parameters;
 using Mutagen.Bethesda.Plugins.Cache;
 using Mutagen.Bethesda.Plugins.Records;
 using Mutagen.Bethesda.Skyrim;
@@ -10,6 +11,7 @@ using Mutagen.Bethesda.Skyrim;
 //
 // Usage:
 //   build:        dotnet run --project Plugin -- --master "<Skyrim>/Data/Skyrim.esm" [--out LazyCamping.esp] [--force]
+//   update:       dotnet run --project Plugin -- --master "<Skyrim>/Data/Skyrim.esm" --update [--out LazyCamping.esp] [--scripts Scripts/Source]
 //   verify:       dotnet run --project Plugin -- --verify <LazyCamping.esp> --scripts Scripts/Source [--master <Skyrim.esm>]
 //   search:       dotnet run --project Plugin -- --master <Skyrim.esm> --find <text>
 //   test master:  dotnet run --project Plugin -- --make-test-master <path>
@@ -51,7 +53,13 @@ try
     var settings = Settings.Load(options.GetValueOrDefault("settings") ?? Path.Combine(here, "settings.json"));
     var clutter = ClutterSets.Load(options.GetValueOrDefault("clutter") ?? Path.Combine(here, "clutter.json"));
     var outPath = options.GetValueOrDefault("out") ?? "LazyCamping.esp";
-    if (File.Exists(outPath) && !options.ContainsKey("force"))
+    var update = options.ContainsKey("update");
+    if (update && !File.Exists(outPath))
+    {
+        Console.Error.WriteLine($"{outPath} doesn't exist yet: build it without --update first.");
+        return 1;
+    }
+    if (!update && File.Exists(outPath) && !options.ContainsKey("force"))
     {
         Console.Error.WriteLine($"{outPath} already exists. It may have Creation Kit edits, so it won't be overwritten; pass --force to replace it.");
         return 1;
@@ -70,6 +78,11 @@ try
         return 1;
     }
 
+    if (update)
+    {
+        return Update(outPath, mod, options.GetValueOrDefault("scripts") ?? (Directory.Exists("Scripts/Source") ? "Scripts/Source" : null));
+    }
+
     mod.WriteToBinary(outPath);
     Console.WriteLine($"Wrote {outPath}: {mod.EnumerateMajorRecords().Count()} records.");
     return 0;
@@ -78,6 +91,45 @@ catch (Exception e)
 {
     Console.Error.WriteLine(e);
     return 1;
+}
+
+// Adds what a fresh build has and the plugin lacks (see Updater), keeping a
+// backup of the plugin as it was.
+static int Update(string pluginPath, SkyrimMod fresh, string? scriptDir)
+{
+    var plugin = SkyrimMod.CreateFromBinary(pluginPath, SkyrimRelease.SkyrimSE);
+    var updater = new Updater(plugin, fresh, scriptDir);
+    updater.Run();
+    var dangling = updater.DanglingLinks().ToList();
+    if (dangling.Count > 0)
+    {
+        Console.Error.WriteLine("Not written: these links would point at nothing in the plugin:");
+        dangling.ForEach(d => Console.Error.WriteLine($"  {d}"));
+        return 1;
+    }
+    if (updater.Report.Count == 0)
+    {
+        Console.WriteLine($"{pluginPath} is already up to date.");
+        return 0;
+    }
+
+    var backup = pluginPath + ".bak";
+    File.Copy(pluginPath, backup, overwrite: true);
+    var masters = plugin.ModHeader.MasterReferences.Select(m => m.Master).ToList();
+    plugin.WriteToBinary(pluginPath, BinaryWriteParameters.Default with
+    {
+        MastersListOrdering = new MastersListOrderingByLoadOrder(masters),
+    });
+    foreach (var line in updater.Report)
+    {
+        Console.WriteLine($"  {line}");
+    }
+    Console.WriteLine($"Updated {pluginPath} ({updater.Report.Count} changes); the old one is {backup}.");
+    if (scriptDir is null)
+    {
+        Console.WriteLine("Pass --scripts <Scripts/Source> to also drop properties the scripts no longer declare.");
+    }
+    return 0;
 }
 
 // Reads the built plugin back and checks that every link points at a record
