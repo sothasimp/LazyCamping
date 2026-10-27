@@ -12,6 +12,7 @@ using Mutagen.Bethesda.Skyrim;
 // Usage:
 //   build:        dotnet run --project Plugin -- --master "<Skyrim>/Data/Skyrim.esm" [--out LazyCamping.esp] [--force]
 //   update:       dotnet run --project Plugin -- --master "<Skyrim>/Data/Skyrim.esm" --update [--out LazyCamping.esp] [--scripts Scripts/Source]
+//                 or --update --from <a freshly built esp> instead of --master
 //   verify:       dotnet run --project Plugin -- --verify <LazyCamping.esp> --scripts Scripts/Source [--master <Skyrim.esm>]
 //   search:       dotnet run --project Plugin -- --master <Skyrim.esm> --find <text>
 //   test master:  dotnet run --project Plugin -- --make-test-master <path>
@@ -34,6 +35,14 @@ try
         var linksOk = !options.TryGetValue("master", out var verifyMaster) || Verify(verifyPath, verifyMaster) == 0;
         var scriptsOk = !options.TryGetValue("scripts", out var scriptDir) || ScriptCheck.Run(verifyPath, scriptDir);
         return linksOk && scriptsOk ? 0 : 1;
+    }
+
+    // Update from a plugin built earlier, instead of building one now.
+    if (options.ContainsKey("update") && options.TryGetValue("from", out var builtPath))
+    {
+        var updatePath = options.GetValueOrDefault("out") ?? "LazyCamping.esp";
+        var built = SkyrimMod.CreateFromBinary(builtPath, SkyrimRelease.SkyrimSE);
+        return Update(updatePath, built, options.GetValueOrDefault("scripts") ?? (Directory.Exists("Scripts/Source") ? "Scripts/Source" : null));
     }
 
     if (!options.TryGetValue("master", out var masterPath))

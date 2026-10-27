@@ -131,7 +131,7 @@ When the mod gains records or script properties, bring your edited plugin up to 
 dotnet run --project Plugin -- --master "<Skyrim Data>\Skyrim.esm" --update
 ```
 
-Run it in the repo folder, next to `LazyCamping.esp`. It matches records by EditorID and only:
+Run it in the repo folder, next to `LazyCamping.esp`. If you've built a fresh plugin elsewhere (say `New.esp`), `--update --from New.esp` takes the new records from it instead of building, and needs no `--master`. It matches records by EditorID and only:
 - **adds** records the builder makes and the plugin lacks, with links pointed at your existing records. Holding-cell references are added only if they have an EditorID, or belong to a clutter set the plugin doesn't have yet, so hand-placed clutter is never duplicated;
 - on records you already have, **attaches** the `LZC_` scripts the builder attaches, **removes** `LZC_` scripts it no longer uses, **adds** missing script properties, and **drops** properties the scripts in `Scripts/Source` no longer declare.
 
