@@ -116,10 +116,17 @@ static int Update(string pluginPath, SkyrimMod fresh, string? scriptDir)
     var backup = pluginPath + ".bak";
     File.Copy(pluginPath, backup, overwrite: true);
     var masters = plugin.ModHeader.MasterReferences.Select(m => m.Master).ToList();
-    plugin.WriteToBinary(pluginPath, BinaryWriteParameters.Default with
+    var written = Path.GetTempFileName();
+    plugin.WriteToBinary(written, BinaryWriteParameters.Default with
     {
         MastersListOrdering = new MastersListOrderingByLoadOrder(masters),
+        ModKey = ModKeyOption.NoCheck,
     });
+    // Records the update didn't change are copied from the original as they were.
+    var masterIndex = (uint)masters.Count << 24;
+    var changed = updater.Changed.Select(k => masterIndex | k.ID).ToHashSet();
+    File.WriteAllBytes(pluginPath, Splice.Run(File.ReadAllBytes(backup), File.ReadAllBytes(written), changed));
+    File.Delete(written);
     foreach (var line in updater.Report)
     {
         Console.WriteLine($"  {line}");

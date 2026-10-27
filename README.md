@@ -135,7 +135,7 @@ Run it in the repo folder, next to `LazyCamping.esp`. It matches records by Edit
 - **adds** records the builder makes and the plugin lacks, with links pointed at your existing records. Holding-cell references are added only if they have an EditorID, or belong to a clutter set the plugin doesn't have yet, so hand-placed clutter is never duplicated;
 - on records you already have, **attaches** the `LZC_` scripts the builder attaches, **removes** `LZC_` scripts it no longer uses, **adds** missing script properties, and **drops** properties the scripts in `Scripts/Source` no longer declare.
 
-Everything else stays as you made it: models, bounds, texture sets (normal maps and all), packages, aliases, quest settings and any non-`LZC_` scripts. It keeps the old plugin as `LazyCamping.esp.bak`, prints what it changed, and refuses to write if a link would point at nothing. Running it again when nothing's new changes nothing.
+Everything else stays as you made it: models, bounds, texture sets (normal maps and all), packages, aliases, quest settings and any non-`LZC_` scripts. Records it doesn't change are copied byte for byte from your plugin, so they stay exactly as the Creation Kit saved them, and new records get FormIDs after the highest one in use. It keeps the old plugin as `LazyCamping.esp.bak`, prints what it changed, and refuses to write if a link would point at nothing. Running it again when nothing's new changes nothing.
 
 ### Settings (`Plugin/settings.json`)
 

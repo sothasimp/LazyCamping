@@ -27,8 +27,20 @@ public sealed class Updater(SkyrimMod plugin, SkyrimMod fresh, string? scriptDir
 
     public List<string> Report { get; } = [];
 
+    /// <summary>The plugin's own records whose data the update changed (not the ones it added).</summary>
+    public HashSet<FormKey> Changed { get; } = [];
+
     public void Run()
     {
+        // New FormIDs must come after every one the plugin uses, whatever
+        // the header says.
+        var highest = plugin.EnumerateMajorRecords().Where(r => r.FormKey.ModKey == plugin.ModKey)
+            .Select(r => r.FormKey.ID).DefaultIfEmpty(0x7FFu).Max();
+        if (plugin.ModHeader.Stats.NextFormID <= highest)
+        {
+            plugin.ModHeader.Stats.NextFormID = highest + 1;
+        }
+
         var byEditorId = plugin.EnumerateMajorRecords()
             .Where(r => r.EditorID is not null)
             .GroupBy(r => r.EditorID!, StringComparer.OrdinalIgnoreCase)
@@ -95,7 +107,12 @@ public sealed class Updater(SkyrimMod plugin, SkyrimMod fresh, string? scriptDir
                 record.EditorID is { } id && byEditorId.TryGetValue(id, out var existing) &&
                 existing is IHaveVirtualMachineAdapter target)
             {
+                var before = Report.Count;
                 UpdateScripts(id, target, wanted, remap);
+                if (Report.Count > before)
+                {
+                    Changed.Add(existing.FormKey);
+                }
             }
         }
     }
