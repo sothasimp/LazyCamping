@@ -242,8 +242,14 @@ Function HandlePowerCast()
 		EndIf
 		Return
 	EndIf
-	If LZC_Native.GetVersion() < kNativeVersion
-		Debug.Notification("Lazy Camping needs SKSE and an up-to-date LazyCamping.dll.")
+	; 0 means the DLL's functions aren't bound: no SKSE, no DLL (or Address
+	; Library), or no LZC_Native.pex.
+	Int nativeVersion = LZC_Native.GetVersion()
+	If nativeVersion == 0
+		Debug.Notification("Lazy Camping: LazyCamping.dll isn't loaded (check SKSE, Address Library and LZC_Native.pex).")
+		Return
+	ElseIf nativeVersion < kNativeVersion
+		Debug.Notification("Lazy Camping: LazyCamping.dll is out of date.")
 		Return
 	EndIf
 
