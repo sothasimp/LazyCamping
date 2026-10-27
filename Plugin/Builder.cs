@@ -53,8 +53,6 @@ public sealed class Builder
         var campfireLight = Find<ILightGetter>(settings.Vanilla.CampfireLight, "fire");
         var campfireUnlit = Find<IPlaceableObjectGetter>(settings.Vanilla.CampfireUnlit, "campfire");
         var choppingBlock = Find<IFurnitureGetter>(settings.Vanilla.ChoppingBlock, "chopping");
-        var unpackSoundDescriptor = Find<ISoundDescriptorGetter>(settings.Vanilla.UnpackSound, "clothing");
-        var buildSoundDescriptor = Find<ISoundDescriptorGetter>(settings.Vanilla.BuildSound, "impact");
         var bedroll = Find<IFurnitureGetter>(settings.Vanilla.Bedroll, "bedroll");
         var sitMarker = Find<IFurnitureGetter>(settings.Vanilla.SitCrossLegged, "crossleg");
         var sleepTemplate = Find<IPackageGetter>(settings.Vanilla.SleepTemplate, "sleep");
@@ -110,8 +108,8 @@ public sealed class Builder
             firepit.VirtualMachineAdapter = Scripts(Script("LZC_FirepitScript", Link("CampQuest", campQuest)));
         }
 
-        var unpackSound = SoundMarker("LZC_UnpackSound", unpackSoundDescriptor);
-        var buildSound = SoundMarker("LZC_BuildSound", buildSoundDescriptor);
+        var unpackSound = Sound("LZC_UnpackSound", settings.Vanilla.UnpackSound, "clothing");
+        var buildSound = Sound("LZC_BuildSound", settings.Vanilla.BuildSound, "hammer");
 
         var packUpMsg = mod.Messages.AddNew("LZC_PackUpConfirmMsg");
         packUpMsg.Description = "Pack up your camp?";
@@ -355,9 +353,21 @@ public sealed class Builder
         return tent;
     }
 
-    // Papyrus plays sound markers, so a vanilla sound descriptor gets one.
-    SoundMarker? SoundMarker(string editorId, ISoundDescriptorGetter? descriptor)
+    // Papyrus plays sound markers: a vanilla one is used as it is, and a
+    // vanilla sound descriptor gets one of our own, editorId.
+    IMajorRecordGetter? Sound(string editorId, string vanilla, string hint)
     {
+        if (string.IsNullOrWhiteSpace(vanilla))
+        {
+            return null;
+        }
+        var vanillaMarker = skyrim.EnumerateMajorRecords<ISoundMarkerGetter>()
+            .FirstOrDefault(r => string.Equals(r.EditorID, vanilla, StringComparison.OrdinalIgnoreCase));
+        if (vanillaMarker is not null)
+        {
+            return vanillaMarker;
+        }
+        var descriptor = Find<ISoundDescriptorGetter>(vanilla, hint);
         if (descriptor is null)
         {
             return null;

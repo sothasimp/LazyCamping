@@ -25,9 +25,14 @@ public static class TestMaster
         mod.Lights.AddNew(v.CampfireLight);
         mod.Statics.AddNew(v.CampfireUnlit).Model = new Model { File = @"Clutter\Campfire01Off.nif" };
         mod.Furniture.AddNew(v.ChoppingBlock);
-        foreach (var sound in new[] { v.UnpackSound, v.BuildSound }.Where(s => !string.IsNullOrWhiteSpace(s)))
+        // One sound of each kind the builder accepts.
+        if (!string.IsNullOrWhiteSpace(v.UnpackSound))
         {
-            mod.SoundDescriptors.AddNew(sound);
+            mod.SoundDescriptors.AddNew(v.UnpackSound);
+        }
+        if (!string.IsNullOrWhiteSpace(v.BuildSound))
+        {
+            mod.SoundMarkers.AddNew(v.BuildSound);
         }
         mod.Furniture.AddNew(v.Bedroll);
         var sit = mod.Furniture.AddNew(v.SitCrossLegged);
