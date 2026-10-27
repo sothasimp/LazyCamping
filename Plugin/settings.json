@@ -7,7 +7,7 @@
     "campfireUnlit": "Campfire01Off",
     "choppingBlock": "WoodChoppingBlock",
     "unpackSound": "ITMClothingDownSD",
-    "buildSound": "NPCHumanWorkbenchHammer",
+    "buildSound": "NPCHumanBlacksmithRepairHammerSD",
     "bedroll": "Bedroll01",
     "sitCrossLegged": "SitCrossLeggedMarker",
     "sleepTemplate": "Sleep",
