@@ -118,6 +118,9 @@ Float Property TentRingGap = 40.0 Auto
 ring: SeatRadius + TentRingGap + the largest HalfDepth among them, widened
 when needed so neighbouring tents don't touch. The default leaves the tent
 fronts just behind the seats; raise it if seated people brush the tents.}
+Float Property MiddleTentExtraGap = 10.0 Auto
+{The player's tent, in the middle, stands this much further from the fire
+than the tent ring.}
 Float Property SmallTentHalfWidth = 85.0 Auto
 Float Property SmallTentHalfDepth = 85.0 Auto
 Int Property SmallTentCapacity = 2 Auto
@@ -469,8 +472,12 @@ Function SetUpCamp()
 	t = 0
 	While t < tents
 		Float bearing = FanBearing(t)
-		tentFwd[t] = FireForward() + radius * Math.Cos(bearing)
-		tentSide[t] = radius * Math.Sin(bearing)
+		Float tentRadius = radius
+		If t == 0
+			tentRadius += MiddleTentExtraGap
+		EndIf
+		tentFwd[t] = FireForward() + tentRadius * Math.Cos(bearing)
+		tentSide[t] = tentRadius * Math.Sin(bearing)
 		tentTurn[t] = bearing + 180.0
 		t += 1
 	EndWhile
