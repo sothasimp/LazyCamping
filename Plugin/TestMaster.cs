@@ -25,6 +25,7 @@ public static class TestMaster
         mod.Lights.AddNew(v.CampfireLight);
         mod.Statics.AddNew(v.CampfireUnlit).Model = new Model { File = @"Clutter\Campfire01Off.nif" };
         mod.Furniture.AddNew(v.ChoppingBlock);
+        mod.Furniture.AddNew(v.CookingPot);
         foreach (var sound in new[] { v.UnpackSound }.Where(s => !string.IsNullOrWhiteSpace(s)))
         {
             mod.SoundDescriptors.AddNew(sound);

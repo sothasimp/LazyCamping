@@ -44,7 +44,12 @@ Form Property LZC_BedrollPlaced Auto
 {Furniture with a sleep marker, so the player can sleep / wait in it. Can be
 the vanilla bedroll: this script needs nothing on it.}
 Form Property LZC_CampfirePlaced Auto
-{Static or Activator: the burning campfire. Can be the vanilla one.}
+{The burning campfire: LZC_Campfire, the vanilla campfire's look with
+LZC_CampfireScript, so activating it opens the Cook menu.}
+Form Property LZC_CookingStation Auto
+{Optional. Furniture with the cooking pot's crafting keyword and an empty
+model (no furniture marker), placed hidden at the fire. Activating the fire
+activates it, which opens the Cook menu without an animation.}
 Light Property LZC_CampfireLight Auto
 {Optional. Flickering firelight placed above the campfire.}
 Bool Property PlaceCampfireLight = True Auto
@@ -197,7 +202,8 @@ Int Property kFirstBedroll = 11 AutoReadOnly       ; 11-22, the player's first
 Int Property kFirstBedrollSeat = 23 AutoReadOnly   ; 23-34, one on each bedroll
 Int Property kFirepit = 35 AutoReadOnly            ; unlit, with FirewoodMechanic
 Int Property kChoppingBlock = 36 AutoReadOnly
-Int Property kSlotCount = 37 AutoReadOnly
+Int Property kCookingStation = 37 AutoReadOnly     ; hidden, at the fire
+Int Property kSlotCount = 38 AutoReadOnly
 Int Property kMaxFollowerSeats = 5 AutoReadOnly    ; fire seats besides the player's
 
 Int Property kMaxFollowers = 3 AutoReadOnly
@@ -509,11 +515,11 @@ Function SetUpCamp()
 	EndIf
 
 	; Slot layout (see placedRefs). Index 0, the campfire, is the camp's anchor.
-	Form[] forms = new Form[37]
-	Float[] fwd = new Float[37]
-	Float[] side = new Float[37]
-	Float[] lift = new Float[37]
-	Float[] turn = new Float[37]
+	Form[] forms = new Form[38]
+	Float[] fwd = new Float[38]
+	Float[] side = new Float[38]
+	Float[] lift = new Float[38]
+	Float[] turn = new Float[38]
 
 	forms[kCampfire] = LZC_CampfirePlaced
 	fwd[kCampfire] = FireForward()
@@ -522,6 +528,8 @@ Function SetUpCamp()
 	EndIf
 	fwd[kLight] = FireForward()
 	lift[kLight] = LightHeight
+	forms[kCookingStation] = LZC_CookingStation
+	fwd[kCookingStation] = FireForward()
 
 	; With the firewood mechanic, an unlit firepit stands in the fire's spot;
 	; the fire and its light are placed too, but hidden until it's lit.
@@ -537,7 +545,7 @@ Function SetUpCamp()
 	; group (the tent it's in, or 0 without tents) and its place in the row
 	; (neighbours differ by 1).
 	; Which clutter set (1-based; 0 = none) goes around each layout object.
-	Int[] clutterSet = new Int[37]
+	Int[] clutterSet = new Int[38]
 	clutterSet[kCampfire] = 1
 
 	Int[] bedGroup = new Int[12]
@@ -672,7 +680,7 @@ Function SetUpCamp()
 	If placedRefs.Length <= kSlotCount
 		FadeIn()
 		Debug.Notification("Your camp couldn't be set up.")
-		placedRefs = new ObjectReference[37]
+		placedRefs = new ObjectReference[38]
 		If followers
 			LZC_CampFollowersQuest.Stop()
 		EndIf
@@ -756,6 +764,18 @@ Function SetUpCamp()
 		LZC_UnpackSound.Play(PlayerRef)
 	EndIf
 	FadeIn()
+EndFunction
+
+; Called by LZC_CampfireScript. Activating the camp's fire opens the Cook
+; menu, through the hidden cooking station at the fire.
+Function OnCampfireActivated(ObjectReference akFire, ObjectReference akActionRef)
+	If akActionRef != PlayerRef || !CampDeployed || akFire != placedRefs[kCampfire]
+		Return
+	EndIf
+	ObjectReference station = placedRefs[kCookingStation]
+	If station
+		station.Activate(PlayerRef)
+	EndIf
 EndFunction
 
 ; Called by LZC_FirepitScript. Sneak-activating the camp's unlit firepit

@@ -6,6 +6,7 @@
     "campfireLight": "WRFireLightNS",
     "campfireUnlit": "Campfire01Off",
     "choppingBlock": "WoodChoppingBlock",
+    "cookingPot": "CraftingCookingPotSm",
     "unpackSound": "ITMClothingDownSD",
     "bedroll": "Bedroll01",
     "sitCrossLegged": "SitCrossLeggedMarker",
@@ -24,6 +25,7 @@
     "largeTent": "aaaAMV\\lazycamping\\largenordictent.nif",
     "playerSeat": "aaaAMV\\lazycamping\\sitmarker.nif",
     "bedrollSeat": "aaaAMV\\lazycamping\\sitmarker.nif",
+    "cookingStation": "LazyCamping\\CookingStation.nif",
     "storage": "aaaAMV\\lazycamping\\backpack.nif"
   },
 

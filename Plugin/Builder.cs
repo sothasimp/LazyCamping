@@ -52,6 +52,7 @@ public sealed class Builder
         var campfireLight = Find<ILightGetter>(settings.Vanilla.CampfireLight, "fire");
         var campfireUnlit = Find<IPlaceableObjectGetter>(settings.Vanilla.CampfireUnlit, "campfire");
         var choppingBlock = Find<IFurnitureGetter>(settings.Vanilla.ChoppingBlock, "chopping");
+        var cookingPot = Find<IFurnitureGetter>(settings.Vanilla.CookingPot, "cooking");
         var bedroll = Find<IFurnitureGetter>(settings.Vanilla.Bedroll, "bedroll");
         var sitMarker = Find<IFurnitureGetter>(settings.Vanilla.SitCrossLegged, "crossleg");
         var voice = Find<IEquipTypeGetter>(settings.Vanilla.VoiceEquipType, "voice");
@@ -106,6 +107,28 @@ public sealed class Builder
             firepit.Model = (campfireUnlit as IModeledGetter)?.Model?.DeepCopy();
             firepit.ObjectBounds = (campfireUnlit as IObjectBoundedGetter)?.ObjectBounds.DeepCopy() ?? Bounds(50, 50, 30);
             firepit.VirtualMachineAdapter = Scripts(Script("LZC_FirepitScript", Link("CampQuest", campQuest)));
+        }
+
+        // The camp's fire: the vanilla burning campfire's look, but the player
+        // can activate it, which opens the Cook menu through a hidden cooking
+        // station (a copy of the vanilla cooking pot with an empty model, so
+        // there's nothing to see and no animation).
+        Activator? campfireActivator = null;
+        if (campfire is not null)
+        {
+            campfireActivator = mod.Activators.AddNew("LZC_Campfire");
+            campfireActivator.Name = "Campfire";
+            campfireActivator.ActivateTextOverride = "Cook";
+            campfireActivator.Model = (campfire as IModeledGetter)?.Model?.DeepCopy();
+            campfireActivator.ObjectBounds = (campfire as IObjectBoundedGetter)?.ObjectBounds.DeepCopy() ?? Bounds(50, 50, 30);
+            campfireActivator.VirtualMachineAdapter = Scripts(Script("LZC_CampfireScript", Link("CampQuest", campQuest)));
+        }
+        Furniture? cookingStation = null;
+        if (cookingPot is not null)
+        {
+            cookingStation = mod.Furniture.DuplicateInAsNewRecord(cookingPot, "LZC_CookingStation");
+            cookingStation.Name = "Campfire";
+            cookingStation.Model = new Model { File = settings.Models.CookingStation };
         }
 
         var unpackSound = Sound("LZC_UnpackSound", settings.Vanilla.UnpackSound, "clothing");
@@ -250,7 +273,8 @@ public sealed class Builder
             Link("LZC_CampMapMarker", mapMarker),
             Link("LZC_CampFollowersQuest", followersQuest));
         AddIfFound(campScript, "LZC_BedrollPlaced", bedroll);
-        AddIfFound(campScript, "LZC_CampfirePlaced", campfire);
+        AddIfFound(campScript, "LZC_CampfirePlaced", campfireActivator);
+        AddIfFound(campScript, "LZC_CookingStation", cookingStation);
         AddIfFound(campScript, "LZC_CampfireLight", campfireLight);
         AddIfFound(campScript, "LZC_Firepit", firepit);
         AddIfFound(campScript, "LZC_ChoppingBlock", choppingBlock);
