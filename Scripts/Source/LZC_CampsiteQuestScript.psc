@@ -118,7 +118,7 @@ Float Property TentRingGap = 40.0 Auto
 ring: SeatRadius + TentRingGap + the largest HalfDepth among them, widened
 when needed so neighbouring tents don't touch. The default leaves the tent
 fronts just behind the seats; raise it if seated people brush the tents.}
-Float Property TentSetback = 10.0 Auto
+Float Property TentSetback = 15.0 Auto
 {Moves every tent this much further from the fire, after the ring is widened
 to fit them.}
 Float Property SmallTentHalfWidth = 85.0 Auto
