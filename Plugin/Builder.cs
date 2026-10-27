@@ -67,6 +67,9 @@ public sealed class Builder
         // Quests first, so other records can point at them.
         var campQuest = mod.Quests.AddNew("LZC_CampsiteQuest");
         var followersQuest = mod.Quests.AddNew("LZC_CampFollowersQuest");
+        // Alias packages compete by quest priority: outrank the vanilla
+        // follower quest's follow package, or followers never sit or sleep.
+        followersQuest.Priority = 90;
 
         var activity = new GlobalShort(mod.GetNextFormKey(), SkyrimRelease.SkyrimSE)
         {

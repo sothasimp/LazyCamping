@@ -204,7 +204,7 @@ The camp also uses these when it shares bedrolls out between the tents, so partn
 | `LZC_FollowerSleepN` | *Sleep* | Sleep Location: *Near Reference Alias* `BedrollN`, radius 64 | `GetGlobalValue LZC_CampActivity == 2` |
 | `LZC_FollowerSitN` | *Sit* | Sit Location: *Near Reference Alias* `SeatN`, radius 64; Search Criteria / target: alias `SeatN` | `GetGlobalValue LZC_CampActivity == 1` |
 
-Then open `LZC_CampFollowersQuest`'s **Quest Aliases** tab, and in each `FollowerN` alias add `LZC_FollowerSleepN` and `LZC_FollowerSitN` to its *Alias Package Data*. Without them followers just follow the player as normal: they don't sit or sleep at camp.
+Give `LZC_CampFollowersQuest` a high **Priority** on its *Quest Data* tab (the builder uses 90): alias packages compete by quest priority, and the vanilla follower quest's follow package would otherwise win, so followers would never sit or sleep. Then open `LZC_CampFollowersQuest`'s **Quest Aliases** tab, and in each `FollowerN` alias add `LZC_FollowerSleepN` and `LZC_FollowerSitN` to its *Alias Package Data*. Without them followers just follow the player as normal: they don't sit or sleep at camp.
 
 The follower quest's `CampRadius` setting (default 1024, in the follower quest's script) is how near the fire counts as "at camp", for sleeping and for seated followers staying put.
 
