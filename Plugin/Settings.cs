@@ -30,6 +30,7 @@ public sealed class VanillaIds
     public string CampfireUnlit { get; set; } = "";
     public string ChoppingBlock { get; set; } = "";
     public string CookingPot { get; set; } = "";
+    public string TubWater { get; set; } = "";
     public string UnpackSound { get; set; } = "";
     public string Bedroll { get; set; } = "";
     public string SitCrossLegged { get; set; } = "";
@@ -51,6 +52,7 @@ public sealed class ModelPaths
     public string BedrollSeat { get; set; } = "";
     public string Storage { get; set; } = "";
     public string CookingStation { get; set; } = "";
+    public string Tub { get; set; } = "";
 }
 
 public sealed class TentTextureSettings

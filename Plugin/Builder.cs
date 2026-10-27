@@ -53,6 +53,7 @@ public sealed class Builder
         var campfireUnlit = Find<IPlaceableObjectGetter>(settings.Vanilla.CampfireUnlit, "campfire");
         var choppingBlock = Find<IFurnitureGetter>(settings.Vanilla.ChoppingBlock, "chopping");
         var cookingPot = Find<IFurnitureGetter>(settings.Vanilla.CookingPot, "cooking");
+        var tubWater = Find<IPlaceableObjectGetter>(settings.Vanilla.TubWater, "water");
         var bedroll = Find<IFurnitureGetter>(settings.Vanilla.Bedroll, "bedroll");
         var sitMarker = Find<IFurnitureGetter>(settings.Vanilla.SitCrossLegged, "crossleg");
         var voice = Find<IEquipTypeGetter>(settings.Vanilla.VoiceEquipType, "voice");
@@ -124,6 +125,15 @@ public sealed class Builder
             cookingStation = mod.Furniture.DuplicateInAsNewRecord(cookingPot, "LZC_CookingStation");
             cookingStation.Name = "Campfire";
             cookingStation.Model = new Model { File = settings.Models.CookingStation };
+        }
+
+        // The bathtub: a static with the tub mesh; the vanilla water goes in it.
+        Static? tub = null;
+        if (!string.IsNullOrWhiteSpace(settings.Models.Tub))
+        {
+            tub = mod.Statics.AddNew("LZC_Tub");
+            tub.Model = new Model { File = settings.Models.Tub };
+            tub.ObjectBounds = Bounds(50, 35, 40);
         }
 
         var unpackSound = Sound("LZC_UnpackSound", settings.Vanilla.UnpackSound, "clothing");
@@ -270,6 +280,8 @@ public sealed class Builder
         AddIfFound(campScript, "LZC_BedrollPlaced", bedroll);
         AddIfFound(campScript, "LZC_CampfirePlaced", campfire);
         AddIfFound(campScript, "LZC_CookingStation", cookingStation);
+        AddIfFound(campScript, "LZC_Tub", tub);
+        AddIfFound(campScript, "LZC_TubWater", tubWater);
         AddIfFound(campScript, "LZC_CampfireLight", campfireLight);
         AddIfFound(campScript, "LZC_Firepit", firepit);
         AddIfFound(campScript, "LZC_ChoppingBlock", choppingBlock);

@@ -7,6 +7,7 @@
     "campfireUnlit": "Campfire01Off",
     "choppingBlock": "WoodChoppingBlock",
     "cookingPot": "CraftingCookingPotSm",
+    "tubWater": "LargeRainBarrelWater01",
     "unpackSound": "ITMClothingDownSD",
     "bedroll": "Bedroll01",
     "sitCrossLegged": "SitCrossLeggedMarker",
@@ -26,6 +27,7 @@
     "playerSeat": "aaaAMV\\lazycamping\\sitmarker.nif",
     "bedrollSeat": "aaaAMV\\lazycamping\\sitmarker.nif",
     "cookingStation": "LazyCamping\\CookingStation.nif",
+    "tub": "aaaAMV\\lazycamping\\tub.nif",
     "storage": "aaaAMV\\lazycamping\\backpack.nif"
   },
 

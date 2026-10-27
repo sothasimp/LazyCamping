@@ -67,6 +67,18 @@ LZC_FirepitScript. The fire and its light are placed hidden in its spot.}
 Form Property LZC_ChoppingBlock Auto
 {Optional. A woodcutting block placed beside the outermost tent (or along the
 bedroll fan without tents) when FirewoodMechanic is on. Can be the vanilla one.}
+Form Property LZC_Tub Auto
+{Optional. A bathtub, placed beside the outermost tent on the side away from
+the chopping block (or along the bedroll fan without tents) when PlaceTub is
+on.}
+Form Property LZC_TubWater Auto
+{Optional. Placed in the tub, TubWaterHeight up: the vanilla rain barrel
+water, so bathing mods that use it work in the tub.}
+Bool Property PlaceTub = True Auto
+Float Property TubWaterHeight = 20.0 Auto
+{How far above the tub's base the water goes.}
+Float Property TubHalfWidth = 50.0 Auto
+{Half the tub's length along the tent ring, for keeping it clear of the tent.}
 Form Property LZC_SitMarkerPlayer Auto
 {Optional. Visible cross-legged seat by the fire that the player can use.}
 Form Property LZC_BedrollSitMarker Auto
@@ -209,7 +221,9 @@ Int Property kFirstBedrollSeat = 23 AutoReadOnly   ; 23-34, one on each bedroll
 Int Property kFirepit = 35 AutoReadOnly            ; unlit, with FirewoodMechanic
 Int Property kChoppingBlock = 36 AutoReadOnly
 Int Property kCookingStation = 37 AutoReadOnly     ; hidden, at the fire
-Int Property kSlotCount = 38 AutoReadOnly
+Int Property kTub = 38 AutoReadOnly
+Int Property kTubWater = 39 AutoReadOnly
+Int Property kSlotCount = 40 AutoReadOnly
 Int Property kMaxFollowerSeats = 5 AutoReadOnly    ; fire seats besides the player's
 
 Int Property kMaxFollowers = 3 AutoReadOnly
@@ -521,11 +535,11 @@ Function SetUpCamp()
 	EndIf
 
 	; Slot layout (see placedRefs). Index 0, the campfire, is the camp's anchor.
-	Form[] forms = new Form[38]
-	Float[] fwd = new Float[38]
-	Float[] side = new Float[38]
-	Float[] lift = new Float[38]
-	Float[] turn = new Float[38]
+	Form[] forms = new Form[40]
+	Float[] fwd = new Float[40]
+	Float[] side = new Float[40]
+	Float[] lift = new Float[40]
+	Float[] turn = new Float[40]
 
 	forms[kCampfire] = LZC_CampfirePlaced
 	fwd[kCampfire] = FireForward()
@@ -535,6 +549,9 @@ Function SetUpCamp()
 	fwd[kLight] = FireForward()
 	lift[kLight] = LightHeight
 	forms[kCookingStation] = LZC_CookingStation
+	If LZC_Tub && PlaceTub
+		SetTub(forms, fwd, side, lift, turn, tents, sizes, radius, bedrolls)
+	EndIf
 	fwd[kCookingStation] = FireForward()
 
 	; With the firewood mechanic, an unlit firepit stands in the fire's spot;
@@ -551,7 +568,7 @@ Function SetUpCamp()
 	; group (the tent it's in, or 0 without tents) and its place in the row
 	; (neighbours differ by 1).
 	; Which clutter set (1-based; 0 = none) goes around each layout object.
-	Int[] clutterSet = new Int[38]
+	Int[] clutterSet = new Int[40]
 	clutterSet[kCampfire] = 1
 
 	Int[] bedGroup = new Int[12]
@@ -686,7 +703,7 @@ Function SetUpCamp()
 	If placedRefs.Length <= kSlotCount
 		FadeIn()
 		Debug.Notification("Your camp couldn't be set up.")
-		placedRefs = new ObjectReference[38]
+		placedRefs = new ObjectReference[40]
 		If followers
 			LZC_CampFollowersQuest.Stop()
 		EndIf
@@ -921,6 +938,35 @@ Function SetChoppingBlock(Form[] forms, Float[] fwd, Float[] side, Float[] turn,
 	fwd[kChoppingBlock] = FireForward() + distance * Math.Cos(bearing)
 	side[kChoppingBlock] = distance * Math.Sin(bearing)
 	turn[kChoppingBlock] = bearing + 180.0
+EndFunction
+
+; The tub stands beside the outermost tent on the other side from the
+; chopping block (left of the middle tent with up to two tents, right of the
+; right-hand tent with three), or in the bedroll fan after the chopping
+; block's place without tents. The water sits in it, raised by TubWaterHeight.
+Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] lift, Float[] turn, Int tents, Int[] sizes, Float radius, Int bedrolls)
+	Float bearing = FanBearing(bedrolls + 1)
+	Float distance = BedrollRingRadius
+	If tents > 0
+		Int beside = 0
+		Float outward = -1.0
+		If tents >= 3
+			beside = 1
+			outward = 1.0
+		EndIf
+		bearing = FanBearing(beside) + outward * (TentHalfWidth(sizes[beside]) + kChoppingBlockGap + TubHalfWidth) / radius * 57.29578
+		distance = radius
+	EndIf
+	Int slot = kTub
+	While slot <= kTubWater
+		fwd[slot] = FireForward() + distance * Math.Cos(bearing)
+		side[slot] = distance * Math.Sin(bearing)
+		turn[slot] = bearing + 180.0
+		slot += 1
+	EndWhile
+	forms[kTub] = LZC_Tub
+	forms[kTubWater] = LZC_TubWater
+	lift[kTubWater] = TubWaterHeight
 EndFunction
 
 ; How far in front of the player the fire goes: one seat radius, so the

@@ -24,6 +24,7 @@ namespace Menu
 			bool         fadeToBlack{ true };
 			bool         hideGrassUnderCamp{ true };
 			bool         placeCampfireLight{ true };
+			bool         placeTub{ true };
 		};
 
 		std::mutex                            lock;
@@ -53,9 +54,10 @@ namespace Menu
 			auto*  fade = object ? AutoProperty(object.get(), "FadeToBlack") : nullptr;
 			auto*  grass = object ? AutoProperty(object.get(), "HideGrassUnderCamp") : nullptr;
 			auto*  light = object ? AutoProperty(object.get(), "PlaceCampfireLight") : nullptr;
-			const bool found = firewood && burnHours && block && fade && grass && light;
+			auto*  tub = object ? AutoProperty(object.get(), "PlaceTub") : nullptr;
+			const bool found = firewood && burnHours && block && fade && grass && light && tub;
 			if (found) {
-				values = { firewood->GetBool(), burnHours->GetFloat(), block->GetBool(), fade->GetBool(), grass->GetBool(), light->GetBool() };
+				values = { firewood->GetBool(), burnHours->GetFloat(), block->GetBool(), fade->GetBool(), grass->GetBool(), light->GetBool(), tub->GetBool() };
 			}
 
 			std::scoped_lock guard(lock);
@@ -86,6 +88,9 @@ namespace Menu
 				}
 				if (auto* light = AutoProperty(object.get(), "PlaceCampfireLight")) {
 					light->SetBool(a_values.placeCampfireLight);
+				}
+				if (auto* tub = AutoProperty(object.get(), "PlaceTub")) {
+					tub->SetBool(a_values.placeTub);
 				}
 			}
 			--pendingWrites;
@@ -132,6 +137,8 @@ namespace Menu
 			ImGuiMCP::SetItemTooltip("Clear the grass in a circle around the camp while it's up. Takes effect at the next camp.");
 			changed |= ImGuiMCP::Checkbox("Campfire light marker", &values.placeCampfireLight);
 			ImGuiMCP::SetItemTooltip("Place a light with the campfire. Turn off if a Light Placer config already lights it. Takes effect at the next camp.");
+			changed |= ImGuiMCP::Checkbox("Bathtub", &values.placeTub);
+			ImGuiMCP::SetItemTooltip("Place a bathtub of water beside the tents. Takes effect at the next camp.");
 
 			if (changed) {
 				{
