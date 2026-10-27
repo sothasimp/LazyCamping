@@ -30,7 +30,6 @@ public sealed class VanillaIds
     public string CampfireUnlit { get; set; } = "";
     public string ChoppingBlock { get; set; } = "";
     public string UnpackSound { get; set; } = "";
-    public string BuildSound { get; set; } = "";
     public string Bedroll { get; set; } = "";
     public string SitCrossLegged { get; set; } = "";
     public string VoiceEquipType { get; set; } = "";

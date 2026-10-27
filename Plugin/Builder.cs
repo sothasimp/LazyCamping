@@ -107,7 +107,6 @@ public sealed class Builder
         }
 
         var unpackSound = Sound("LZC_UnpackSound", settings.Vanilla.UnpackSound, "clothing");
-        var buildSound = Sound("LZC_BuildSound", settings.Vanilla.BuildSound, "hammer");
 
         var packUpMsg = mod.Messages.AddNew("LZC_PackUpConfirmMsg");
         packUpMsg.Description = "Pack up your camp?";
@@ -261,7 +260,6 @@ public sealed class Builder
         AddIfFound(campScript, "LZC_Firepit", firepit);
         AddIfFound(campScript, "LZC_ChoppingBlock", choppingBlock);
         AddIfFound(campScript, "LZC_UnpackSound", unpackSound);
-        AddIfFound(campScript, "LZC_BuildSound", buildSound);
         AddIfFound(campScript, "Firewood01", firewood);
         AddIfFound(campScript, "LocTypeCity", locTypeCity);
         AddIfFound(campScript, "LocTypeTown", locTypeTown);
