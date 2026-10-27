@@ -10,8 +10,6 @@
     "buildSound": "NPCHumanBlacksmithRepairHammerSD",
     "bedroll": "Bedroll01",
     "sitCrossLegged": "SitCrossLeggedMarker",
-    "sleepTemplate": "Sleep",
-    "sitTemplate": "Sit",
     "voiceEquipType": "Voice",
     "firewood": "Firewood01",
     "locTypeCity": "LocTypeCity",

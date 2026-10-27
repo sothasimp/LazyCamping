@@ -41,17 +41,6 @@ public static class TestMaster
             mod.Factions.AddNew(v.PartnerFaction);
         }
 
-        // Package templates with the kinds of inputs the builder rewires.
-        var sleep = mod.Packages.AddNew(v.SleepTemplate);
-        sleep.Type = Package.Types.PackageTemplate;
-        sleep.Data[0] = new PackageDataLocation { Name = "Location", Location = new LocationTargetRadius() };
-        sleep.Data[1] = new PackageDataBool { Name = "Lock Doors" };
-
-        var sitTemplate = mod.Packages.AddNew(v.SitTemplate);
-        sitTemplate.Type = Package.Types.PackageTemplate;
-        sitTemplate.Data[0] = new PackageDataLocation { Name = "Location", Location = new LocationTargetRadius() };
-        sitTemplate.Data[1] = new PackageDataTarget { Name = "Target", Target = new PackageTargetSelf() };
-
         // The real master's low FormIDs (MapMarker, XMarkerHeading) are normally reserved.
         mod.WriteToBinary(path, BinaryWriteParameters.Default with
         {

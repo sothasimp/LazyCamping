@@ -33,8 +33,6 @@ public sealed class VanillaIds
     public string BuildSound { get; set; } = "";
     public string Bedroll { get; set; } = "";
     public string SitCrossLegged { get; set; } = "";
-    public string SleepTemplate { get; set; } = "";
-    public string SitTemplate { get; set; } = "";
     public string VoiceEquipType { get; set; } = "";
     public string Firewood { get; set; } = "";
     public string LocTypeCity { get; set; } = "";

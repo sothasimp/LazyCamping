@@ -124,7 +124,7 @@ Once it's built:
 
 ### Settings (`Plugin/settings.json`)
 
-- **`vanilla`:** EditorIDs of the vanilla records used: the burning campfire (an activator; any placeable type works), its light, the unlit firepit (its model is used for `LZC_Firepit`), the woodcutting block, optional sounds played as the camp is set up: an unpacking sound once, then a build sound 3 times (by default `ITMClothingDownSD` and `NPCHumanBlacksmithRepairHammerSD`; a vanilla *Sound Marker* is used as it is, and a *Sound Descriptor* gets a sound marker of its own, `LZC_UnpackSound` or `LZC_BuildSound`), the ground bedroll, the cross-legged sit marker, the *Sleep* and *Sit* package templates, the *Voice* equip slot, `Firewood01`, `LocTypeCity`, `LocTypeTown`, and an optional partner faction (for example `PlayerMarriedFaction`). **Some of the defaults are educated guesses.** If one isn't in `Skyrim.esm`, the builder stops and lists the closest EditorIDs it found, so you can correct it. To list every record whose EditorID contains some text, run `dotnet run --project Plugin -- --master "<Skyrim Data>\Skyrim.esm" --find campfire`.
+- **`vanilla`:** EditorIDs of the vanilla records used: the burning campfire (an activator; any placeable type works), its light, the unlit firepit (its model is used for `LZC_Firepit`), the woodcutting block, optional sounds played as the camp is set up: an unpacking sound once, then a build sound 3 times (by default `ITMClothingDownSD` and `NPCHumanBlacksmithRepairHammerSD`; a vanilla *Sound Marker* is used as it is, and a *Sound Descriptor* gets a sound marker of its own, `LZC_UnpackSound` or `LZC_BuildSound`), the ground bedroll, the cross-legged sit marker, the *Voice* equip slot, `Firewood01`, `LocTypeCity`, `LocTypeTown`, and an optional partner faction (for example `PlayerMarriedFaction`). **Some of the defaults are educated guesses.** If one isn't in `Skyrim.esm`, the builder stops and lists the closest EditorIDs it found, so you can correct it. To list every record whose EditorID contains some text, run `dotnet run --project Plugin -- --master "<Skyrim Data>\Skyrim.esm" --find campfire`.
 - **`models`:** mesh paths, relative to `Data/Meshes`, for the kits, both tent sizes, the player's fire seat, the invisible bedroll seat, and the storage backpack.
 - **`tentTextures`:** how the colours are made (see below).
 - **`kits`:** inventory names, weights and values. `{Colour}` in a name becomes the tent's colour.
@@ -142,7 +142,6 @@ Once it's built:
 | Message | `LZC_PackUpConfirmMsg` | *Pack up your camp?* with *Yes* / *No* |
 | Global | `LZC_CampActivity` | what followers are doing (see section 2b) |
 | Quests | `LZC_CampsiteQuest`, `LZC_CampFollowersQuest` | scripts, aliases, alias scripts and every property filled in |
-| Packages | `LZC_FollowerSleep1`–`3`, `LZC_FollowerSit1`–`3` | from the vanilla *Sleep* and *Sit* templates, pointed at each follower's bedroll and seat aliases |
 | Holding cell | `LZC_HoldingCell` | the camp map marker (`LZC_CampMapMarkerRef`), the storage backpack (`LZC_CampStorageRef`), and the clutter sets |
 
 The campfire, light, bedroll and follower sit marker are the vanilla objects themselves, not copies, so mods that change those objects also change the camp's. In particular, **Base Object Swapper (BOS) variance mods** also vary the camp's campfire and bedrolls.
@@ -201,6 +200,15 @@ The camp also uses these when it shares bedrolls out between the tents, so partn
 | 0 | the camp is up, before anyone has sat down; after the player wakes; after the player leaves camp | follow the player as normal |
 | 1 | the player has sat in their fire seat, or on a bedroll's seat | sit in the fire seats, or on the other bedrolls' seats (partners beside the player, couples side by side). They **stay seated after the player gets up**, until the player goes to bed (they go to their bedrolls), packs up the camp, or leaves it: more than `CampRadius` from the fire, or in another worldspace, checked every 5 seconds (they follow). Sitting somewhere else moves them to match. |
 | 2 | the player is sleeping within `CampRadius` of the fire | sleep in their bedrolls |
+
+**Making the follower packages (once, in the Creation Kit).** The builder doesn't make these: the Creation Kit couldn't load the packages it wrote. For each N from 1 to 3, make two packages, both with **Owner Quest** `LZC_CampFollowersQuest`:
+
+| Package | Template | Data | Condition (run on subject) |
+|---|---|---|---|
+| `LZC_FollowerSleepN` | *Sleep* | Sleep Location: *Near Reference Alias* `BedrollN`, radius 64 | `GetGlobalValue LZC_CampActivity == 2` |
+| `LZC_FollowerSitN` | *Sit* | Sit Location: *Near Reference Alias* `SeatN`, radius 64; Search Criteria / target: alias `SeatN` | `GetGlobalValue LZC_CampActivity == 1` |
+
+Then open `LZC_CampFollowersQuest`'s **Quest Aliases** tab, and in each `FollowerN` alias add `LZC_FollowerSleepN` and `LZC_FollowerSitN` to its *Alias Package Data*. Without them followers just follow the player as normal: they don't sit or sleep at camp.
 
 The follower quest's `CampRadius` setting (default 1024, in the follower quest's script) is how near the fire counts as "at camp", for sleeping and for seated followers staying put.
 

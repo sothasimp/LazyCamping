@@ -55,14 +55,12 @@ public sealed class Builder
         var choppingBlock = Find<IFurnitureGetter>(settings.Vanilla.ChoppingBlock, "chopping");
         var bedroll = Find<IFurnitureGetter>(settings.Vanilla.Bedroll, "bedroll");
         var sitMarker = Find<IFurnitureGetter>(settings.Vanilla.SitCrossLegged, "crossleg");
-        var sleepTemplate = Find<IPackageGetter>(settings.Vanilla.SleepTemplate, "sleep");
-        var sitTemplate = Find<IPackageGetter>(settings.Vanilla.SitTemplate, "sit");
         var voice = Find<IEquipTypeGetter>(settings.Vanilla.VoiceEquipType, "voice");
         var firewood = Find<IMiscItemGetter>(settings.Vanilla.Firewood, "firewood");
         var locTypeCity = Find<IKeywordGetter>(settings.Vanilla.LocTypeCity, "loctype");
         var locTypeTown = Find<IKeywordGetter>(settings.Vanilla.LocTypeTown, "loctype");
         var partnerFaction = Find<IFactionGetter>(settings.Vanilla.PartnerFaction, "married");
-        if (problems.Count > 0 || sitMarker is null || sleepTemplate is null || sitTemplate is null)
+        if (problems.Count > 0 || sitMarker is null)
         {
             return mod;
         }
@@ -162,7 +160,9 @@ public sealed class Builder
         var largeSet = ClutterSet(holding, "LargeTent", 2, clutter.LargeTent, storageMarkers);
         var ringSet = ClutterSet(holding, "RingBedroll", 3, clutter.RingBedroll, storageMarkers);
 
-        // Follower packages: sleep in BedrollN, sit in SeatN, by LZC_CampActivity.
+        // Follower aliases. Their packages (sleep in BedrollN, sit in SeatN, by
+        // LZC_CampActivity) are made in the Creation Kit: it couldn't load
+        // packages written here (see the README).
         const uint playerAlias = 0;
         const uint firstFollowerAlias = 1;
         const uint firstBedrollAlias = firstFollowerAlias + MaxFollowers;
@@ -176,8 +176,6 @@ public sealed class Builder
         });
         for (uint i = 0; i < MaxFollowers; i++)
         {
-            var sleep = PackageFromTemplate($"LZC_FollowerSleep{i + 1}", sleepTemplate, firstBedrollAlias + i, followersQuest, activity, 2);
-            var sit = PackageFromTemplate($"LZC_FollowerSit{i + 1}", sitTemplate, firstSeatAlias + i, followersQuest, activity, 1);
             var follower = new QuestAlias
             {
                 ID = firstFollowerAlias + i,
@@ -194,8 +192,6 @@ public sealed class Builder
                 // Don't pick someone an earlier alias already holds.
                 follower.Conditions.Add(Equals(new GetIsAliasRefConditionData { ReferenceAliasIndex = (int)(firstFollowerAlias + j) }, 0));
             }
-            follower.PackageData.Add(sleep);
-            follower.PackageData.Add(sit);
             followersQuest.Aliases.Add(follower);
         }
         for (uint i = 0; i < MaxFollowers; i++)
@@ -384,46 +380,6 @@ public sealed class Builder
         seat.Name = "Seat";
         seat.Model = new Model { File = model };
         return seat;
-    }
-
-    Package PackageFromTemplate(string editorId, IPackageGetter template, uint alias, Quest owner, IGlobalGetter activity, float when)
-    {
-        var package = mod.Packages.AddNew(editorId);
-        package.Type = Package.Types.Package;
-        package.PackageTemplate.SetTo(template);
-        package.OwnerQuest.SetTo(owner);
-        package.DataInputVersion = template.DataInputVersion;
-        package.ScheduleMonth = -1;
-        package.ScheduleDayOfWeek = Package.DayOfWeek.Any;
-        package.ScheduleDate = 0;
-        package.ScheduleHour = -1;
-        package.ScheduleMinute = -1;
-        package.ScheduleDurationInMinutes = 0;
-
-        var condition = new GetGlobalValueConditionData();
-        condition.Global.Link.SetTo(activity);
-        package.Conditions.Add(Equals(condition, when));
-
-        // Copy the template's inputs, pointing every location and target at the alias.
-        foreach (var (index, input) in template.Data)
-        {
-            var copy = input.DeepCopy();
-            switch (copy)
-            {
-                case PackageDataLocation location:
-                    location.Location = new LocationTargetRadius
-                    {
-                        Target = new LocationFallback { Type = LocationTargetRadius.LocationType.AliasForReference, Data = (int)alias },
-                        Radius = 64,
-                    };
-                    break;
-                case PackageDataTarget target:
-                    target.Target = new PackageTargetAlias { Alias = (int)alias };
-                    break;
-            }
-            package.Data[index] = copy;
-        }
-        return package;
     }
 
     Cell HoldingCell()
