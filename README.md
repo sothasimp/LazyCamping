@@ -140,7 +140,7 @@ Everything else stays as you made it: models, bounds, texture sets (normal maps 
 ### Settings (`Plugin/settings.json`)
 
 - **`vanilla`:** EditorIDs of the vanilla records used: the burning campfire (an activator; any placeable type works), the cooking pot furniture (copied as the hidden `LZC_CookingStation`), its light, the unlit firepit (its model is used for `LZC_Firepit`), the woodcutting block, an optional sound played as the camp is set up and packed up (by default `ITMClothingDownSD`; a vanilla *Sound Marker* is used as it is, and a *Sound Descriptor* gets a sound marker of its own, `LZC_UnpackSound`), the ground bedroll, the cross-legged sit marker, the *Voice* equip slot, `Firewood01`, `LocTypeCity`, `LocTypeTown`, and an optional partner faction (for example `PlayerMarriedFaction`). **Some of the defaults are educated guesses.** If one isn't in `Skyrim.esm`, the builder stops and lists the closest EditorIDs it found, so you can correct it. To list every record whose EditorID contains some text, run `dotnet run --project Plugin -- --master "<Skyrim Data>\Skyrim.esm" --find campfire`.
-- **`models`:** mesh paths, relative to `Data/Meshes`, for the kits, both tent sizes, the player's fire seat, the bedroll seat, the empty cooking station model, the bathtub, and the storage backpack.
+- **`models`:** mesh paths, relative to `Data/Meshes`, for the kits, both tent sizes, the player's fire seat, the bedroll seat, the bathtub, and the storage backpack.
 - **`tentTextures`:** how the colours are made (see below).
 - **`kits`:** inventory names, weights and values. `{Colour}` in a name becomes the tent's colour.
 
@@ -151,7 +151,7 @@ Everything else stays as you made it: models, bounds, texture sets (normal maps 
 | Kits | `LZC_BedrollKit`, `LZC_TentKitSmallBrown` … `LZC_TentKitLargeWhite` | 11 MiscItems |
 | Tents | `LZC_TentSmallBrown` … `LZC_TentLargeWhite` | 10 Activators with `LZC_CampObjectScript` |
 | Bath | `LZC_Tub`, `LZC_ClothesBasket` | the tub (static, your mesh); a clothes basket activator (*Use*: undress, then dress again; `LZC_CampObjectScript`; give it a model in the CK or `models.clothesBasket`) |
-| Cooking | `LZC_CookActivator`, `LZC_CookingStation` | the base for the cook box (named *Campfire*, shows *Cook*, with `LZC_CampObjectScript`); a copy of the vanilla cooking pot furniture with an empty model, placed hidden at the fire, which activating the box activates |
+| Cooking | `LZC_CookActivator`, `LZC_CookingStation` | the base for the cook box (named *Campfire*, shows *Cook*, with `LZC_CampObjectScript`); a copy of the vanilla cooking pot furniture with the XMarker's mesh and *Is Marker*, placed hidden at the fire, which activating the box activates |
 | Firepit | `LZC_Firepit` | an Activator with the vanilla unlit firepit's model and `LZC_CampObjectScript`, for the firewood mechanic |
 | Seats | `LZC_SitMarkerPlayer`, `LZC_BedrollSitMarker` | copies of the vanilla cross-legged marker with the models from `settings.json` |
 | Storage | `LZC_CampStorageContainer` | a container that never respawns |
@@ -195,7 +195,7 @@ These go in `Data/Meshes/LazyCamping/` and `Data/Textures/LazyCamping/`, at the 
 - **Tent meshes**, small (170 × 170) and large (300 × 200).
 - **The player's fire seat:** something visible to sit on, such as a fur pelt or a log, with collision. The player can only activate furniture they can point the crosshair at.
 - **The bedroll seat** needs no art: give `LZC_BedrollSitMarker` the vanilla cross-legged sit marker's model, which is invisible in game and has the furniture marker the game needs to seat the player (furniture markers live in the `.nif`). The player reaches it by sneak-activating the bedroll, so it doesn't need to be selectable.
-- **The cooking station's model** (`models.cookingStation`): an empty `.nif`, with no geometry, collision or furniture marker, so activating the station opens the Cook menu without moving the player. In NifSkope, open any small vanilla model, delete everything under the root node, and save it as `Meshes/LazyCamping/CookingStation.nif`.
+- **The cooking station** needs no art: the builder gives `LZC_CookingStation` the editor XMarker's mesh and the *Is Marker* flag, so it isn't drawn in game, and has no furniture marker (no stirring animation) or collision. Set `models.cookingStation` only to use a mesh of your own.
 - **The storage backpack** mesh.
 - **Tent colours.** Brown is each tent mesh's own texture. For the other four colours, make recoloured copies of the canvas texture, named like `Textures/LazyCamping/TentSmallBlue_d.dds` (the pattern is `tentTextures.path`). Then set `tentTextures.smallShape` and `largeShape` to the name of the canvas shape in each mesh (look it up in NifSkope). The builder makes a texture set per colour and swaps it onto that shape. With the shape names left empty, every colour uses the mesh's own texture.
 

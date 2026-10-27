@@ -27,6 +27,7 @@ public sealed class Builder
     const short ScriptVersion = 5;
     const ushort ScriptObjectFormat = 2;
     const int PersistentFlag = 0x400;   // reference record flag: persistent
+    const int IsMarkerFlag = 0x800000;  // base object record flag: not drawn in game
 
     readonly ISkyrimModGetter skyrim;
     readonly Settings settings;
@@ -123,7 +124,14 @@ public sealed class Builder
         {
             cookingStation = mod.Furniture.DuplicateInAsNewRecord(cookingPot, "LZC_CookingStation");
             cookingStation.Name = "Campfire";
-            cookingStation.Model = new Model { File = settings.Models.CookingStation };
+            // The pot's own mesh would bring its furniture marker (the stirring
+            // animation) and collision. The editor XMarker's mesh has neither,
+            // and Is Marker keeps it from being drawn in game.
+            var xMarker = skyrim.EnumerateMajorRecords<IStaticGetter>().FirstOrDefault(r => r.FormKey == XMarkerHeadingKey);
+            cookingStation.Model = !string.IsNullOrWhiteSpace(settings.Models.CookingStation)
+                ? new Model { File = settings.Models.CookingStation }
+                : xMarker?.Model?.DeepCopy();
+            cookingStation.MajorRecordFlagsRaw |= IsMarkerFlag;
         }
 
         // The bathtub: a static with the tub mesh. Its water, steps and so on
