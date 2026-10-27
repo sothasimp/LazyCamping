@@ -23,7 +23,7 @@ The mod adds a **Set Up Camp** Lesser Power, named " Set Up Camp" with a leading
 - **the other tents** stand 70° to either side of it: the second to the right, the third to the left. The near side of the fire stays open. Tent fronts sit just behind the seats: small tents stand 250 units from the fire, a lone large tent 265, and a large tent with small ones beside it about 285: the ring is widened just far enough that the tents' front corners don't touch, then every tent is set back another 15 (`TentSetback`).
 - **with no tent kits**, there are no tents. The bedrolls (up to 4) lie sideways in the same fan, just outside the seats: the player's behind their seat, the rest beside it. With one bedroll per person, each lies behind its owner's seat. The player and a partner, and a follower couple, get neighbouring places with their bedrolls head to head.
 
-A **bathtub** (`LZC_Tub`, a static with your tub mesh) stands beside the outermost tent, on the other side from the chopping block, or along the bedroll fan without tents. It can be turned off (`PlaceTub`). What's in and around it is the **tub clutter set**, arranged in the Creation Kit: by default the vanilla rain barrel water (`LargeRainBarrelWater01`) in it and a **clothes basket** (`LZC_ClothesBasket`) that undresses the player when activated; add steps, invisible seats inside the tub and so on.
+A **bathtub** (`LZC_Tub`, a static with your tub mesh) stands beside the outermost tent, on the other side from the chopping block, or along the bedroll fan without tents. It can be turned off (`PlaceTub`). What's in and around it is the **tub clutter set**, arranged in the Creation Kit: by default the vanilla rain barrel water (`LargeRainBarrelWater01`) in it and a **clothes basket** (`LZC_ClothesBasket`): activating it takes off everything the player is wearing, and activating it again puts it all back on; add steps, invisible seats inside the tub and so on.
 
 **Clutter sets** add clutter around the camp, such as pelts, packs, firewood and lanterns. You arrange each set by eye in the Creation Kit around a stand-in marker, and every fire, tent or tentless bedroll gets a copy, turned to match. One **backpack** can be the player's storage: it's a single real container that moves from camp to camp, so whatever's in it stays there.
 
@@ -54,7 +54,7 @@ Scripts/Source/
   LZC_TentActivatorScript.psc   on every tent; sneak-activating it from outside offers to pack up the camp
   LZC_FirepitScript.psc         on the unlit firepit; sneak-activating it with firewood lights the fire
   LZC_CampfireScript.psc        on the cook box over the camp's fire; activating it opens the Cook menu
-  LZC_ClothesBasketScript.psc   on the clothes basket by the tub; activating it undresses the player
+  LZC_ClothesBasketScript.psc   on the clothes basket by the tub; activating it undresses the player, and again dresses them
   LZC_CampFollowersScript.psc   followers' seats and bedrolls; sit/sleep with the player
   LZC_CampPlayerAliasScript.psc on the follower quest's Player alias; notices the player sitting
   LZC_Native.psc                declarations of the SKSE plugin's functions
@@ -139,7 +139,7 @@ Once it's built:
 |---|---|---|
 | Kits | `LZC_BedrollKit`, `LZC_TentKitSmallBrown` … `LZC_TentKitLargeWhite` | 11 MiscItems |
 | Tents | `LZC_TentSmallBrown` … `LZC_TentLargeWhite` | 10 Activators with `LZC_TentActivatorScript` |
-| Bath | `LZC_Tub`, `LZC_ClothesBasket` | the tub (static, your mesh); a clothes basket activator (*Undress*, `LZC_ClothesBasketScript`; give it a model in the CK or `models.clothesBasket`) |
+| Bath | `LZC_Tub`, `LZC_ClothesBasket` | the tub (static, your mesh); a clothes basket activator (*Use*: undress, then dress again; `LZC_ClothesBasketScript`; give it a model in the CK or `models.clothesBasket`) |
 | Cooking | `LZC_CookActivator`, `LZC_CookingStation` | the base for the cook box (named *Campfire*, shows *Cook*, with `LZC_CampfireScript`); a copy of the vanilla cooking pot furniture with an empty model, placed hidden at the fire, which activating the box activates |
 | Firepit | `LZC_Firepit` | an Activator with the vanilla unlit firepit's model and `LZC_FirepitScript`, for the firewood mechanic |
 | Seats | `LZC_SitMarkerPlayer`, `LZC_BedrollSitMarker` | copies of the vanilla cross-legged marker with the models from `settings.json` |

@@ -138,7 +138,7 @@ public sealed class Builder
         }
         var basket = mod.Activators.AddNew("LZC_ClothesBasket");
         basket.Name = "Clothes Basket";
-        basket.ActivateTextOverride = "Undress";
+        basket.ActivateTextOverride = "Use";
         if (!string.IsNullOrWhiteSpace(settings.Models.ClothesBasket))
         {
             basket.Model = new Model { File = settings.Models.ClothesBasket };
