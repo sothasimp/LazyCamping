@@ -165,6 +165,8 @@ Sound Property LZC_BuildSound Auto
 {Optional. Played BuildSoundRepeats times as the camp is set up, like stakes
 being driven in.}
 Int Property BuildSoundRepeats = 3 Auto
+Float Property BuildSoundVolume = 0.5 Auto
+{The build sound's volume, from 0 to 1.}
 Float Property BuildSoundInterval = 0.6 Auto
 {Seconds between the build sounds.}
 
@@ -798,7 +800,7 @@ Function PlayBuildSound()
 	EndIf
 	Int i = 0
 	While LZC_BuildSound && i < BuildSoundRepeats
-		LZC_BuildSound.Play(PlayerRef)
+		Sound.SetInstanceVolume(LZC_BuildSound.Play(PlayerRef), BuildSoundVolume)
 		Utility.Wait(BuildSoundInterval)
 		i += 1
 	EndWhile
