@@ -53,7 +53,7 @@ model (no furniture marker), placed hidden at the fire. Activating
 LZC_CookBox activates it, which opens the Cook menu without an animation.}
 ObjectReference Property LZC_CookBox Auto
 {Optional. A persistent, initially disabled activator box in the holding cell:
-a box primitive on the L_ACTIVATOR collision layer, base LZC_CookActivator
+a box primitive with Player Activation ticked, base LZC_CookActivator
 (LZC_CampObjectScript). It moves onto the fire while the fire is lit, so looking
 at the fire shows "Cook".}
 Light Property LZC_CampfireLight Auto
