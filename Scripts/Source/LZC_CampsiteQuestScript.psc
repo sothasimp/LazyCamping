@@ -159,10 +159,11 @@ Bool Property FadeToBlack = True Auto
 {Fade the screen to black while the camp is set up or packed up.}
 Float Property kFadeSeconds = 1.0 AutoReadOnly
 Sound Property LZC_BuildSound Auto
-{Optional. Played while tents are pitched.}
-Float Property BuildSoundSeconds = 2.0 Auto
-{How long the screen stays black while the build sound plays, when tents are
-pitched with FadeToBlack on.}
+{Optional. Played BuildSoundRepeats times as the camp is set up, like stakes
+being driven in.}
+Int Property BuildSoundRepeats = 3 Auto
+Float Property BuildSoundInterval = 0.6 Auto
+{Seconds between the build sounds.}
 
 Bool Property AlignToSlope = True Auto
 {Tilt the tents, bedrolls, seats and fire to match the ground.}
@@ -694,9 +695,6 @@ Function SetUpCamp()
 	itemCount = AddSet(setItems, itemSet, itemCount, LZC_RingBedrollClutter, 4)
 
 	FadeOut()
-	If tents > 0 && LZC_BuildSound
-		LZC_BuildSound.Play(PlayerRef)
-	EndIf
 	placedRefs = LZC_Native.PlaceCamp(PlayerRef, heading, forms, fwd, side, lift, turn, AlignToSlope, MaxSlope, clutterSet, setAnchors, setItems, itemSet, LZC_CampStorageMarkers)
 	If placedRefs.Length <= kSlotCount
 		FadeIn()
@@ -784,10 +782,18 @@ Function SetUpCamp()
 	CampDeployed = True
 	; The leading space sorts the power to the top of the magic menu.
 	LZC_Native.RenameForm(LZC_SetUpCampPower, " Pack Up Camp")
-	If FadeToBlack && tents > 0 && LZC_BuildSound
-		Utility.Wait(BuildSoundSeconds)
-	EndIf
+	PlayBuildSound()
 	FadeIn()
+EndFunction
+
+; The build sound, BuildSoundRepeats times, while the screen is still black.
+Function PlayBuildSound()
+	Int i = 0
+	While LZC_BuildSound && i < BuildSoundRepeats
+		LZC_BuildSound.Play(PlayerRef)
+		Utility.Wait(BuildSoundInterval)
+		i += 1
+	EndWhile
 EndFunction
 
 ; Called by LZC_FirepitScript. Sneak-activating the camp's unlit firepit

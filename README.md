@@ -124,7 +124,7 @@ Once it's built:
 
 ### Settings (`Plugin/settings.json`)
 
-- **`vanilla`:** EditorIDs of the vanilla records used: the burning campfire (an activator; any placeable type works), its light, the unlit firepit (its model is used for `LZC_Firepit`), the woodcutting block, an optional sound played while tents are pitched (a *Sound Descriptor*; the builder wraps it in the sound marker `LZC_BuildSound`), the ground bedroll, the cross-legged sit marker, the *Sleep* and *Sit* package templates, the *Voice* equip slot, `Firewood01`, `LocTypeCity`, `LocTypeTown`, and an optional partner faction (for example `PlayerMarriedFaction`). **Some of the defaults are educated guesses.** If one isn't in `Skyrim.esm`, the builder stops and lists the closest EditorIDs it found, so you can correct it. To list every record whose EditorID contains some text, run `dotnet run --project Plugin -- --master "<Skyrim Data>\Skyrim.esm" --find campfire`.
+- **`vanilla`:** EditorIDs of the vanilla records used: the burning campfire (an activator; any placeable type works), its light, the unlit firepit (its model is used for `LZC_Firepit`), the woodcutting block, an optional sound played 3 times as the camp is set up (a *Sound Descriptor*, by default `WPNImpactBladeVsWoodSD`; the builder wraps it in the sound marker `LZC_BuildSound`), the ground bedroll, the cross-legged sit marker, the *Sleep* and *Sit* package templates, the *Voice* equip slot, `Firewood01`, `LocTypeCity`, `LocTypeTown`, and an optional partner faction (for example `PlayerMarriedFaction`). **Some of the defaults are educated guesses.** If one isn't in `Skyrim.esm`, the builder stops and lists the closest EditorIDs it found, so you can correct it. To list every record whose EditorID contains some text, run `dotnet run --project Plugin -- --master "<Skyrim Data>\Skyrim.esm" --find campfire`.
 - **`models`:** mesh paths, relative to `Data/Meshes`, for the kits, both tent sizes, the player's fire seat, the invisible bedroll seat, and the storage backpack.
 - **`tentTextures`:** how the colours are made (see below).
 - **`kits`:** inventory names, weights and values. `{Colour}` in a name becomes the tent's colour.
@@ -206,7 +206,7 @@ The follower quest's `CampRadius` setting (default 1024, in the follower quest's
 
 ### 2c. Settings on the quest scripts
 
-The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `FadeToBlack`, `BuildSoundSeconds`, `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, `PlaceCampfireLight`, the tent sizes, `SeatRadius`, `TentRingGap`, `BedrollRingRadius`, `BedrollSpacing`, `PairedBedrollSpacing`, `FirewoodMechanic`, `FireBurnHours` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file.
+The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `FadeToBlack`, `BuildSoundRepeats`, `BuildSoundInterval`, `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, `PlaceCampfireLight`, the tent sizes, `SeatRadius`, `TentRingGap`, `BedrollRingRadius`, `BedrollSpacing`, `PairedBedrollSpacing`, `FirewoodMechanic`, `FireBurnHours` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file.
 
 ### 2d. How players get the kits
 
