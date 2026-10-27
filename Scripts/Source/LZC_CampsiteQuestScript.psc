@@ -31,6 +31,8 @@ in the inventory lights it, burning one; it burns for FireBurnHours, then goes
 out. A chopping block stands by the tents. Off: the fire is always lit.}
 Float Property FireBurnHours = 6.0 Auto
 {How long a fire lit with firewood burns, in game hours.}
+Bool Property PlaceChoppingBlock = True Auto
+{With FirewoodMechanic, place LZC_ChoppingBlock beside the tents.}
 
 ; ---------------------------------------------------------------------------
 ; World objects placed when the camp is set up
@@ -540,7 +542,7 @@ Function SetUpCamp()
 	If FirewoodMechanic && LZC_Firepit
 		forms[kFirepit] = LZC_Firepit
 		fwd[kFirepit] = FireForward()
-		If LZC_ChoppingBlock
+		If LZC_ChoppingBlock && PlaceChoppingBlock
 			SetChoppingBlock(forms, fwd, side, turn, tents, sizes, radius, bedrolls)
 		EndIf
 	EndIf
