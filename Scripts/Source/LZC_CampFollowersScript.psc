@@ -62,10 +62,10 @@ Int[] spotOrder
 ; Called by the camp script once everything is placed. allBeds holds every
 ; camp bedroll and bedSeats the seat on each (groups/orders say where each one
 ; is); followers get theirs when the player sleeps or sits on a bedroll.
-Function Assign(ObjectReference akCampfire, ObjectReference[] seats, Int[] places, ObjectReference[] allBeds, ObjectReference[] bedSeats, Int[] groups, Int[] orders)
+Function Assign(ObjectReference akCampfire, ObjectReference[] akFireSeats, Int[] places, ObjectReference[] allBeds, ObjectReference[] bedSeats, Int[] groups, Int[] orders)
 	CampAnchor = akCampfire
-	PlayerSeat = seats[0]
-	fireSeats = seats
+	PlayerSeat = akFireSeats[0]
+	fireSeats = akFireSeats
 	firePlaces = places
 	fireGroups = new Int[6]
 	campBedrolls = allBeds
