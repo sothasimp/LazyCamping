@@ -53,6 +53,7 @@ public sealed class Builder
         var campfireLight = Find<ILightGetter>(settings.Vanilla.CampfireLight, "fire");
         var campfireUnlit = Find<IPlaceableObjectGetter>(settings.Vanilla.CampfireUnlit, "campfire");
         var choppingBlock = Find<IFurnitureGetter>(settings.Vanilla.ChoppingBlock, "chopping");
+        var buildSoundDescriptor = Find<ISoundDescriptorGetter>(settings.Vanilla.BuildSound, "craft");
         var bedroll = Find<IFurnitureGetter>(settings.Vanilla.Bedroll, "bedroll");
         var sitMarker = Find<IFurnitureGetter>(settings.Vanilla.SitCrossLegged, "crossleg");
         var sleepTemplate = Find<IPackageGetter>(settings.Vanilla.SleepTemplate, "sleep");
@@ -106,6 +107,15 @@ public sealed class Builder
             firepit.Model = (campfireUnlit as IModeledGetter)?.Model?.DeepCopy();
             firepit.ObjectBounds = (campfireUnlit as IObjectBoundedGetter)?.ObjectBounds.DeepCopy() ?? Bounds(50, 50, 30);
             firepit.VirtualMachineAdapter = Scripts(Script("LZC_FirepitScript", Link("CampQuest", campQuest)));
+        }
+
+        // Papyrus plays sound markers, so the vanilla sound gets one.
+        SoundMarker? buildSound = null;
+        if (buildSoundDescriptor is not null)
+        {
+            buildSound = mod.SoundMarkers.AddNew("LZC_BuildSound");
+            buildSound.ObjectBounds = Bounds(0, 0, 0);
+            buildSound.SoundDescriptor.SetTo(buildSoundDescriptor);
         }
 
         var packUpMsg = mod.Messages.AddNew("LZC_PackUpConfirmMsg");
@@ -261,6 +271,7 @@ public sealed class Builder
         AddIfFound(campScript, "LZC_CampfireLight", campfireLight);
         AddIfFound(campScript, "LZC_Firepit", firepit);
         AddIfFound(campScript, "LZC_ChoppingBlock", choppingBlock);
+        AddIfFound(campScript, "LZC_BuildSound", buildSound);
         AddIfFound(campScript, "Firewood01", firewood);
         AddIfFound(campScript, "LocTypeCity", locTypeCity);
         AddIfFound(campScript, "LocTypeTown", locTypeTown);

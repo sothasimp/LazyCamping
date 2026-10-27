@@ -25,6 +25,10 @@ public static class TestMaster
         mod.Lights.AddNew(v.CampfireLight);
         mod.Statics.AddNew(v.CampfireUnlit).Model = new Model { File = @"Clutter\Campfire01Off.nif" };
         mod.Furniture.AddNew(v.ChoppingBlock);
+        if (!string.IsNullOrWhiteSpace(v.BuildSound))
+        {
+            mod.SoundDescriptors.AddNew(v.BuildSound);
+        }
         mod.Furniture.AddNew(v.Bedroll);
         var sit = mod.Furniture.AddNew(v.SitCrossLegged);
         sit.Markers = [new FurnitureMarker { Enabled = true }];

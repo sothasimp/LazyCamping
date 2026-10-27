@@ -29,6 +29,7 @@ public sealed class VanillaIds
     public string CampfireLight { get; set; } = "";
     public string CampfireUnlit { get; set; } = "";
     public string ChoppingBlock { get; set; } = "";
+    public string BuildSound { get; set; } = "";
     public string Bedroll { get; set; } = "";
     public string SitCrossLegged { get; set; } = "";
     public string SleepTemplate { get; set; } = "";

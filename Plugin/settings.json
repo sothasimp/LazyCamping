@@ -6,6 +6,7 @@
     "campfireLight": "WRFireLightNS",
     "campfireUnlit": "Campfire01Off",
     "choppingBlock": "WoodChoppingBlock",
+    "buildSound": "",
     "bedroll": "Bedroll01",
     "sitCrossLegged": "SitCrossLeggedMarker",
     "sleepTemplate": "Sleep",
