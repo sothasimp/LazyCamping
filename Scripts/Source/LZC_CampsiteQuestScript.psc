@@ -77,6 +77,9 @@ water, so bathing mods that use it work in the tub.}
 Bool Property PlaceTub = True Auto
 Float Property TubWaterHeight = 20.0 Auto
 {How far above the tub's base the water goes.}
+Float Property TubWaterScale = 1.0 Auto
+{The water's size, to fit the tub's opening (1 = as it is; the game scales
+evenly in every direction).}
 Float Property TubHalfWidth = 50.0 Auto
 {Half the tub's length along the tent ring, for keeping it clear of the tent.}
 Form Property LZC_SitMarkerPlayer Auto
@@ -708,6 +711,10 @@ Function SetUpCamp()
 			LZC_CampFollowersQuest.Stop()
 		EndIf
 		Return
+	EndIf
+
+	If placedRefs[kTubWater] && TubWaterScale != 1.0
+		placedRefs[kTubWater].SetScale(TubWaterScale)
 	EndIf
 
 	; The cook box goes over the fire, enabled only while the fire is lit.
