@@ -143,11 +143,6 @@ bedroll model's long axis isn't its forward axis.}
 ; ---------------------------------------------------------------------------
 ; Followers
 ; ---------------------------------------------------------------------------
-ReferenceAlias[] Property RingBedrollAliases Auto
-{RingBedroll1-4 on this quest: optional, empty Specific Reference aliases with
-LZC_BedrollAliasScript. In a camp without tents they hold the bedrolls, so
-sneaking and activating one packs up the camp.}
-
 Quest Property LZC_CampFollowersQuest Auto
 {Optional. Seats followers by the fire and puts them to bed with the player.
 Leave empty to place only the player's seat and the bedrolls.}
@@ -212,7 +207,7 @@ Float Property kFireHalfSize = 50.0 AutoReadOnly     ; for the ground check
 Float Property kFanStep = 70.0 AutoReadOnly          ; degrees between neighbours
 Float Property kTentClearance = 15.0 AutoReadOnly    ; between neighbouring tents
 Float Property kChoppingBlockGap = 60.0 AutoReadOnly ; from a tent's side to the block
-Int Property kNativeVersion = 6 AutoReadOnly         ; LazyCamping.dll needed
+Int Property kNativeVersion = 7 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
 Int[] tentSizesUsed
@@ -275,36 +270,6 @@ Function OnTentActivated(ObjectReference akTent)
 		EndIf
 		t += 1
 	EndWhile
-EndFunction
-
-; Called by LZC_BedrollAliasScript. In a camp without tents, the bedrolls'
-; activation is blocked so this runs first: sneaking packs up the camp, and
-; anything else is passed through to the bedroll as normal.
-Function OnBedrollActivated(ObjectReference akBedroll, ObjectReference akActionRef)
-	If !CampDeployed || TentCount > 0 || !IsCampBedroll(akBedroll)
-		Return  ; not blocked, so the bedroll has already done its normal thing
-	EndIf
-
-	If akActionRef == PlayerRef && PlayerRef.IsSneaking()
-		If !busy
-			busy = True
-			ConfirmPackUp()
-			busy = False
-		EndIf
-	Else
-		akBedroll.Activate(akActionRef, True)
-	EndIf
-EndFunction
-
-Bool Function IsCampBedroll(ObjectReference akRef)
-	Int i = kFirstBedroll
-	While i < kFirstBedroll + kMaxBedrolls
-		If placedRefs[i] && placedRefs[i] == akRef
-			Return True
-		EndIf
-		i += 1
-	EndWhile
-	Return False
 EndFunction
 
 Bool Function CanCampHere()
@@ -712,20 +677,17 @@ Function SetUpCamp()
 		SetFireLit(False)
 	EndIf
 
-	; Without tents, the bedrolls go into the RingBedroll aliases, whose
-	; script handles activation first, so sneaking and activating one can
-	; pack up the camp.
+	; Sneaking and activating a bedroll sits the player on its seat; the DLL
+	; handles it, so the bedrolls stay the plain vanilla ones.
+	ObjectReference[] campBeds = new ObjectReference[12]
+	ObjectReference[] campBedSeats = new ObjectReference[12]
 	Int i = 0
-	If tents == 0
-		While i < bedrolls && i < RingBedrollAliases.Length
-			ObjectReference bed = placedRefs[kFirstBedroll + i]
-			If bed
-				bed.BlockActivation(True)
-				RingBedrollAliases[i].ForceRefTo(bed)
-			EndIf
-			i += 1
-		EndWhile
-	EndIf
+	While i < kMaxBedrolls
+		campBeds[i] = placedRefs[kFirstBedroll + i]
+		campBedSeats[i] = placedRefs[kFirstBedrollSeat + i]
+		i += 1
+	EndWhile
+	LZC_Native.SetBedrollSeats(campBeds, campBedSeats)
 
 	If followers
 		; Every camp bedroll goes to the follower quest, which hands them out
@@ -873,13 +835,9 @@ Function PackUpCamp()
 		LZC_CampStorage.MoveTo(LZC_CampStorageMarkers[0])
 	EndIf
 
-	Int i = 0
-	While i < RingBedrollAliases.Length
-		RingBedrollAliases[i].Clear()
-		i += 1
-	EndWhile
+	LZC_Native.ClearBedrollSeats()
 
-	i = 0
+	Int i = 0
 	While i < placedRefs.Length
 		If placedRefs[i]
 			placedRefs[i].Disable()

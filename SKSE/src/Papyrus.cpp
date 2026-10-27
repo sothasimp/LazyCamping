@@ -1,5 +1,6 @@
 #include "Papyrus.h"
 
+#include "BedrollSeats.h"
 #include "FormNames.h"
 #include "GrassHider.h"
 #include "Placement.h"
@@ -16,7 +17,7 @@ namespace Papyrus
 	namespace
 	{
 		constexpr auto         kClass = "LZC_Native"sv;
-		constexpr std::int32_t kVersion = 6;
+		constexpr std::int32_t kVersion = 7;
 
 		// How far above/below the origin to look for ground.
 		constexpr float kSearchUp = 256.0f;
@@ -285,6 +286,18 @@ namespace Papyrus
 			GrassHider::Show();
 		}
 
+		// The camp's bedrolls and the seat on each, for sneak-activating a
+		// bedroll to sit on it; see BedrollSeats.
+		void SetBedrollSeats(RE::StaticFunctionTag*, std::vector<RE::TESObjectREFR*> a_beds, std::vector<RE::TESObjectREFR*> a_seats)
+		{
+			BedrollSeats::Set(a_beds, a_seats);
+		}
+
+		void ClearBedrollSeats(RE::StaticFunctionTag*)
+		{
+			BedrollSeats::Clear();
+		}
+
 		// Renames a form, or gives it its own name back if a_name is empty.
 		// The name is kept in the save; see FormNames.
 		void RenameForm(RE::StaticFunctionTag*, RE::TESForm* a_form, RE::BSFixedString a_name)
@@ -301,6 +314,8 @@ namespace Papyrus
 		a_vm->RegisterFunction("HideGrass"sv, kClass, HideGrass);
 		a_vm->RegisterFunction("ShowGrass"sv, kClass, ShowGrass);
 		a_vm->RegisterFunction("RenameForm"sv, kClass, RenameForm);
+		a_vm->RegisterFunction("SetBedrollSeats"sv, kClass, SetBedrollSeats);
+		a_vm->RegisterFunction("ClearBedrollSeats"sv, kClass, ClearBedrollSeats);
 		logger::info("Registered {} native functions", kClass);
 		return true;
 	}

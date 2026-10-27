@@ -1,3 +1,4 @@
+#include "BedrollSeats.h"
 #include "GrassHider.h"
 #include "Menu.h"
 #include "Papyrus.h"
@@ -37,6 +38,7 @@ SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
 
 	Serialization::Install();
 	GrassHider::Install();
+	BedrollSeats::Install();
 
 	// SKSE Menu Framework loads after this plugin, if it's installed at all.
 	SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message* a_message) {

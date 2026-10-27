@@ -40,6 +40,14 @@ Function HideGrass(ObjectReference[] refs) Global Native
 ; Brings back the grass hidden by HideGrass.
 Function ShowGrass() Global Native
 
+; The camp's bedrolls and the seat on each (same index; pairs with a None are
+; skipped). Sneaking and activating one of the bedrolls sits the player on its
+; seat instead of opening the sleep menu. Replaces any earlier camp's.
+Function SetBedrollSeats(ObjectReference[] beds, ObjectReference[] seats) Global Native
+
+; Forgets the bedrolls given to SetBedrollSeats.
+Function ClearBedrollSeats() Global Native
+
 ; Renames a form (a spell, say), or gives it its own name back if name is
 ; empty. Unlike SKSE's Form.SetName, the name is kept in the save.
 Function RenameForm(Form akForm, String name) Global Native

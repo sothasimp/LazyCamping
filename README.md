@@ -33,7 +33,7 @@ Every bedroll also has a **seat on it**, facing the fire. Followers sit at the f
 
 **Sneaking and activating any of the tents from outside** asks *Pack up your camp?*; on *Yes*, everything the camp placed is removed. Activating a tent without sneaking, or from inside, does nothing. So the player can't pack up by accident while getting into bed.
 
-In a camp without tents, **sneaking and activating any of the camp's bedrolls** asks the same question. Activating a bedroll without sneaking opens the usual Sleep/Wait menu.
+**Sneaking and activating any of the camp's bedrolls** sits the player cross-legged on it (on its seat), with or without tents. Activating a bedroll without sneaking opens the usual Sleep/Wait menu.
 
 While a camp is up, the power is called **Pack Up Camp** (" Pack Up Camp"). It keeps its place in favourites and the voice slot. **Casting it** asks *Pack up your camp?* and packs it up if confirmed, from anywhere, so a camp left behind never stops the player making a new one.
 
@@ -51,7 +51,6 @@ Scripts/Source/
   LZC_SetUpCampEffect.psc       on the magic effect; calls the quest
   LZC_TentActivatorScript.psc   on every tent; sneak-activating it from outside offers to pack up the camp
   LZC_FirepitScript.psc         on the unlit firepit; sneak-activating it with firewood lights the fire
-  LZC_BedrollAliasScript.psc    on the RingBedroll aliases; sneak-activating a bedroll offers to pack up a camp without tents
   LZC_CampFollowersScript.psc   followers' seats and bedrolls; sit/sleep with the player
   LZC_CampPlayerAliasScript.psc on the follower quest's Player alias; notices the player sitting
   LZC_Native.psc                declarations of the SKSE plugin's functions
@@ -61,6 +60,7 @@ SKSE/                           C++ plugin (LazyCamping.dll), required
   src/Papyrus.cpp               native functions for LZC_Native
   src/Placement.cpp             ground raycast, slope tilt, water check
   src/GrassHider.cpp            hides the grass under the camp
+  src/BedrollSeats.cpp          sneak-activating a camp bedroll sits the player on it
   src/FormNames.cpp             renames the power while a camp is up, kept in the save
   src/Serialization.cpp         the SKSE co-save
   src/Menu.cpp                  the optional SKSE Menu Framework page
@@ -176,11 +176,7 @@ These go in `Data/Meshes/LazyCamping/` and `Data/Textures/LazyCamping/`, at the 
 
 - **Tent meshes**, small (170 × 170) and large (300 × 200).
 - **The player's fire seat:** something visible to sit on, such as a fur pelt or a log, with collision. The player can only activate furniture they can point the crosshair at.
-- **The bedroll seat: invisible but selectable.** The game picks what the crosshair is on by its collision, not by what's drawn:
-  1. In NifSkope, open a small vanilla clutter model that has collision, such as a folded pelt, and save a copy as `Meshes/LazyCamping/BedrollSeat.nif`.
-  2. Delete its visible geometry (the `BSTriShape` or `NiTriShape` blocks), keeping its collision object (`bhkCollisionObject`).
-
-  Keep the collision box small and centred on the bedroll, so its head and foot stay easy to target for sleeping.
+- **The bedroll seat: invisible.** The player reaches it by sneak-activating the bedroll, so it doesn't need to be selectable, and is better without collision so it never takes the crosshair from the bedroll. A `.nif` with just an empty root node works: in NifSkope, open any small vanilla model, delete everything under the root `BSFadeNode`, and save it as `Meshes/LazyCamping/BedrollSeat.nif`.
 - **The storage backpack** mesh.
 - **Tent colours.** Brown is each tent mesh's own texture. For the other four colours, make recoloured copies of the canvas texture, named like `Textures/LazyCamping/TentSmallBlue_d.dds` (the pattern is `tentTextures.path`). Then set `tentTextures.smallShape` and `largeShape` to the name of the canvas shape in each mesh (look it up in NifSkope). The builder makes a texture set per colour and swaps it onto that shape. With the shape names left empty, every colour uses the mesh's own texture.
 
@@ -265,7 +261,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 
 ## 4. Compile scripts and package
 
-1. In the CK, compile all eight scripts (*Gameplay > Papyrus Script Manager*). `LZC_Native` compiles without the DLL; its functions are only bound at runtime.
+1. In the CK, compile all seven scripts (*Gameplay > Papyrus Script Manager*). `LZC_Native` compiles without the DLL; its functions are only bound at runtime.
 2. Build `LazyCamping.esp` with the builder (section 2). It adds only new records, so you can flag it as ESL with xEdit.
 3. Package these files:
    ```
@@ -274,7 +270,6 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
    Scripts/LZC_SetUpCampEffect.pex
    Scripts/LZC_TentActivatorScript.pex
    Scripts/LZC_FirepitScript.pex
-   Scripts/LZC_BedrollAliasScript.pex
    Scripts/LZC_Native.pex
    Scripts/LZC_CampFollowersScript.pex
    Scripts/LZC_CampPlayerAliasScript.pex
@@ -299,7 +294,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 - **Footprint check**: the check samples 5 points (the centre and four corners). Something small that sits between those points can still poke through the tent. You can add more sample points in `IsAreaClear` if needed.
 - **One camp at a time**: this is by design. Casting the power while a camp is up offers to pack that camp up, wherever it is; cast again to make a new one.
 - **Bedroll fan**: neighbouring bedrolls in a tentless camp are 70° apart, about 218 units between centres at the default `BedrollRingRadius` (190). With the vanilla bedroll (128 long, assumed up to 64 wide) that leaves about 90 units between their ends; the limit is the seats in front, which are assumed to need 35 units behind the marker. If seated people have room to spare in game, `BedrollRingRadius` can go down to about 180.
-- **Sneak to pack up**: in a camp without tents, the bedrolls' normal activation is blocked and `LZC_BedrollAliasScript` passes it on itself. Followers should be unaffected, because anyone else's activation is passed straight through. If followers ever stop using the ring bedrolls, check this first.
+- **Sneak to sit**: `BedrollSeats.cpp` hooks furniture activation. When the player sneaks and activates a camp bedroll, it activates that bedroll's seat instead, so the bedroll stays the plain vanilla one and anyone else (followers) uses it as normal.
 - **Cooking**: the camp doesn't place a cooking pot. Mods that make campfires usable, such as *Useable Campfires*, should work at the camp's fire if they apply to the vanilla campfire object it uses. That's untested.
 - **Base Object Swapper**: BOS swaps a reference's base object when the reference loads. That should include references the camp places, but test it: with a campfire or bedroll variance mod installed, set up camp a few times and check that the campfire and bedrolls vary. The camp's scripts don't depend on the base object, so a swapped bedroll still sleeps, gets followers, and packs up.
 - **Map marker**: moving a persistent map marker is how other camping mods do it. Still, check in game that the marker appears at the camp on the world map, moves with each new camp, and disappears when you pack up.

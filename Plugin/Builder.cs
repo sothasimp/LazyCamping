@@ -24,7 +24,6 @@ public sealed class Builder
 
     public static readonly string[] Colours = ["Brown", "Blue", "Green", "Red", "White"];
     const int MaxFollowers = 3;
-    const int RingBedrollAliases = 4;
     const short ScriptVersion = 5;
     const ushort ScriptObjectFormat = 2;
     const int PersistentFlag = 0x400;   // reference record flag: persistent
@@ -223,12 +222,6 @@ public sealed class Builder
 
         // The controller quest.
         campQuest.Flags = Quest.Flag.StartGameEnabled | Quest.Flag.RunOnce;
-        for (uint i = 0; i < RingBedrollAliases; i++)
-        {
-            campQuest.Aliases.Add(EmptyAlias(i, $"RingBedroll{i + 1}"));
-        }
-        campQuest.NextAliasID = RingBedrollAliases;
-
         var campScript = Script("LZC_CampsiteQuestScript",
             Link("PlayerRef", PlayerRefKey),
             Link("LZC_SetUpCampPower", power),
@@ -252,7 +245,6 @@ public sealed class Builder
             Links("LZC_CampStorageMarkers", storageMarkers),
             Link("LZC_PackUpConfirmMsg", packUpMsg),
             Link("LZC_CampMapMarker", mapMarker),
-            AliasList("RingBedrollAliases", campQuest, 0, RingBedrollAliases),
             Link("LZC_CampFollowersQuest", followersQuest));
         AddIfFound(campScript, "LZC_BedrollPlaced", bedroll);
         AddIfFound(campScript, "LZC_CampfirePlaced", campfire);
@@ -270,11 +262,6 @@ public sealed class Builder
             ObjectFormat = ScriptObjectFormat,
             Scripts = { campScript },
         };
-        for (uint i = 0; i < RingBedrollAliases; i++)
-        {
-            campQuest.VirtualMachineAdapter.Aliases.Add(AliasScript(campQuest, i, "LZC_BedrollAliasScript"));
-        }
-
         return mod;
     }
 
