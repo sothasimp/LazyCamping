@@ -53,7 +53,6 @@ public sealed class Builder
         var campfireUnlit = Find<IPlaceableObjectGetter>(settings.Vanilla.CampfireUnlit, "campfire");
         var choppingBlock = Find<IFurnitureGetter>(settings.Vanilla.ChoppingBlock, "chopping");
         var cookingPot = Find<IFurnitureGetter>(settings.Vanilla.CookingPot, "cooking");
-        var tubWater = Find<IPlaceableObjectGetter>(settings.Vanilla.TubWater, "water");
         var bedroll = Find<IFurnitureGetter>(settings.Vanilla.Bedroll, "bedroll");
         var sitMarker = Find<IFurnitureGetter>(settings.Vanilla.SitCrossLegged, "crossleg");
         var voice = Find<IEquipTypeGetter>(settings.Vanilla.VoiceEquipType, "voice");
@@ -127,7 +126,9 @@ public sealed class Builder
             cookingStation.Model = new Model { File = settings.Models.CookingStation };
         }
 
-        // The bathtub: a static with the tub mesh; the vanilla water goes in it.
+        // The bathtub: a static with the tub mesh. Its water, steps and so on
+        // are the tub clutter set, which can use the clothes basket: activating
+        // it undresses the player.
         Static? tub = null;
         if (!string.IsNullOrWhiteSpace(settings.Models.Tub))
         {
@@ -135,6 +136,15 @@ public sealed class Builder
             tub.Model = new Model { File = settings.Models.Tub };
             tub.ObjectBounds = Bounds(50, 35, 40);
         }
+        var basket = mod.Activators.AddNew("LZC_ClothesBasket");
+        basket.Name = "Clothes Basket";
+        basket.ActivateTextOverride = "Undress";
+        if (!string.IsNullOrWhiteSpace(settings.Models.ClothesBasket))
+        {
+            basket.Model = new Model { File = settings.Models.ClothesBasket };
+        }
+        basket.ObjectBounds = Bounds(20, 20, 20);
+        basket.VirtualMachineAdapter = Scripts(Script("LZC_ClothesBasketScript", Link("PlayerRef", PlayerRefKey)));
 
         var unpackSound = Sound("LZC_UnpackSound", settings.Vanilla.UnpackSound, "clothing");
 
@@ -188,6 +198,7 @@ public sealed class Builder
         var smallSet = ClutterSet(holding, "SmallTent", 1, clutter.SmallTent, storageMarkers);
         var largeSet = ClutterSet(holding, "LargeTent", 2, clutter.LargeTent, storageMarkers);
         var ringSet = ClutterSet(holding, "RingBedroll", 3, clutter.RingBedroll, storageMarkers);
+        var tubSet = ClutterSet(holding, "Tub", 4, clutter.Tub, storageMarkers);
 
         // Follower aliases. Their packages (sleep in BedrollN, sit in SeatN, by
         // LZC_CampActivity) are made in the Creation Kit: it couldn't load
@@ -272,6 +283,8 @@ public sealed class Builder
             Links("LZC_LargeTentClutter", largeSet.Items),
             Link("LZC_RingBedrollClutterAnchor", ringSet.Anchor),
             Links("LZC_RingBedrollClutter", ringSet.Items),
+            Link("LZC_TubClutterAnchor", tubSet.Anchor),
+            Links("LZC_TubClutter", tubSet.Items),
             Link("LZC_CampStorage", storage),
             Links("LZC_CampStorageMarkers", storageMarkers),
             Link("LZC_PackUpConfirmMsg", packUpMsg),
@@ -281,7 +294,6 @@ public sealed class Builder
         AddIfFound(campScript, "LZC_CampfirePlaced", campfire);
         AddIfFound(campScript, "LZC_CookingStation", cookingStation);
         AddIfFound(campScript, "LZC_Tub", tub);
-        AddIfFound(campScript, "LZC_TubWater", tubWater);
         AddIfFound(campScript, "LZC_CampfireLight", campfireLight);
         AddIfFound(campScript, "LZC_Firepit", firepit);
         AddIfFound(campScript, "LZC_ChoppingBlock", choppingBlock);

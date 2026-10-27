@@ -23,7 +23,7 @@ The mod adds a **Set Up Camp** Lesser Power, named " Set Up Camp" with a leading
 - **the other tents** stand 70° to either side of it: the second to the right, the third to the left. The near side of the fire stays open. Tent fronts sit just behind the seats: small tents stand 250 units from the fire, a lone large tent 265, and a large tent with small ones beside it about 285: the ring is widened just far enough that the tents' front corners don't touch, then every tent is set back another 15 (`TentSetback`).
 - **with no tent kits**, there are no tents. The bedrolls (up to 4) lie sideways in the same fan, just outside the seats: the player's behind their seat, the rest beside it. With one bedroll per person, each lies behind its owner's seat. The player and a partner, and a follower couple, get neighbouring places with their bedrolls head to head.
 
-A **bathtub** (`LZC_Tub`, a static with your tub mesh) filled with the vanilla rain barrel water (`LargeRainBarrelWater01`) stands beside the outermost tent, on the other side from the chopping block, or along the bedroll fan without tents. It can be turned off (`PlaceTub`).
+A **bathtub** (`LZC_Tub`, a static with your tub mesh) stands beside the outermost tent, on the other side from the chopping block, or along the bedroll fan without tents. It can be turned off (`PlaceTub`). What's in and around it is the **tub clutter set**, arranged in the Creation Kit: by default the vanilla rain barrel water (`LargeRainBarrelWater01`) in it and a **clothes basket** (`LZC_ClothesBasket`) that undresses the player when activated; add steps, invisible seats inside the tub and so on.
 
 **Clutter sets** add clutter around the camp, such as pelts, packs, firewood and lanterns. You arrange each set by eye in the Creation Kit around a stand-in marker, and every fire, tent or tentless bedroll gets a copy, turned to match. One **backpack** can be the player's storage: it's a single real container that moves from camp to camp, so whatever's in it stays there.
 
@@ -54,6 +54,7 @@ Scripts/Source/
   LZC_TentActivatorScript.psc   on every tent; sneak-activating it from outside offers to pack up the camp
   LZC_FirepitScript.psc         on the unlit firepit; sneak-activating it with firewood lights the fire
   LZC_CampfireScript.psc        on the cook box over the camp's fire; activating it opens the Cook menu
+  LZC_ClothesBasketScript.psc   on the clothes basket by the tub; activating it undresses the player
   LZC_CampFollowersScript.psc   followers' seats and bedrolls; sit/sleep with the player
   LZC_CampPlayerAliasScript.psc on the follower quest's Player alias; notices the player sitting
   LZC_Native.psc                declarations of the SKSE plugin's functions
@@ -127,7 +128,7 @@ Once it's built:
 
 ### Settings (`Plugin/settings.json`)
 
-- **`vanilla`:** EditorIDs of the vanilla records used: the burning campfire (an activator; any placeable type works), the cooking pot furniture (copied as the hidden `LZC_CookingStation`), the water placed in the bathtub (`LargeRainBarrelWater01`), its light, the unlit firepit (its model is used for `LZC_Firepit`), the woodcutting block, an optional sound played as the camp is set up and packed up (by default `ITMClothingDownSD`; a vanilla *Sound Marker* is used as it is, and a *Sound Descriptor* gets a sound marker of its own, `LZC_UnpackSound`), the ground bedroll, the cross-legged sit marker, the *Voice* equip slot, `Firewood01`, `LocTypeCity`, `LocTypeTown`, and an optional partner faction (for example `PlayerMarriedFaction`). **Some of the defaults are educated guesses.** If one isn't in `Skyrim.esm`, the builder stops and lists the closest EditorIDs it found, so you can correct it. To list every record whose EditorID contains some text, run `dotnet run --project Plugin -- --master "<Skyrim Data>\Skyrim.esm" --find campfire`.
+- **`vanilla`:** EditorIDs of the vanilla records used: the burning campfire (an activator; any placeable type works), the cooking pot furniture (copied as the hidden `LZC_CookingStation`), its light, the unlit firepit (its model is used for `LZC_Firepit`), the woodcutting block, an optional sound played as the camp is set up and packed up (by default `ITMClothingDownSD`; a vanilla *Sound Marker* is used as it is, and a *Sound Descriptor* gets a sound marker of its own, `LZC_UnpackSound`), the ground bedroll, the cross-legged sit marker, the *Voice* equip slot, `Firewood01`, `LocTypeCity`, `LocTypeTown`, and an optional partner faction (for example `PlayerMarriedFaction`). **Some of the defaults are educated guesses.** If one isn't in `Skyrim.esm`, the builder stops and lists the closest EditorIDs it found, so you can correct it. To list every record whose EditorID contains some text, run `dotnet run --project Plugin -- --master "<Skyrim Data>\Skyrim.esm" --find campfire`.
 - **`models`:** mesh paths, relative to `Data/Meshes`, for the kits, both tent sizes, the player's fire seat, the bedroll seat, the empty cooking station model, the bathtub, and the storage backpack.
 - **`tentTextures`:** how the colours are made (see below).
 - **`kits`:** inventory names, weights and values. `{Colour}` in a name becomes the tent's colour.
@@ -138,6 +139,7 @@ Once it's built:
 |---|---|---|
 | Kits | `LZC_BedrollKit`, `LZC_TentKitSmallBrown` … `LZC_TentKitLargeWhite` | 11 MiscItems |
 | Tents | `LZC_TentSmallBrown` … `LZC_TentLargeWhite` | 10 Activators with `LZC_TentActivatorScript` |
+| Bath | `LZC_Tub`, `LZC_ClothesBasket` | the tub (static, your mesh); a clothes basket activator (*Undress*, `LZC_ClothesBasketScript`; give it a model in the CK or `models.clothesBasket`) |
 | Cooking | `LZC_CookActivator`, `LZC_CookingStation` | the base for the cook box (named *Campfire*, shows *Cook*, with `LZC_CampfireScript`); a copy of the vanilla cooking pot furniture with an empty model, placed hidden at the fire, which activating the box activates |
 | Firepit | `LZC_Firepit` | an Activator with the vanilla unlit firepit's model and `LZC_FirepitScript`, for the firewood mechanic |
 | Seats | `LZC_SitMarkerPlayer`, `LZC_BedrollSitMarker` | copies of the vanilla cross-legged marker with the models from `settings.json` |
@@ -154,7 +156,7 @@ Not generated: crafting recipes and merchant lists for the kits (see 2d). For te
 
 ### Clutter sets
 
-The builder lays out four clutter sets in the holding cell, `LZC_HoldingCell`, each around an `XMarkerHeading` anchor:
+The builder lays out five clutter sets in the holding cell, `LZC_HoldingCell`, each around an `XMarkerHeading` anchor:
 
 | Set | Anchor | Copied around |
 |---|---|---|
@@ -162,11 +164,12 @@ The builder lays out four clutter sets in the holding cell, `LZC_HoldingCell`, e
 | Small tent | `LZC_SmallTentClutterAnchor` | each small tent |
 | Large tent | `LZC_LargeTentClutterAnchor` | each large tent |
 | Ring bedroll | `LZC_RingBedrollClutterAnchor` | each bedroll in a camp without tents |
+| Tub | `LZC_TubClutterAnchor` | the bathtub: its water, steps, clothes basket and seats |
 
 Each starts out with just a storage marker (see below). To fill a set, **arrange clutter around its anchor by eye in the Creation Kit**:
 1. Open `LZC_HoldingCell`. Each anchor points the way its object faces: a tent's entrance, or along a bedroll. It helps to place a real tent or bedroll on the anchor while you work, then delete it.
 2. Place the clutter. Use **static** clutter, not items that can be picked up, or players could take a fresh pelt from every camp. Make each item a **persistent** reference.
-3. Add each item to the set's list on `LZC_CampsiteQuest`'s script: `LZC_FireClutter`, `LZC_SmallTentClutter`, `LZC_LargeTentClutter` or `LZC_RingBedrollClutter`.
+3. Add each item to the set's list on `LZC_CampsiteQuest`'s script: `LZC_FireClutter`, `LZC_SmallTentClutter`, `LZC_LargeTentClutter`, `LZC_RingBedrollClutter` or `LZC_TubClutter`.
 
 The camp copies the arrangement around each fire, tent or tentless bedroll, keeping each item's offset, height, turn, lean and scale. Items sit on the ground at their own spot, raised by their height above the anchor, and tilt with the slope when `AlignToSlope` is on. All the sets together can hold up to 128 items.
 
@@ -215,7 +218,7 @@ The follower quest's `CampRadius` setting (default 1024, in the follower quest's
 
 ### 2c. Settings on the quest scripts
 
-The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `FadeToBlack`, `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, `PlaceCampfireLight`, the tent sizes, `SeatRadius`, `TentRingGap`, `TentSetback`, `BedrollRingRadius`, `BedrollSpacing`, `PairedBedrollSpacing`, `FirewoodMechanic`, `FireBurnHours`, `PlaceChoppingBlock`, `PlaceTub`, `TubWaterHeight`, `TubWaterScale`, `TubHalfWidth` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file.
+The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `FadeToBlack`, `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, `PlaceCampfireLight`, the tent sizes, `SeatRadius`, `TentRingGap`, `TentSetback`, `BedrollRingRadius`, `BedrollSpacing`, `PairedBedrollSpacing`, `FirewoodMechanic`, `FireBurnHours`, `PlaceChoppingBlock`, `PlaceTub`, `TubHalfWidth` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file.
 
 ### 2d. How players get the kits
 
@@ -266,7 +269,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 
 ## 4. Compile scripts and package
 
-1. In the CK, compile all eight scripts (*Gameplay > Papyrus Script Manager*). `LZC_Native` compiles without the DLL; its functions are only bound at runtime.
+1. In the CK, compile all nine scripts (*Gameplay > Papyrus Script Manager*). `LZC_Native` compiles without the DLL; its functions are only bound at runtime.
 2. Build `LazyCamping.esp` with the builder (section 2). It adds only new records, so you can flag it as ESL with xEdit.
 3. Package these files:
    ```
@@ -276,6 +279,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
    Scripts/LZC_TentActivatorScript.pex
    Scripts/LZC_FirepitScript.pex
    Scripts/LZC_CampfireScript.pex
+   Scripts/LZC_ClothesBasketScript.pex
    Scripts/LZC_Native.pex
    Scripts/LZC_CampFollowersScript.pex
    Scripts/LZC_CampPlayerAliasScript.pex
