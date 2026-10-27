@@ -150,7 +150,7 @@ Everything else stays as you made it: models, bounds, texture sets (normal maps 
 |---|---|---|
 | Kits | `LZC_BedrollKit`, `LZC_TentKitSmallBrown` … `LZC_TentKitLargeWhite` | 11 MiscItems |
 | Tents | `LZC_TentSmallBrown` … `LZC_TentLargeWhite` | 10 Activators with `LZC_CampObjectScript` |
-| Bath | `LZC_Tub`, `LZC_ClothesBasket` | the tub (static, your mesh); a clothes basket activator (*Use*: undress, then dress again; `LZC_CampObjectScript`; give it a model in the CK or `models.clothesBasket`) |
+| Bath | `LZC_Tub`, `LZC_ClothesBasket` | the tub (static, your mesh); a clothes basket activator (*Use*: undress, then dress again; `LZC_CampObjectScript`; model from `models.clothesBasket`) |
 | Cooking | `LZC_CookActivator`, `LZC_CookingStation` | the base for the cook box (named *Campfire*, shows *Cook*, with `LZC_CampObjectScript`); a copy of the vanilla cooking pot furniture with the XMarker's mesh and *Is Marker*, placed hidden at the fire, which activating the box activates |
 | Firepit | `LZC_Firepit` | an Activator with the vanilla unlit firepit's model and `LZC_CampObjectScript`, for the firewood mechanic |
 | Seats | `LZC_SitMarkerPlayer`, `LZC_BedrollSitMarker` | copies of the vanilla cross-legged marker with the models from `settings.json` |
