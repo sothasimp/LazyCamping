@@ -778,9 +778,17 @@ Function SetUpCamp()
 	If storageSpot
 		If LZC_CampStorage
 			LZC_CampStorage.MoveTo(storageSpot)
+			If LZC_CampStorage.GetDistance(storageSpot) > 100.0
+				Debug.Trace("Lazy Camping: the backpack didn't move to its spot")
+				Debug.Notification("Lazy Camping: the backpack couldn't be moved to the camp.")
+			EndIf
+		Else
+			Debug.Notification("Lazy Camping: LZC_CampStorage is empty.")
 		EndIf
 		storageSpot.Delete()
 		placedRefs[kSlotCount] = None
+	Else
+		Debug.Notification("Lazy Camping: this camp has no backpack spot.")
 	EndIf
 
 	If HideGrassUnderCamp

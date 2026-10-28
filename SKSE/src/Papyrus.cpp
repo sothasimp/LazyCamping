@@ -237,6 +237,12 @@ namespace Papyrus
 				if (!anchor) {
 					continue;
 				}
+				std::size_t setSize = 0;
+				for (std::size_t j = 0; j < a_setItems.size(); ++j) {
+					setSize += a_itemSet[j] == set + 1 && a_setItems[j];
+				}
+				logger::info("PlaceCamp: object {} ({:08X}) gets clutter set {} around {:08X}, {} items", i, base->GetFormID(),
+					set + 1, anchor->GetFormID(), setSize);
 				const RE::NiMatrix3 anchorRotation = Placement::MatrixFromAngles(anchor->GetAngle());
 				const RE::NiMatrix3 toAnchor = anchorRotation.Transpose();
 				const float         sinYaw = std::sin(yaw);
@@ -287,6 +293,13 @@ namespace Papyrus
 				}
 			}
 
+			if (storageFound) {
+				const auto& spot = pending[count].position;
+				logger::info("PlaceCamp: storage spot at ({:.0f}, {:.0f}, {:.0f})", spot.x, spot.y, spot.z);
+			} else {
+				logger::warn("PlaceCamp: none of the {} storage markers is in a placed clutter set", a_storageMarkers.size());
+			}
+
 			std::vector<RE::TESObjectREFR*> refs(pending.size(), nullptr);
 			for (std::size_t i = 0; i < pending.size(); ++i) {
 				const auto& ref = pending[i];
@@ -299,6 +312,9 @@ namespace Papyrus
 				auto* created = handle.get().get();
 				if (created && ref.scale != 100) {
 					SetScale(created, ref.scale);
+				}
+				if (!created) {
+					logger::warn("PlaceCamp: couldn't create {:08X} (index {})", ref.base->GetFormID(), i);
 				}
 				refs[i] = created;
 			}
