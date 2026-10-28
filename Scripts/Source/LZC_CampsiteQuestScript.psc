@@ -625,7 +625,11 @@ Function SetUpCamp()
 			fwd[kFirstTent + t] = tentFwd[t]
 			side[kFirstTent + t] = tentSide[t]
 			turn[kFirstTent + t] = tentTurn[t]
-			clutterSet[kFirstTent + t] = 2 + sizes[t]   ; 2 small, 3 large
+			; Index and value in locals: the Papyrus compiler can write an Int
+			; array element computed this way with its index for the value.
+			Int slot = kFirstTent + t
+			Int setNumber = 2 + sizes[t]   ; 2 small, 3 large
+			clutterSet[slot] = setNumber
 			t += 1
 		EndWhile
 
@@ -636,7 +640,8 @@ Function SetUpCamp()
 		While t < tents
 			SetTentBedroll(forms, fwd, side, turn, nextSlot, tentFwd[t], tentSide[t], tentTurn[t], 0, bedsInTent[t], sizes[t])
 			bedGroup[nextSlot - kFirstBedroll] = t
-			bedOrder[nextSlot - kFirstBedroll] = PairedOrder(0)
+			Int firstOrder = PairedOrder(0)
+			bedOrder[nextSlot - kFirstBedroll] = firstOrder
 			nextSlot += 1
 			t += 1
 		EndWhile
@@ -646,7 +651,8 @@ Function SetUpCamp()
 			While b < bedsInTent[t]
 				SetTentBedroll(forms, fwd, side, turn, nextSlot, tentFwd[t], tentSide[t], tentTurn[t], b, bedsInTent[t], sizes[t])
 				bedGroup[nextSlot - kFirstBedroll] = t
-				bedOrder[nextSlot - kFirstBedroll] = PairedOrder(b)
+				Int nextOrder = PairedOrder(b)
+				bedOrder[nextSlot - kFirstBedroll] = nextOrder
 				nextSlot += 1
 				b += 1
 			EndWhile
@@ -773,7 +779,8 @@ Function SetUpCamp()
 		i = 0
 		While i < kMaxFollowerSeats
 			fireSeats[i + 1] = placedRefs[kFirstFollowerSeat + i]
-			firePlaces[i + 1] = FanPlace(i + 1)
+			Int firePlace = FanPlace(i + 1)
+			firePlaces[i + 1] = firePlace
 			i += 1
 		EndWhile
 		ObjectReference[] bedSeats = new ObjectReference[12]
