@@ -146,6 +146,9 @@ fronts just behind the seats; raise it if seated people brush the tents.}
 Float Property TentSetback = 15.0 Auto
 {Moves every tent this much further from the fire, after the ring is widened
 to fit them.}
+Float Property MiddleLargeTentPullIn = 170.0 Auto
+{Brings the large tent, when it stands in the middle, this much closer to the
+fire than the ring.}
 Float Property SmallTentHalfWidth = 85.0 Auto
 Float Property SmallTentHalfDepth = 85.0 Auto
 Int Property SmallTentCapacity = 2 Auto
@@ -516,11 +519,16 @@ Function SetUpCamp()
 	Float[] tentFwd = new Float[4]
 	Float[] tentSide = new Float[4]
 	Float[] tentTurn = new Float[4]
+	Float[] tentDistance = new Float[4]
 	t = 0
 	While t < tents
 		Float bearing = FanBearing(t)
-		tentFwd[t] = FireForward() + radius * Math.Cos(bearing)
-		tentSide[t] = radius * Math.Sin(bearing)
+		tentDistance[t] = radius
+		If t == 0 && sizes[0] == kLarge
+			tentDistance[t] = radius - MiddleLargeTentPullIn
+		EndIf
+		tentFwd[t] = FireForward() + tentDistance[t] * Math.Cos(bearing)
+		tentSide[t] = tentDistance[t] * Math.Sin(bearing)
 		tentTurn[t] = bearing + 180.0
 		t += 1
 	EndWhile
@@ -568,7 +576,7 @@ Function SetUpCamp()
 	lift[kLight] = LightHeight
 	forms[kCookingStation] = LZC_CookingStation
 	If LZC_Tub && PlaceTub
-		SetTub(forms, fwd, side, turn, clutterSet, tents, sizes, radius, bedrolls)
+		SetTub(forms, fwd, side, turn, clutterSet, tents, sizes, tentDistance, bedrolls)
 	EndIf
 	fwd[kCookingStation] = FireForward()
 
@@ -578,7 +586,7 @@ Function SetUpCamp()
 		forms[kFirepit] = LZC_Firepit
 		fwd[kFirepit] = FireForward()
 		If LZC_ChoppingBlock && PlaceChoppingBlock
-			SetChoppingBlock(forms, fwd, side, turn, tents, sizes, radius, bedrolls)
+			SetChoppingBlock(forms, fwd, side, turn, tents, sizes, tentDistance, bedrolls)
 		EndIf
 	EndIf
 
@@ -952,7 +960,7 @@ EndFunction
 
 ; The chopping block stands beside the outermost tent, on its far side from
 ; the middle one; without tents, in the next place along the bedroll fan.
-Function SetChoppingBlock(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int tents, Int[] sizes, Float radius, Int bedrolls)
+Function SetChoppingBlock(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int tents, Int[] sizes, Float[] tentDistance, Int bedrolls)
 	Float bearing = FanBearing(bedrolls)
 	Float distance = BedrollRingRadius
 	If tents > 0
@@ -963,8 +971,8 @@ Function SetChoppingBlock(Form[] forms, Float[] fwd, Float[] side, Float[] turn,
 			outward = -1.0
 		EndIf
 		; Along the tent ring, past the tent's side by kChoppingBlockGap.
-		bearing = tentBearing + outward * (TentHalfWidth(sizes[outer]) + kChoppingBlockGap) / radius * 57.29578
-		distance = radius
+		distance = tentDistance[outer]
+		bearing = tentBearing + outward * (TentHalfWidth(sizes[outer]) + kChoppingBlockGap) / distance * 57.29578
 	EndIf
 	forms[kChoppingBlock] = LZC_ChoppingBlock
 	fwd[kChoppingBlock] = FireForward() + distance * Math.Cos(bearing)
@@ -977,7 +985,7 @@ EndFunction
 ; right-hand tent with three), or in the bedroll fan after the chopping
 ; block's place without tents. The tub clutter set (water, steps...) goes
 ; around it.
-Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clutterSet, Int tents, Int[] sizes, Float radius, Int bedrolls)
+Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clutterSet, Int tents, Int[] sizes, Float[] tentDistance, Int bedrolls)
 	Float bearing = FanBearing(bedrolls + 1)
 	Float distance = BedrollRingRadius
 	If tents > 0
@@ -987,8 +995,8 @@ Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clu
 			beside = 1
 			outward = 1.0
 		EndIf
-		bearing = FanBearing(beside) + outward * (TentHalfWidth(sizes[beside]) + kChoppingBlockGap + TubHalfWidth) / radius * 57.29578
-		distance = radius
+		distance = tentDistance[beside]
+		bearing = FanBearing(beside) + outward * (TentHalfWidth(sizes[beside]) + kChoppingBlockGap + TubHalfWidth) / distance * 57.29578
 	EndIf
 	forms[kTub] = LZC_Tub
 	fwd[kTub] = FireForward() + distance * Math.Cos(bearing)
