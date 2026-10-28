@@ -202,11 +202,13 @@ public sealed class Builder
         storage.EditorID = "LZC_CampStorageRef";
 
         var storageMarkers = new List<PlacedObject>();
-        var fireSet = ClutterSet(holding, "Fire", 0, clutter.Fire, storageMarkers);
-        var smallSet = ClutterSet(holding, "SmallTent", 1, clutter.SmallTent, storageMarkers);
-        var largeSet = ClutterSet(holding, "LargeTent", 2, clutter.LargeTent, storageMarkers);
-        var ringSet = ClutterSet(holding, "RingBedroll", 3, clutter.RingBedroll, storageMarkers);
-        var tubSet = ClutterSet(holding, "Tub", 4, clutter.Tub, storageMarkers);
+        // Each anchor is the object the set goes around (the camp only reads
+        // its position and rotation), so the sets can be arranged by eye.
+        var fireSet = ClutterSet(holding, "Fire", 0, clutter.Fire, storageMarkers, campfire?.FormKey);
+        var smallSet = ClutterSet(holding, "SmallTent", 1, clutter.SmallTent, storageMarkers, smallTents[0].FormKey);
+        var largeSet = ClutterSet(holding, "LargeTent", 2, clutter.LargeTent, storageMarkers, largeTents[0].FormKey);
+        var ringSet = ClutterSet(holding, "RingBedroll", 3, clutter.RingBedroll, storageMarkers, bedroll?.FormKey);
+        var tubSet = ClutterSet(holding, "Tub", 4, clutter.Tub, storageMarkers, tub?.FormKey);
 
         // Follower aliases. Their packages (sleep in BedrollN, sit in SeatN, by
         // LZC_CampActivity) are made in the Creation Kit: it couldn't load
@@ -473,11 +475,11 @@ public sealed class Builder
         return placed;
     }
 
-    (PlacedObject Anchor, List<PlacedObject> Items) ClutterSet(Cell cell, string name, int slot, List<ClutterItem> items, List<PlacedObject> storageMarkers)
+    (PlacedObject Anchor, List<PlacedObject> Items) ClutterSet(Cell cell, string name, int slot, List<ClutterItem> items, List<PlacedObject> storageMarkers, FormKey? anchorBase)
     {
         // Sets sit 1000 units apart in the holding cell so they're easy to tell apart in the Creation Kit.
         var origin = new P3Float(slot * 1000, 1000, 0);
-        var anchor = Place(cell, XMarkerHeadingKey, origin, new P3Float(0, 0, 0), 1);
+        var anchor = Place(cell, anchorBase ?? XMarkerHeadingKey, origin, new P3Float(0, 0, 0), 1);
         anchor.EditorID = $"LZC_{name}ClutterAnchor";
 
         var placed = new List<PlacedObject>();

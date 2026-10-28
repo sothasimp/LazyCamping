@@ -19,6 +19,8 @@ namespace Papyrus
 		constexpr auto         kClass = "LZC_Native"sv;
 		constexpr std::int32_t kVersion = 7;
 
+		constexpr RE::FormID kXMarkerHeading = 0x34;  // Skyrim.esm
+
 		// How far above/below the origin to look for ground.
 		constexpr float kSearchUp = 256.0f;
 		constexpr float kSearchDown = 1024.0f;
@@ -261,6 +263,12 @@ namespace Papyrus
 					const bool isStorage = std::ranges::find(a_storageMarkers, item) != a_storageMarkers.end();
 					if (isStorage) {
 						if (!storageFound) {
+							// Whatever the marker is (the backpack itself, say), the
+							// spot is an invisible marker the script moves the
+							// backpack onto, then deletes.
+							if (auto* marker = RE::TESForm::LookupByID<RE::TESBoundObject>(kXMarkerHeading)) {
+								clutter.base = marker;
+							}
 							pending[count] = clutter;
 							storageFound = true;
 						}

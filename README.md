@@ -167,7 +167,7 @@ Not generated: crafting recipes and merchant lists for the kits (see 2d). For te
 
 ### Clutter sets
 
-The builder lays out five clutter sets in the holding cell, `LZC_HoldingCell`, each around an `XMarkerHeading` anchor:
+The builder lays out five clutter sets in the holding cell, `LZC_HoldingCell`, each around an anchor that is the object itself (the campfire, a brown small or large tent, the bedroll, the tub), so you can see what you're arranging around. The camp only reads the anchor's position and rotation, so any reference works as an anchor, an `XMarkerHeading` included.
 
 | Set | Anchor | Copied around |
 |---|---|---|
@@ -184,7 +184,9 @@ Each starts out with just a storage marker (see below). To fill a set, **arrange
 
 The camp copies the arrangement around each fire, tent or tentless bedroll, keeping each item's offset, height, turn, lean and scale. Items sit on the ground at their own spot, raised by their height above the anchor, and tilt with the slope when `AlignToSlope` is on. All the sets together can hold up to 128 items.
 
-**Storage spots.** Each set's storage marker (`LZC_SmallTentStorageMarker` and so on) marks where the storage backpack goes; move them wherever you like. The markers are listed both in their set and in `LZC_CampStorageMarkers`. When a camp goes up, the backpack moves to the first storage marker in camp order (the player's tent, or the player's bedroll without tents), and returns to the holding cell on pack-up, with its contents.
+**Storage spots.** Each set's storage marker (`LZC_SmallTentStorageMarker` and so on) is a copy of the storage backpack itself, standing exactly where and how the backpack will: move, turn, tilt or raise it (to lean it against something, say). The markers are listed both in their set and in `LZC_CampStorageMarkers`. When a camp goes up, the backpack moves to the first storage marker in camp order (the player's tent, or the player's bedroll without tents), matching its position and rotation, and returns to the holding cell on pack-up, with its contents.
+
+**Switching an older plugin's markers to real objects.** In the Creation Kit, select an `XMarkerHeading` anchor or storage marker in `LZC_HoldingCell` and use *Edit > Search and Replace* with *Selected only* to swap its base object for the tent, campfire, bedroll, tub or `LZC_CampStorageContainer`. The reference stays the same one, so the quest's properties still point at it (check they do). Keep the position and rotation as they are.
 
 `Plugin/clutter.json` only decides what the builder puts in the sets to start with. After that, the Creation Kit is the place to change them.
 

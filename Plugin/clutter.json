@@ -1,18 +1,18 @@
 {
-  "_comment": "Clutter sets: clutter copied around each camp object. Offsets are in game units relative to the object (x = right, y = forward, which for tents is out of the entrance toward the fire; z = up). Rotation is in degrees (x, y, z). base is a vanilla or LazyCamping EditorID; use static clutter, not items that can be picked up. An item with \"storage\": true marks where the storage backpack goes instead of being copied.",
+  "_comment": "Clutter sets: clutter copied around each camp object. Offsets are in game units relative to the object (x = right, y = forward, which for tents is out of the entrance toward the fire; z = up). Rotation is in degrees (x, y, z). base is a vanilla or LazyCamping EditorID; use static clutter, not items that can be picked up. An item with \"storage\": true marks where the storage backpack goes instead of being copied: make it the backpack itself, so it shows exactly where and how it will sit.",
 
   "fire": [],
 
   "smallTent": [
-    { "base": "XMarkerHeading", "offset": [60, 110, 0], "rotation": [0, 0, 0], "storage": true }
+    { "base": "LZC_CampStorageContainer", "offset": [60, 110, 0], "rotation": [0, 0, 0], "storage": true }
   ],
 
   "largeTent": [
-    { "base": "XMarkerHeading", "offset": [100, 125, 0], "rotation": [0, 0, 0], "storage": true }
+    { "base": "LZC_CampStorageContainer", "offset": [100, 125, 0], "rotation": [0, 0, 0], "storage": true }
   ],
 
   "ringBedroll": [
-    { "base": "XMarkerHeading", "offset": [0, 90, 0], "rotation": [0, 0, 0], "storage": true }
+    { "base": "LZC_CampStorageContainer", "offset": [0, 90, 0], "rotation": [0, 0, 0], "storage": true }
   ],
 
   "tub": [
