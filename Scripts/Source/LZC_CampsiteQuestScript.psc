@@ -154,8 +154,14 @@ Int Property LargeTentCapacity = 4 Auto
 Float Property PairedBedrollSpacing = 60.0 Auto
 {Bedrolls in a tent lie in pairs that touch, for couples: the side-to-side
 distance between the two of a pair. Set it to the bedroll's width.}
-Float Property BedrollSpacing = 70.0 Auto
+Float Property BedrollSpacing = 130.0 Auto
 {Side-to-side distance from one pair's bedroll to the next pair's, in a tent.}
+Float Property LargeTentBedrollBack = 60.0 Auto
+{Moves the large tent's bedrolls this much further from the fire (negative:
+nearer), from the tent's centre.}
+Float Property LargeTentBedrollLeft = 60.0 Auto
+{Moves the large tent's row of bedrolls this much to the left as seen from the
+fire (negative: right), from the centre of the tent.}
 
 Float Property BedrollRingRadius = 190.0 Auto
 {Without tents: distance of the bedrolls from the centre of the fire, just
@@ -1016,15 +1022,20 @@ EndFunction
 ; always sit 1+2, 3+4.
 Function SetTentBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int slot, Float tentFwd, Float tentSide, Float tentTurn, Int index, Int count, Int size)
 	Int rowLength = count
+	Float back = 0.0
+	Float left = 0.0
 	If size == kLarge
 		rowLength = LargeTentCapacity
+		back = LargeTentBedrollBack
+		left = LargeTentBedrollLeft
 	EndIf
 	; Offset along the tent's right axis, which points at tentTurn + 90. The
 	; tent faces the fire, so its right is the left as seen from the fire.
-	Float offset = RowPosition(rowLength - 1) / 2.0 - RowPosition(index)
+	; The tent's forward axis, at tentTurn, points at the fire.
+	Float offset = RowPosition(rowLength - 1) / 2.0 - RowPosition(index) + left
 	forms[slot] = LZC_BedrollPlaced
-	fwd[slot] = tentFwd + offset * Math.Cos(tentTurn + 90.0)
-	side[slot] = tentSide + offset * Math.Sin(tentTurn + 90.0)
+	fwd[slot] = tentFwd + offset * Math.Cos(tentTurn + 90.0) - back * Math.Cos(tentTurn)
+	side[slot] = tentSide + offset * Math.Sin(tentTurn + 90.0) - back * Math.Sin(tentTurn)
 	turn[slot] = tentTurn
 EndFunction
 
