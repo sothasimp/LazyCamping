@@ -278,11 +278,11 @@ namespace Papyrus
 						0.0f
 					};
 					// Raised by its own height above the holding cell floor, so moving
-					// the anchor up or down doesn't carry the clutter with it.
-					GroundAndTilt(a_origin, clutter, yaw, relative, item->GetPosition().z, a_alignToSlope,
-						a_maxTiltDegrees);
-
+					// the anchor up or down doesn't carry the clutter with it. The
+					// storage spot keeps only its own lean, never the slope's.
 					const bool isStorage = std::ranges::find(a_storageMarkers, item) != a_storageMarkers.end();
+					GroundAndTilt(a_origin, clutter, yaw, relative, item->GetPosition().z, a_alignToSlope && !isStorage,
+						a_maxTiltDegrees);
 					if (isStorage) {
 						if (!storageFound) {
 							// Whatever the marker is (the backpack itself, say), the
