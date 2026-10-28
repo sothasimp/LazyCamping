@@ -249,7 +249,7 @@ Int Property kColors = 5 AutoReadOnly
 Float Property kFireHalfSize = 50.0 AutoReadOnly     ; for the ground check
 Float Property kFanStep = 70.0 AutoReadOnly          ; degrees between neighbours
 Float Property kChoppingBlockGap = 60.0 AutoReadOnly ; from a tent's side to the block
-Int Property kNativeVersion = 9 AutoReadOnly         ; LazyCamping.dll needed
+Int Property kNativeVersion = 10 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
 Form[] clothesTaken   ; what a clothes basket took off, until it's put back on
@@ -707,12 +707,12 @@ Function SetUpCamp()
 	EndIf
 
 	; The plugin puts everything on the ground and places it in one frame.
-	ObjectReference[] setAnchors = new ObjectReference[5]
-	setAnchors[0] = LZC_FireClutterAnchor
-	setAnchors[1] = LZC_SmallTentClutterAnchor
-	setAnchors[2] = LZC_LargeTentClutterAnchor
-	setAnchors[3] = LZC_RingBedrollClutterAnchor
-	setAnchors[4] = LZC_TubClutterAnchor
+	Int[] setAnchorIDs = new Int[5]
+	setAnchorIDs[0] = AnchorID(LZC_FireClutterAnchor)
+	setAnchorIDs[1] = AnchorID(LZC_SmallTentClutterAnchor)
+	setAnchorIDs[2] = AnchorID(LZC_LargeTentClutterAnchor)
+	setAnchorIDs[3] = AnchorID(LZC_RingBedrollClutterAnchor)
+	setAnchorIDs[4] = AnchorID(LZC_TubClutterAnchor)
 	ObjectReference[] setItems = new ObjectReference[128]
 	Int[] itemSet = new Int[128]
 	Int itemCount = AddSet(setItems, itemSet, 0, LZC_FireClutter, 1)
@@ -725,7 +725,7 @@ Function SetUpCamp()
 	If LZC_UnpackSound
 		LZC_UnpackSound.Play(PlayerRef)
 	EndIf
-	placedRefs = LZC_Native.PlaceCamp(PlayerRef, heading, forms, fwd, side, lift, turn, AlignToSlope, MaxSlope, clutterSet, setAnchors, setItems, itemSet, LZC_CampStorageMarkers)
+	placedRefs = LZC_Native.PlaceCamp(PlayerRef, heading, forms, fwd, side, lift, turn, AlignToSlope, MaxSlope, clutterSet, setAnchorIDs, setItems, itemSet, LZC_CampStorageMarkers)
 	If placedRefs.Length <= kSlotCount
 		Debug.Notification("Your camp couldn't be set up.")
 		placedRefs = new ObjectReference[39]
@@ -1309,6 +1309,13 @@ EndFunction
 
 ; Appends a clutter set's items to the flattened lists for PlaceCamp,
 ; tagged with the set's number. Returns the new count.
+Int Function AnchorID(ObjectReference anchor)
+	If anchor
+		Return anchor.GetFormID()
+	EndIf
+	Return 0
+EndFunction
+
 Int Function AddSet(ObjectReference[] setItems, Int[] itemSet, Int count, ObjectReference[] items, Int setNumber)
 	Int i = 0
 	While items && i < items.Length && count < setItems.Length

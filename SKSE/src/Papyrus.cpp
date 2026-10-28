@@ -17,7 +17,7 @@ namespace Papyrus
 	namespace
 	{
 		constexpr auto         kClass = "LZC_Native"sv;
-		constexpr std::int32_t kVersion = 9;
+		constexpr std::int32_t kVersion = 10;
 
 		constexpr RE::FormID kXMarkerHeading = 0x34;  // Skyrim.esm
 
@@ -178,7 +178,7 @@ namespace Papyrus
 		// asked, plus the clutter around each layout object.
 		//
 		// Clutter sets are Creation Kit references in a holding cell: each set
-		// has an anchor marker (a_setAnchors[s]) standing in for its camp object,
+		// has an anchor (the reference a_setAnchorIDs[s]) standing in for its camp object,
 		// and items (a_setItems[j], in set a_itemSet[j], 1-based; 0 = unused)
 		// arranged around it. A layout object with a_clutterSet[i] = s + 1 gets a
 		// copy of set s, with each item's offset and rotation relative to the
@@ -197,7 +197,7 @@ namespace Papyrus
 		std::vector<RE::TESObjectREFR*> PlaceCamp(RE::StaticFunctionTag*, RE::TESObjectREFR* a_origin, float a_headingDegrees,
 			std::vector<RE::TESForm*> a_forms, std::vector<float> a_fwd, std::vector<float> a_side,
 			std::vector<float> a_lift, std::vector<float> a_turn, bool a_alignToSlope, float a_maxTiltDegrees,
-			std::vector<std::int32_t> a_clutterSet, std::vector<RE::TESObjectREFR*> a_setAnchors,
+			std::vector<std::int32_t> a_clutterSet, std::vector<std::int32_t> a_setAnchorIDs,
 			std::vector<RE::TESObjectREFR*> a_setItems, std::vector<std::int32_t> a_itemSet,
 			std::vector<RE::TESObjectREFR*> a_storageMarkers)
 		{
@@ -227,9 +227,16 @@ namespace Papyrus
 				const float yaw = heading + ToRadians(a_turn[i]);
 
 				const std::int32_t set = a_clutterSet[i] - 1;
-				auto*              anchor = set >= 0 && static_cast<std::size_t>(set) < a_setAnchors.size() ?
-				                                a_setAnchors[set] :
-				                                nullptr;
+				RE::TESObjectREFR* anchor = nullptr;
+				if (set >= 0) {
+					if (static_cast<std::size_t>(set) < a_setAnchorIDs.size() && a_setAnchorIDs[set] != 0) {
+						anchor = RE::TESForm::LookupByID<RE::TESObjectREFR>(static_cast<RE::FormID>(a_setAnchorIDs[set]));
+					}
+					if (!anchor) {
+						logger::warn("PlaceCamp: object {} ({:08X}) has clutter set {}, but its anchor isn't set or isn't found", i,
+							base->GetFormID(), set + 1);
+					}
+				}
 				// The anchor's height above the holding cell floor (z = 0) raises
 				// the object.
 				const float lift = a_lift[i] + (anchor ? anchor->GetPosition().z : 0.0f);
