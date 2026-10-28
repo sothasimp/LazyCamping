@@ -17,7 +17,7 @@ namespace Papyrus
 	namespace
 	{
 		constexpr auto         kClass = "LZC_Native"sv;
-		constexpr std::int32_t kVersion = 10;
+		constexpr std::int32_t kVersion = 11;
 
 		constexpr RE::FormID kXMarkerHeading = 0x34;  // Skyrim.esm
 
@@ -182,8 +182,9 @@ namespace Papyrus
 		// and items (a_setItems[j], in set a_itemSet[j], 1-based; 0 = unused)
 		// arranged around it. A layout object with a_clutterSet[i] = s + 1 gets a
 		// copy of set s, with each item's offset and rotation relative to the
-		// anchor carried over. The holding cell floor is z = 0: the layout object
-		// is raised by its anchor's height above it, and each item sits on the
+		// anchor carried over. The anchor's turn turns the layout object, and the
+		// holding cell floor is z = 0: the layout object is raised by its
+		// anchor's height above it, and each item sits on the
 		// ground at its own spot, raised by its own height above it.
 		//
 		// The first item found that is one of a_storageMarkers marks where the
@@ -224,7 +225,6 @@ namespace Papyrus
 				auto& ref = pending[i];
 				ref.base = base;
 				ref.position = LocalToWorld(a_origin, heading, a_fwd[i], a_side[i]);
-				const float yaw = heading + ToRadians(a_turn[i]);
 
 				const std::int32_t set = a_clutterSet[i] - 1;
 				RE::TESObjectREFR* anchor = nullptr;
@@ -237,8 +237,10 @@ namespace Papyrus
 							base->GetFormID(), set + 1);
 					}
 				}
-				// The anchor's height above the holding cell floor (z = 0) raises
-				// the object.
+				// The anchor's turn in the holding cell turns the object (and its
+				// clutter with it), and its height above the holding cell floor
+				// (z = 0) raises it.
+				const float yaw = heading + ToRadians(a_turn[i]) + (anchor ? anchor->GetAngle().z : 0.0f);
 				const float lift = a_lift[i] + (anchor ? anchor->GetPosition().z : 0.0f);
 				GroundAndTilt(a_origin, ref, yaw, identity, lift, a_alignToSlope, a_maxTiltDegrees);
 				if (!anchor) {

@@ -78,9 +78,6 @@ ring, for keeping them clear of the tent beside them. Raise it if they clip.}
 Bool Property TubInLargeTent = False Auto
 {When there's a large tent, the tub goes inside it, in place of its third and
 fourth bedrolls: the large tent then holds 2 bedrolls at most.}
-Float Property TubInTentTurn = 0.0 Auto
-{Turns the tub in the large tent, in degrees clockwise, from facing the way
-the bedrolls do.}
 Form Property LZC_ClothesBasket Auto
 {The clothes basket's base (in the tub clutter set). Activating one takes off
 everything the player is wearing; activating it again puts it back on.}
@@ -259,7 +256,7 @@ Float Property kFireHalfSize = 50.0 AutoReadOnly     ; for the ground check
 Float Property kFanStep = 70.0 AutoReadOnly          ; degrees between neighbours
 Float Property kSeatStep = 60.0 AutoReadOnly         ; between neighbouring fire seats
 Float Property kChoppingBlockGap = 60.0 AutoReadOnly ; from a tent's side to the block
-Int Property kNativeVersion = 10 AutoReadOnly         ; LazyCamping.dll needed
+Int Property kNativeVersion = 11 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
 Form[] clothesTaken   ; what a clothes basket took off, until it's put back on
@@ -1213,7 +1210,7 @@ Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clu
 		Float offset = RowPosition(3) / 2.0 - (RowPosition(2) + RowPosition(3)) / 2.0 + LargeTentBedrollLeft
 		fwd[kTub] = tentFwd[0] + offset * Math.Cos(tentTurn[0] + 90.0) - LargeTentBedrollBack * Math.Cos(tentTurn[0])
 		side[kTub] = tentSide[0] + offset * Math.Sin(tentTurn[0] + 90.0) - LargeTentBedrollBack * Math.Sin(tentTurn[0])
-		turn[kTub] = tentTurn[0] + TubInTentTurn
+		turn[kTub] = tentTurn[0]
 		Return
 	EndIf
 	Float bearing = FanBearing(bedrolls + 1)

@@ -23,7 +23,8 @@ Int Function CheckCampSite(ObjectReference origin, Float heading, Int count, Flo
 ; setAnchorIDs[s] (standing in for the camp object; passed by FormID because
 ; scripted references don't always reach the plugin) plus the setItems whose
 ; itemSet entry is s + 1 (0 = unused); each item's offset and rotation
-; relative to the anchor carry over. The holding cell floor is z = 0: the
+; relative to the anchor carry over. The anchor's turn turns the object.
+; The holding cell floor is z = 0: the
 ; object is raised by its anchor's height above it, and each item sits on the
 ; ground at its own spot, raised by its own height above it. The first item found that is one of storageMarkers isn't copied
 ; as clutter: a copy of it marks where the player's storage goes.
