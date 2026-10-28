@@ -17,7 +17,7 @@ namespace Papyrus
 	namespace
 	{
 		constexpr auto         kClass = "LZC_Native"sv;
-		constexpr std::int32_t kVersion = 7;
+		constexpr std::int32_t kVersion = 8;
 
 		constexpr RE::FormID kXMarkerHeading = 0x34;  // Skyrim.esm
 
@@ -182,8 +182,9 @@ namespace Papyrus
 		// and items (a_setItems[j], in set a_itemSet[j], 1-based; 0 = unused)
 		// arranged around it. A layout object with a_clutterSet[i] = s + 1 gets a
 		// copy of set s, with each item's offset and rotation relative to the
-		// anchor carried over. Items sit on the ground at their own spot, raised
-		// by their height above the anchor.
+		// anchor carried over. The holding cell floor is z = 0: the layout object
+		// is raised by its anchor's height above it, and each item sits on the
+		// ground at its own spot, raised by its own height above it.
 		//
 		// The first item found that is one of a_storageMarkers marks where the
 		// player's storage goes: a copy of it is placed and returned at index
@@ -224,13 +225,18 @@ namespace Papyrus
 				ref.base = base;
 				ref.position = LocalToWorld(a_origin, heading, a_fwd[i], a_side[i]);
 				const float yaw = heading + ToRadians(a_turn[i]);
-				GroundAndTilt(a_origin, ref, yaw, identity, a_lift[i], a_alignToSlope, a_maxTiltDegrees);
 
 				const std::int32_t set = a_clutterSet[i] - 1;
-				if (set < 0 || static_cast<std::size_t>(set) >= a_setAnchors.size() || !a_setAnchors[set]) {
+				auto*              anchor = set >= 0 && static_cast<std::size_t>(set) < a_setAnchors.size() ?
+				                                a_setAnchors[set] :
+				                                nullptr;
+				// The anchor's height above the holding cell floor (z = 0) raises
+				// the object.
+				const float lift = a_lift[i] + (anchor ? anchor->GetPosition().z : 0.0f);
+				GroundAndTilt(a_origin, ref, yaw, identity, lift, a_alignToSlope, a_maxTiltDegrees);
+				if (!anchor) {
 					continue;
 				}
-				auto*               anchor = a_setAnchors[set];
 				const RE::NiMatrix3 anchorRotation = Placement::MatrixFromAngles(anchor->GetAngle());
 				const RE::NiMatrix3 toAnchor = anchorRotation.Transpose();
 				const float         sinYaw = std::sin(yaw);
@@ -258,7 +264,10 @@ namespace Papyrus
 						ref.position.y - offset.x * sinYaw + offset.y * cosYaw,
 						0.0f
 					};
-					GroundAndTilt(a_origin, clutter, yaw, relative, offset.z, a_alignToSlope, a_maxTiltDegrees);
+					// Raised by its own height above the holding cell floor, so moving
+					// the anchor up or down doesn't carry the clutter with it.
+					GroundAndTilt(a_origin, clutter, yaw, relative, item->GetPosition().z, a_alignToSlope,
+						a_maxTiltDegrees);
 
 					const bool isStorage = std::ranges::find(a_storageMarkers, item) != a_storageMarkers.end();
 					if (isStorage) {
