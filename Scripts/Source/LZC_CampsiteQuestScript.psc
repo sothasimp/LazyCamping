@@ -257,6 +257,7 @@ Bool undressed = False
 Int Property kTubClothes = 16 AutoReadOnly   ; per follower in the tub
 Actor[] tubActors     ; followers undressed by the tub trigger
 Form[] tubClothes     ; what each took off: kTubClothes per tubActors slot
+Float[] tubTriggerOffset   ; the trigger's right, forward, up and turn from the tub anchor
 Int[] tentSizesUsed
 Bool busy = False
 
@@ -742,11 +743,7 @@ Function SetUpCamp()
 	If placedRefs[kFirepit]
 		SetFireLit(False)
 	EndIf
-	; The tub trigger goes onto the tub, turned with it.
-	If LZC_TubTrigger && placedRefs[kTub]
-		LZC_TubTrigger.MoveTo(placedRefs[kTub])
-		LZC_TubTrigger.Enable()
-	EndIf
+	PlaceTubTrigger()
 
 	; Sneaking and activating a bedroll sits the player on its seat; the DLL
 	; handles it, so the bedrolls stay the plain vanilla ones.
@@ -889,6 +886,35 @@ Form[] Function WornItems(Actor akActor)
 		i += 1
 	EndWhile
 	Return items
+EndFunction
+
+; Moves the tub trigger onto the camp's tub, where it sits relative to the
+; tub anchor in the holding cell. That's read the first time, while the
+; trigger is still there.
+Function PlaceTubTrigger()
+	ObjectReference tub = placedRefs[kTub]
+	If !LZC_TubTrigger || !tub
+		Return
+	EndIf
+	If !tubTriggerOffset
+		tubTriggerOffset = new Float[4]
+		ObjectReference anchor = LZC_TubClutterAnchor
+		If anchor && LZC_TubTrigger.GetParentCell() == anchor.GetParentCell()
+			Float h = anchor.GetAngleZ()
+			Float dx = LZC_TubTrigger.GetPositionX() - anchor.GetPositionX()
+			Float dy = LZC_TubTrigger.GetPositionY() - anchor.GetPositionY()
+			tubTriggerOffset[0] = dx * Math.Cos(h) - dy * Math.Sin(h)
+			tubTriggerOffset[1] = dx * Math.Sin(h) + dy * Math.Cos(h)
+			tubTriggerOffset[2] = LZC_TubTrigger.GetPositionZ() - anchor.GetPositionZ()
+			tubTriggerOffset[3] = LZC_TubTrigger.GetAngleZ() - h
+		EndIf
+	EndIf
+	Float t = tub.GetAngleZ()
+	Float wx = tubTriggerOffset[0] * Math.Cos(t) + tubTriggerOffset[1] * Math.Sin(t)
+	Float wy = tubTriggerOffset[1] * Math.Cos(t) - tubTriggerOffset[0] * Math.Sin(t)
+	LZC_TubTrigger.MoveTo(tub, wx, wy, tubTriggerOffset[2], False)
+	LZC_TubTrigger.SetAngle(0.0, 0.0, t + tubTriggerOffset[3])
+	LZC_TubTrigger.Enable()
 EndFunction
 
 ; From LZC_CampObjectScript: something stepped into (or out of) the tub
