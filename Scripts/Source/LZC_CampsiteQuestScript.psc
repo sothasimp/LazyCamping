@@ -73,8 +73,8 @@ the chopping block (or along the bedroll fan without tents) when PlaceTub is
 on. Its water, steps and so on are the tub clutter set.}
 Bool Property PlaceTub = True Auto
 Float Property TubHalfWidth = 110.0 Auto
-{Half the width of the tub and its clutter (basket, steps...) along the tent
-ring, for keeping them clear of the tent beside them. Raise it if they clip.}
+{Half the width of the tub and its clutter (basket, steps...) out from the tent
+side, for keeping them clear of the tent beside them. Raise it if they clip.}
 Bool Property TubInLargeTent = False Auto
 {When there's a large tent, the tub goes inside it, in place of its third and
 fourth bedrolls: the large tent then holds 2 bedrolls at most.}
@@ -587,7 +587,7 @@ Function SetUpCamp()
 	lift[kLight] = LightHeight
 	forms[kCookingStation] = LZC_CookingStation
 	If LZC_Tub && PlaceTub
-		SetTub(forms, fwd, side, turn, clutterSet, tents, sizes, tentDistance, tentFwd, tentSide, tentTurn, bedrolls)
+		SetTub(forms, fwd, side, turn, clutterSet, tents, sizes, tentFwd, tentSide, tentTurn, bedrolls)
 	EndIf
 	fwd[kCookingStation] = FireForward()
 
@@ -597,7 +597,7 @@ Function SetUpCamp()
 		forms[kFirepit] = LZC_Firepit
 		fwd[kFirepit] = FireForward()
 		If LZC_ChoppingBlock && PlaceChoppingBlock
-			SetChoppingBlock(forms, fwd, side, turn, tents, sizes, tentDistance, bedrolls)
+			SetChoppingBlock(forms, fwd, side, turn, tents, sizes, tentFwd, tentSide, tentTurn, bedrolls)
 		EndIf
 	EndIf
 
@@ -1178,24 +1178,32 @@ EndFunction
 
 ; The chopping block stands beside the outermost tent, on its far side from
 ; the middle one; without tents, in the next place along the bedroll fan.
-Function SetChoppingBlock(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int tents, Int[] sizes, Float[] tentDistance, Int bedrolls)
-	Float bearing = FanBearing(bedrolls)
-	Float distance = BedrollRingRadius
+Function SetChoppingBlock(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int tents, Int[] sizes, Float[] tentFwd, Float[] tentSide, Float[] tentTurn, Int bedrolls)
+	forms[kChoppingBlock] = LZC_ChoppingBlock
 	If tents > 0
 		Int outer = tents - 1
-		Float tentBearing = FanBearing(outer)
 		Float outward = 1.0
-		If tentBearing < 0.0
+		If FanBearing(outer) < 0.0
 			outward = -1.0
 		EndIf
-		; Along the tent ring, past the tent's side by kChoppingBlockGap.
-		distance = tentDistance[outer]
-		bearing = tentBearing + outward * (TentHalfWidth(sizes[outer]) + kChoppingBlockGap) / distance * 57.29578
+		; Straight out from the tent's side, kChoppingBlockGap clear of it.
+		SetBesideTent(fwd, side, turn, kChoppingBlock, tentFwd[outer], tentSide[outer], tentTurn[outer], outward, TentHalfWidth(sizes[outer]) + kChoppingBlockGap)
+		Return
 	EndIf
-	forms[kChoppingBlock] = LZC_ChoppingBlock
-	fwd[kChoppingBlock] = FireForward() + distance * Math.Cos(bearing)
-	side[kChoppingBlock] = distance * Math.Sin(bearing)
+	Float bearing = FanBearing(bedrolls)
+	fwd[kChoppingBlock] = FireForward() + BedrollRingRadius * Math.Cos(bearing)
+	side[kChoppingBlock] = BedrollRingRadius * Math.Sin(bearing)
 	turn[kChoppingBlock] = bearing + 180.0
+EndFunction
+
+; Puts slot `slot` `distance` from the centre of the tent at (tentFwd,
+; tentSide), straight out from its side and facing the way it does: towards
+; higher fan bearings if `outward` is 1, lower if -1.
+Function SetBesideTent(Float[] fwd, Float[] side, Float[] turn, Int slot, Float tentFwd, Float tentSide, Float tentTurn, Float outward, Float distance)
+	; The tent's right axis, at tentTurn + 90, points to lower bearings.
+	fwd[slot] = tentFwd - outward * distance * Math.Cos(tentTurn + 90.0)
+	side[slot] = tentSide - outward * distance * Math.Sin(tentTurn + 90.0)
+	turn[slot] = tentTurn
 EndFunction
 
 ; The tub stands beside the outermost tent on the other side from the
@@ -1204,7 +1212,7 @@ EndFunction
 ; block's place without tents. The tub clutter set (water, steps...) goes
 ; around it. With TubInLargeTent, it goes in the large tent instead, where
 ; its third and fourth bedrolls would lie.
-Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clutterSet, Int tents, Int[] sizes, Float[] tentDistance, Float[] tentFwd, Float[] tentSide, Float[] tentTurn, Int bedrolls)
+Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clutterSet, Int tents, Int[] sizes, Float[] tentFwd, Float[] tentSide, Float[] tentTurn, Int bedrolls)
 	forms[kTub] = LZC_Tub
 	clutterSet[kTub] = 5
 	; The large tent, if any, is always the middle one.
@@ -1217,8 +1225,6 @@ Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clu
 		turn[kTub] = tentTurn[0]
 		Return
 	EndIf
-	Float bearing = FanBearing(bedrolls + 1)
-	Float distance = BedrollRingRadius
 	If tents > 0
 		Int beside = 0
 		Float outward = -1.0
@@ -1226,11 +1232,13 @@ Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clu
 			beside = 1
 			outward = 1.0
 		EndIf
-		distance = tentDistance[beside]
-		bearing = FanBearing(beside) + outward * (TentHalfWidth(sizes[beside]) + kChoppingBlockGap + TubHalfWidth) / distance * 57.29578
+		; Straight out from the tent's side, with room for the tub's clutter.
+		SetBesideTent(fwd, side, turn, kTub, tentFwd[beside], tentSide[beside], tentTurn[beside], outward, TentHalfWidth(sizes[beside]) + kChoppingBlockGap + TubHalfWidth)
+		Return
 	EndIf
-	fwd[kTub] = FireForward() + distance * Math.Cos(bearing)
-	side[kTub] = distance * Math.Sin(bearing)
+	Float bearing = FanBearing(bedrolls + 1)
+	fwd[kTub] = FireForward() + BedrollRingRadius * Math.Cos(bearing)
+	side[kTub] = BedrollRingRadius * Math.Sin(bearing)
 	turn[kTub] = bearing + 180.0
 EndFunction
 
