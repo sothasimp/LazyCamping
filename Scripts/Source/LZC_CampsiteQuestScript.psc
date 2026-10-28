@@ -154,12 +154,12 @@ Int Property LargeTentCapacity = 4 Auto
 Float Property PairedBedrollSpacing = 60.0 Auto
 {Bedrolls in a tent lie in pairs that touch, for couples: the side-to-side
 distance between the two of a pair. Set it to the bedroll's width.}
-Float Property BedrollSpacing = 130.0 Auto
+Float Property BedrollSpacing = 250.0 Auto
 {Side-to-side distance from one pair's bedroll to the next pair's, in a tent.}
 Float Property LargeTentBedrollBack = 60.0 Auto
 {Moves the large tent's bedrolls this much further from the fire (negative:
 nearer), from the tent's centre.}
-Float Property LargeTentBedrollLeft = 60.0 Auto
+Float Property LargeTentBedrollLeft = 0.0 Auto
 {Moves the large tent's row of bedrolls this much to the left as seen from the
 fire (negative: right), from the centre of the tent.}
 
