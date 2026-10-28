@@ -146,9 +146,9 @@ fronts just behind the seats; raise it if seated people brush the tents.}
 Float Property TentSetback = 15.0 Auto
 {Moves every tent this much further from the fire, after the ring is widened
 to fit them.}
-Float Property MiddleLargeTentPullIn = 170.0 Auto
-{Brings the large tent, when it stands in the middle, this much closer to the
-fire than the ring.}
+Float Property LargeTentDistance = 95.0 Auto
+{Distance from the centre of the fire to the centre of the large tent, which
+always stands in the middle. Small tents stand on the ring instead.}
 Float Property SmallTentHalfWidth = 85.0 Auto
 Float Property SmallTentHalfDepth = 85.0 Auto
 Int Property SmallTentCapacity = 2 Auto
@@ -525,7 +525,7 @@ Function SetUpCamp()
 		Float bearing = FanBearing(t)
 		tentDistance[t] = radius
 		If t == 0 && sizes[0] == kLarge
-			tentDistance[t] = radius - MiddleLargeTentPullIn
+			tentDistance[t] = LargeTentDistance
 		EndIf
 		tentFwd[t] = FireForward() + tentDistance[t] * Math.Cos(bearing)
 		tentSide[t] = tentDistance[t] * Math.Sin(bearing)
