@@ -624,9 +624,15 @@ Function SetUpCamp()
 		seatStep = 360.0 / (1 + followerSeats)
 	EndIf
 	SetSeat(forms, fwd, side, turn, kPlayerSeat, LZC_SitMarkerPlayer, 0.0)
+	; The two follower seats either side of the player's, in front of the
+	; middle tent, are the player's kind too, so the player can sit there.
 	Int f = 0
 	While f < followerSeats
-		SetSeat(forms, fwd, side, turn, kFirstFollowerSeat + f, LZC_SitMarkerFollower, FanPlace(f + 1) * seatStep)
+		Form seat = LZC_SitMarkerFollower
+		If f < 2 && LZC_SitMarkerPlayer
+			seat = LZC_SitMarkerPlayer
+		EndIf
+		SetSeat(forms, fwd, side, turn, kFirstFollowerSeat + f, seat, FanPlace(f + 1) * seatStep)
 		f += 1
 	EndWhile
 
