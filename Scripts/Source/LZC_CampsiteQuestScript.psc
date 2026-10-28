@@ -972,7 +972,8 @@ EndFunction
 ; installed (looked up at run time, so it isn't a master): its dirt goes and
 ; it's marked clean.
 Function BatheInTub(Actor akActor)
-	If Game.GetModByName(kBathingPlugin) == 255
+	; Either kind of plugin: a full one, or one flagged as light.
+	If Game.GetModByName(kBathingPlugin) == 255 && Game.GetLightModByName(kBathingPlugin) == 65535
 		Return
 	EndIf
 	MagicEffect cleanStatus = Game.GetFormFromFile(0x26, kBathingPlugin) as MagicEffect
