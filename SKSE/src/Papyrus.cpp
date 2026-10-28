@@ -131,6 +131,20 @@ namespace Papyrus
 			return kClear;
 		}
 
+		// Scales a reference the way Papyrus's SetScale does: the reference's
+		// own scale, flagged as changed so the save keeps it, and its 3D if
+		// that's already loaded (else it loads at the new scale).
+		void SetScale(RE::TESObjectREFR* a_ref, std::uint16_t a_percent)
+		{
+			a_ref->GetReferenceRuntimeData().refScale = a_percent;
+			a_ref->AddChange(RE::TESObjectREFR::ChangeFlags::kScale);
+			if (auto* node = a_ref->Get3D()) {
+				node->local.scale = static_cast<float>(a_percent) / 100.0f;
+				RE::NiUpdateData update{};
+				node->Update(update);
+			}
+		}
+
 		struct PendingRef
 		{
 			RE::TESBoundObject* base{ nullptr };
@@ -267,7 +281,7 @@ namespace Papyrus
 					nullptr, nullptr, RE::ObjectRefHandle(), false, true);
 				auto* created = handle.get().get();
 				if (created && ref.scale != 100) {
-					created->GetReferenceRuntimeData().refScale = ref.scale;
+					SetScale(created, ref.scale);
 				}
 				refs[i] = created;
 			}
