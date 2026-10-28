@@ -25,6 +25,7 @@ namespace Menu
 			bool         placeCampfireLight{ true };
 			bool         placeTub{ true };
 			bool         tubInLargeTent{ false };
+			bool         alignToSlope{ true };
 		};
 
 		std::mutex                            lock;
@@ -55,10 +56,11 @@ namespace Menu
 			auto*  light = object ? AutoProperty(object.get(), "PlaceCampfireLight") : nullptr;
 			auto*  tub = object ? AutoProperty(object.get(), "PlaceTub") : nullptr;
 			auto*  tubInTent = object ? AutoProperty(object.get(), "TubInLargeTent") : nullptr;
-			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent;
+			auto*  slope = object ? AutoProperty(object.get(), "AlignToSlope") : nullptr;
+			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope;
 			if (found) {
 				values = { firewood->GetBool(), burnHours->GetFloat(), block->GetBool(), grass->GetBool(), light->GetBool(), tub->GetBool(),
-					tubInTent->GetBool() };
+					tubInTent->GetBool(), slope->GetBool() };
 			}
 
 			std::scoped_lock guard(lock);
@@ -92,6 +94,9 @@ namespace Menu
 				}
 				if (auto* tubInTent = AutoProperty(object.get(), "TubInLargeTent")) {
 					tubInTent->SetBool(a_values.tubInLargeTent);
+				}
+				if (auto* slope = AutoProperty(object.get(), "AlignToSlope")) {
+					slope->SetBool(a_values.alignToSlope);
 				}
 			}
 			--pendingWrites;
@@ -132,6 +137,8 @@ namespace Menu
 			changed |= ImGuiMCP::Checkbox("Wood chopping block", &values.placeChoppingBlock);
 			ImGuiMCP::SetItemTooltip("Place a woodcutting block beside the tents, for chopping firewood. Takes effect at the next camp.");
 			ImGuiMCP::EndDisabled();
+			changed |= ImGuiMCP::Checkbox("Align to slope", &values.alignToSlope);
+			ImGuiMCP::SetItemTooltip("Tilt the tents, bedrolls, seats, fire and clutter to match the ground. Takes effect at the next camp.");
 			changed |= ImGuiMCP::Checkbox("Clear grass around the camp", &values.hideGrassUnderCamp);
 			ImGuiMCP::SetItemTooltip("Clear the grass in a circle around the camp while it's up. Takes effect at the next camp.");
 			changed |= ImGuiMCP::Checkbox("Campfire light marker", &values.placeCampfireLight);
