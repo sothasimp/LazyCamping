@@ -255,6 +255,7 @@ ObjectReference[] placedRefs
 Form[] clothesTaken   ; what a clothes basket took off, until it's put back on
 Bool undressed = False
 Int Property kTubClothes = 16 AutoReadOnly   ; per follower in the tub
+String Property kBathingPlugin = "Bathing in Skyrim.esp" AutoReadOnly
 Actor[] tubActors     ; followers undressed by the tub trigger
 Form[] tubClothes     ; what each took off: kTubClothes per tubActors slot
 Float[] tubTriggerOffset   ; the trigger's right, forward, up and turn from the tub anchor
@@ -925,13 +926,20 @@ Function PlaceTubTrigger()
 EndFunction
 
 ; From LZC_CampObjectScript: something stepped into (or out of) the tub
-; trigger. Only followers are undressed; the player has the clothes basket.
+; trigger. The player and followers who step in are washed (with Bathing in
+; Skyrim); followers are also undressed, as the player has the clothes basket.
 Function OnCampTrigger(ObjectReference akRef, ObjectReference akActionRef, Bool entered)
 	If !akRef || akRef != LZC_TubTrigger
 		Return
 	EndIf
 	Actor follower = akActionRef as Actor
-	If !follower || follower == PlayerRef || !follower.IsPlayerTeammate()
+	If !follower || (follower != PlayerRef && !follower.IsPlayerTeammate())
+		Return
+	EndIf
+	If entered && CampDeployed
+		BatheInTub(follower)
+	EndIf
+	If follower == PlayerRef
 		Return
 	EndIf
 	If !tubActors
@@ -958,6 +966,36 @@ Function OnCampTrigger(ObjectReference akRef, ObjectReference akActionRef, Bool 
 		follower.UnequipItem(worn[i], True, True)
 		i += 1
 	EndWhile
+EndFunction
+
+; Washes akActor the way Bathing in Skyrim's own water does, if it's
+; installed (looked up at run time, so it isn't a master): its dirt goes and
+; it's marked clean.
+Function BatheInTub(Actor akActor)
+	If Game.GetModByName(kBathingPlugin) == 255
+		Return
+	EndIf
+	MagicEffect cleanStatus = Game.GetFormFromFile(0x26, kBathingPlugin) as MagicEffect
+	Spell batheSpell = Game.GetFormFromFile(0x3D, kBathingPlugin) as Spell
+	Spell cleanSpell = Game.GetFormFromFile(0x43, kBathingPlugin) as Spell
+	If !cleanStatus || !cleanSpell || akActor.HasMagicEffect(cleanStatus)
+		Return
+	EndIf
+	If batheSpell
+		akActor.AddSpell(batheSpell, False)
+	EndIf
+	Int dirt = 0x44
+	While dirt <= 0x46
+		Spell dirtSpell = Game.GetFormFromFile(dirt, kBathingPlugin) as Spell
+		If dirtSpell
+			akActor.RemoveSpell(dirtSpell)
+		EndIf
+		dirt += 1
+	EndWhile
+	akActor.AddSpell(cleanSpell, False)
+	If akActor == PlayerRef
+		Debug.Notification("You are now clean.")
+	EndIf
 EndFunction
 
 ; Puts back on what the tub trigger took off the follower in `slot`.
