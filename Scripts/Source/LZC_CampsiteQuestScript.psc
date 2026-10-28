@@ -78,6 +78,9 @@ ring, for keeping them clear of the tent beside them. Raise it if they clip.}
 Bool Property TubInLargeTent = False Auto
 {When there's a large tent, the tub goes inside it, in place of its third and
 fourth bedrolls: the large tent then holds 2 bedrolls at most.}
+Float Property TubInTentRight = 137.0 Auto
+{How far right of the large tent's centre (as seen from the fire) the tub
+stands when it's in the tent.}
 Form Property LZC_ClothesBasket Auto
 {The clothes basket's base (in the tub clutter set). Activating one takes off
 everything the player is wearing; activating it again puts it back on.}
@@ -1206,8 +1209,9 @@ Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clu
 	clutterSet[kTub] = 5
 	; The large tent, if any, is always the middle one.
 	If TubInLargeTent && tents > 0 && sizes[0] == kLarge
-		; Halfway between bedrolls 3 and 4 of a full row (see SetTentBedroll).
-		Float offset = RowPosition(3) / 2.0 - (RowPosition(2) + RowPosition(3)) / 2.0 + LargeTentBedrollLeft
+		; TubInTentRight to the right of the tent's centre, as seen from the
+		; fire (see SetTentBedroll), as far back as the bedrolls.
+		Float offset = LargeTentBedrollLeft - TubInTentRight
 		fwd[kTub] = tentFwd[0] + offset * Math.Cos(tentTurn[0] + 90.0) - LargeTentBedrollBack * Math.Cos(tentTurn[0])
 		side[kTub] = tentSide[0] + offset * Math.Sin(tentTurn[0] + 90.0) - LargeTentBedrollBack * Math.Sin(tentTurn[0])
 		turn[kTub] = tentTurn[0]
