@@ -72,8 +72,9 @@ Form Property LZC_Tub Auto
 the chopping block (or along the bedroll fan without tents) when PlaceTub is
 on. Its water, steps and so on are the tub clutter set.}
 Bool Property PlaceTub = True Auto
-Float Property TubHalfWidth = 50.0 Auto
-{Half the tub's length along the tent ring, for keeping it clear of the tent.}
+Float Property TubHalfWidth = 110.0 Auto
+{Half the width of the tub and its clutter (basket, steps...) along the tent
+ring, for keeping them clear of the tent beside them. Raise it if they clip.}
 Bool Property TubInLargeTent = False Auto
 {When there's a large tent, the tub goes inside it, in place of its third and
 fourth bedrolls: the large tent then holds 2 bedrolls at most.}
