@@ -146,7 +146,7 @@ fronts just behind the seats; raise it if seated people brush the tents.}
 Float Property TentSetback = 15.0 Auto
 {Moves every tent this much further from the fire, after the ring is widened
 to fit them.}
-Float Property LargeTentDistance = 95.0 Auto
+Float Property LargeTentDistance = 85.0 Auto
 {Distance from the centre of the fire to the centre of the large tent, which
 always stands in the middle. Small tents stand on the ring instead.}
 Float Property SmallTentHalfWidth = 85.0 Auto
