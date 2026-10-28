@@ -631,7 +631,7 @@ Function SetUpCamp()
 		Int nextSlot = kFirstBedroll
 		t = 0
 		While t < tents
-			SetTentBedroll(forms, fwd, side, turn, nextSlot, tentFwd[t], tentSide[t], tentTurn[t], 0, bedsInTent[t])
+			SetTentBedroll(forms, fwd, side, turn, nextSlot, tentFwd[t], tentSide[t], tentTurn[t], 0, bedsInTent[t], sizes[t])
 			bedGroup[nextSlot - kFirstBedroll] = t
 			bedOrder[nextSlot - kFirstBedroll] = PairedOrder(0)
 			nextSlot += 1
@@ -641,7 +641,7 @@ Function SetUpCamp()
 		While t < tents
 			Int b = 1
 			While b < bedsInTent[t]
-				SetTentBedroll(forms, fwd, side, turn, nextSlot, tentFwd[t], tentSide[t], tentTurn[t], b, bedsInTent[t])
+				SetTentBedroll(forms, fwd, side, turn, nextSlot, tentFwd[t], tentSide[t], tentTurn[t], b, bedsInTent[t], sizes[t])
 				bedGroup[nextSlot - kFirstBedroll] = t
 				bedOrder[nextSlot - kFirstBedroll] = PairedOrder(b)
 				nextSlot += 1
@@ -1031,11 +1031,18 @@ Function SetSeat(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int slot
 EndFunction
 
 ; Puts bedroll `index` of `count` in a slot, side by side across the tent at
-; (tentFwd, tentSide) facing the same way as the tent.
-Function SetTentBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int slot, Float tentFwd, Float tentSide, Float tentTurn, Int index, Int count)
+; (tentFwd, tentSide) facing the same way as the tent. The row runs from left
+; to right as seen from the fire. A small tent's row is centred in it; a large
+; tent's is laid out for a full tent and filled from the left, so its pairs
+; always sit 1+2, 3+4.
+Function SetTentBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int slot, Float tentFwd, Float tentSide, Float tentTurn, Int index, Int count, Int size)
+	Int rowLength = count
+	If size == kLarge
+		rowLength = LargeTentCapacity
+	EndIf
 	; Offset along the tent's right axis, which points at tentTurn + 90. The
-	; row is centred in the tent.
-	Float offset = RowPosition(index) - RowPosition(count - 1) / 2.0
+	; tent faces the fire, so its right is the left as seen from the fire.
+	Float offset = RowPosition(rowLength - 1) / 2.0 - RowPosition(index)
 	forms[slot] = LZC_BedrollPlaced
 	fwd[slot] = tentFwd + offset * Math.Cos(tentTurn + 90.0)
 	side[slot] = tentSide + offset * Math.Sin(tentTurn + 90.0)
