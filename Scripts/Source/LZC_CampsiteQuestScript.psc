@@ -138,17 +138,11 @@ Float Property SeatRadius = 110.0 Auto
 front of the player, so they stand at the near edge of the seat ring; their
 own seat is across the fire, in front of their tent.}
 
-Float Property TentRingGap = 40.0 Auto
-{Gap between the seats and the front of the deepest tent. All tents share one
-ring: SeatRadius + TentRingGap + the largest HalfDepth among them, widened
-when needed so neighbouring tents don't touch. The default leaves the tent
-fronts just behind the seats; raise it if seated people brush the tents.}
-Float Property TentSetback = 15.0 Auto
-{Moves every tent this much further from the fire, after the ring is widened
-to fit them.}
+Float Property SmallTentDistance = 250.0 Auto
+{Distance from the centre of the fire to the centre of each small tent.}
 Float Property LargeTentDistance = 85.0 Auto
 {Distance from the centre of the fire to the centre of the large tent, which
-always stands in the middle. Small tents stand on the ring instead.}
+always stands in the middle.}
 Float Property SmallTentHalfWidth = 85.0 Auto
 Float Property SmallTentHalfDepth = 85.0 Auto
 Int Property SmallTentCapacity = 2 Auto
@@ -236,7 +230,6 @@ Int Property kLarge = 1 AutoReadOnly
 Int Property kColors = 5 AutoReadOnly
 Float Property kFireHalfSize = 50.0 AutoReadOnly     ; for the ground check
 Float Property kFanStep = 70.0 AutoReadOnly          ; degrees between neighbours
-Float Property kTentClearance = 15.0 AutoReadOnly    ; between neighbouring tents
 Float Property kChoppingBlockGap = 60.0 AutoReadOnly ; from a tent's side to the block
 Int Property kNativeVersion = 8 AutoReadOnly         ; LazyCamping.dll needed
 
@@ -494,28 +487,6 @@ Function SetUpCamp()
 	; facing it and the open side where the player stands: the player's tent
 	; straight across, the others kFanStep degrees to either side. Bearings
 	; are degrees clockwise from the player's facing, seen from the fire.
-	Float deepest = 0.0
-	t = 0
-	While t < tents
-		If TentHalfDepth(sizes[t]) > deepest
-			deepest = TentHalfDepth(sizes[t])
-		EndIf
-		t += 1
-	EndWhile
-	Float radius = SeatRadius + TentRingGap + deepest
-	; Seen from the fire, each tent spans an angle set by its front corners.
-	; Push the ring out until the middle tent's span and each side tent's fit
-	; within the kFanStep between them.
-	t = 1
-	While t < tents
-		While TentSpan(sizes[0], radius) + TentSpan(sizes[t], radius) > kFanStep
-			radius += 5.0
-		EndWhile
-		t += 1
-	EndWhile
-
-	radius += TentSetback
-
 	Float[] tentFwd = new Float[4]
 	Float[] tentSide = new Float[4]
 	Float[] tentTurn = new Float[4]
@@ -523,8 +494,8 @@ Function SetUpCamp()
 	t = 0
 	While t < tents
 		Float bearing = FanBearing(t)
-		tentDistance[t] = radius
-		If t == 0 && sizes[0] == kLarge
+		tentDistance[t] = SmallTentDistance
+		If sizes[t] == kLarge
 			tentDistance[t] = LargeTentDistance
 		EndIf
 		tentFwd[t] = FireForward() + tentDistance[t] * Math.Cos(bearing)
@@ -1162,12 +1133,6 @@ Float Function TentHalfWidth(Int size)
 		Return LargeTentHalfWidth
 	EndIf
 	Return SmallTentHalfWidth
-EndFunction
-
-; Half the angle, in degrees, that a tent of this size spans as seen from
-; the fire when it stands `radius` from it (plus half the clearance).
-Float Function TentSpan(Int size, Float radius)
-	Return Math.atan((TentHalfWidth(size) + kTentClearance / 2.0) / (radius - TentHalfDepth(size)))
 EndFunction
 
 Float Function TentHalfDepth(Int size)
