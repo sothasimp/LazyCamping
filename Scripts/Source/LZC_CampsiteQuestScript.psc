@@ -623,9 +623,14 @@ Function SetUpCamp()
 	Float seatStep = kSeatStep
 	SetSeat(forms, fwd, side, turn, kPlayerSeat, LZC_SitMarkerPlayer, 0.0)
 	; The two follower seats either side of the player's, in front of the
-	; middle tent, are the player's kind too, so the player can sit there.
+	; middle tent, are the player's kind too, so the player can sit there, and
+	; they're placed even without followers.
+	Int fireSideSeats = followerSeats
+	If LZC_SitMarkerPlayer && fireSideSeats < 2
+		fireSideSeats = 2
+	EndIf
 	Int f = 0
-	While f < followerSeats
+	While f < fireSideSeats
 		Form seat = LZC_SitMarkerFollower
 		If f < 2 && LZC_SitMarkerPlayer
 			seat = LZC_SitMarkerPlayer

@@ -121,15 +121,16 @@ Function SetActivity(Int activity)
 	EndWhile
 EndFunction
 
-; Called by LZC_CampPlayerAliasScript. Sitting in the player's fire seat
-; sends followers to the fire seats; sitting on a bedroll's seat sends them to
-; the other bedrolls' seats.
+; Called by LZC_CampPlayerAliasScript. Sitting in any fire seat sends
+; followers to the other fire seats; sitting on a bedroll's seat sends them to
+; the other bedrolls' seats. Partners take the seats next to the player's.
 Function OnPlayerSat(ObjectReference akFurniture)
 	If !akFurniture || LZC_CampActivity.GetValueInt() == kSleeping
 		Return
 	EndIf
-	If akFurniture == PlayerSeat
-		ForceChosen(Seats, fireSeats, ChooseSpots(fireSeats, fireGroups, firePlaces, 0))
+	Int fireSeat = IndexOf(fireSeats, akFurniture)
+	If fireSeat >= 0
+		ForceChosen(Seats, fireSeats, ChooseSpots(fireSeats, fireGroups, firePlaces, fireSeat))
 		SetActivity(kSitting)
 	Else
 		Int bedSeat = IndexOf(campBedSeats, akFurniture)
