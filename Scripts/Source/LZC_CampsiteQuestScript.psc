@@ -84,6 +84,11 @@ the bedrolls do.}
 Form Property LZC_ClothesBasket Auto
 {The clothes basket's base (in the tub clutter set). Activating one takes off
 everything the player is wearing; activating it again puts it back on.}
+ObjectReference Property LZC_TubTrigger Auto
+{Optional. A persistent, initially disabled trigger box in the holding cell:
+a box primitive on the L_TRIGGER layer, base LZC_CookActivator
+(LZC_CampObjectScript). It moves onto the tub, matching its turn; followers who
+step into it take off their clothes, and put them back on when they step out.}
 Form Property LZC_SitMarkerPlayer Auto
 {Optional. Visible cross-legged seat by the fire that the player can use.}
 Form Property LZC_BedrollSitMarker Auto
@@ -249,6 +254,9 @@ Int Property kNativeVersion = 9 AutoReadOnly         ; LazyCamping.dll needed
 ObjectReference[] placedRefs
 Form[] clothesTaken   ; what a clothes basket took off, until it's put back on
 Bool undressed = False
+Int Property kTubClothes = 16 AutoReadOnly   ; per follower in the tub
+Actor[] tubActors     ; followers undressed by the tub trigger
+Form[] tubClothes     ; what each took off: kTubClothes per tubActors slot
 Int[] tentSizesUsed
 Bool busy = False
 
@@ -295,7 +303,9 @@ Function OnCampObjectActivated(ObjectReference akRef, ObjectReference akActionRe
 	If akActionRef != PlayerRef || !CampDeployed || !akRef
 		Return
 	EndIf
-	If akRef == LZC_CookBox
+	If akRef == LZC_TubTrigger
+		Return
+	ElseIf akRef == LZC_CookBox
 		Cook()
 	ElseIf akRef == placedRefs[kFirepit]
 		LightFire()
@@ -732,6 +742,11 @@ Function SetUpCamp()
 	If placedRefs[kFirepit]
 		SetFireLit(False)
 	EndIf
+	; The tub trigger goes onto the tub, turned with it.
+	If LZC_TubTrigger && placedRefs[kTub]
+		LZC_TubTrigger.MoveTo(placedRefs[kTub])
+		LZC_TubTrigger.Enable()
+	EndIf
 
 	; Sneaking and activating a bedroll sits the player on its seat; the DLL
 	; handles it, so the bedrolls stay the plain vanilla ones.
@@ -851,22 +866,91 @@ Function ChangeClothes()
 		undressed = False
 		Return
 	EndIf
-	clothesTaken = new Form[32]
-	Int count = 0
-	While i < 32
-		Form item = PlayerRef.GetWornForm(Math.LeftShift(1, i))
-		If item && clothesTaken.Find(item) < 0
-			clothesTaken[count] = item
-			count += 1
-		EndIf
-		i += 1
-	EndWhile
-	i = 0
-	While i < count
+	clothesTaken = WornItems(PlayerRef)
+	While i < clothesTaken.Length && clothesTaken[i]
 		PlayerRef.UnequipItem(clothesTaken[i], False, True)
 		i += 1
 	EndWhile
 	undressed = True
+EndFunction
+
+; What akActor wears in the armour slots (30-61), each piece once even if it
+; covers several slots, from the start of the array.
+Form[] Function WornItems(Actor akActor)
+	Form[] items = new Form[32]
+	Int count = 0
+	Int i = 0
+	While i < 32
+		Form item = akActor.GetWornForm(Math.LeftShift(1, i))
+		If item && items.Find(item) < 0
+			items[count] = item
+			count += 1
+		EndIf
+		i += 1
+	EndWhile
+	Return items
+EndFunction
+
+; From LZC_CampObjectScript: something stepped into (or out of) the tub
+; trigger. Only followers are undressed; the player has the clothes basket.
+Function OnCampTrigger(ObjectReference akRef, ObjectReference akActionRef, Bool entered)
+	If !akRef || akRef != LZC_TubTrigger
+		Return
+	EndIf
+	Actor follower = akActionRef as Actor
+	If !follower || follower == PlayerRef || !follower.IsPlayerTeammate()
+		Return
+	EndIf
+	If !tubActors
+		tubActors = new Actor[8]
+		tubClothes = new Form[128]
+	EndIf
+	If !entered
+		RedressFromTub(tubActors.Find(follower))
+		Return
+	EndIf
+	If !CampDeployed || tubActors.Find(follower) >= 0
+		Return
+	EndIf
+	Int slot = tubActors.Find(None)
+	If slot < 0
+		Return
+	EndIf
+	tubActors[slot] = follower
+	Form[] worn = WornItems(follower)
+	Int i = 0
+	While i < kTubClothes && worn[i]
+		tubClothes[slot * kTubClothes + i] = worn[i]
+		; Kept off until put back on, so the follower doesn't dress again.
+		follower.UnequipItem(worn[i], True, True)
+		i += 1
+	EndWhile
+EndFunction
+
+; Puts back on what the tub trigger took off the follower in `slot`.
+Function RedressFromTub(Int slot)
+	If slot < 0 || !tubActors[slot]
+		Return
+	EndIf
+	Actor follower = tubActors[slot]
+	Int i = 0
+	While i < kTubClothes
+		Form item = tubClothes[slot * kTubClothes + i]
+		If item && follower.GetItemCount(item) > 0
+			follower.EquipItem(item, False, True)
+		EndIf
+		tubClothes[slot * kTubClothes + i] = None
+		i += 1
+	EndWhile
+	tubActors[slot] = None
+EndFunction
+
+Function RedressAllFromTub()
+	Int slot = 0
+	While tubActors && slot < tubActors.Length
+		RedressFromTub(slot)
+		slot += 1
+	EndWhile
 EndFunction
 
 ; The fire lit with firewood burns out.
@@ -922,6 +1006,10 @@ Function PackUpCamp()
 	If LZC_CookBox
 		LZC_CookBox.Disable()
 	EndIf
+	If LZC_TubTrigger
+		LZC_TubTrigger.Disable()
+	EndIf
+	RedressAllFromTub()
 
 	If LZC_CampFollowersQuest && LZC_CampFollowersQuest.IsRunning()
 		(LZC_CampFollowersQuest as LZC_CampFollowersScript).Shutdown()
