@@ -140,7 +140,7 @@ own seat is across the fire, in front of their tent.}
 
 Float Property SmallTentDistance = 250.0 Auto
 {Distance from the centre of the fire to the centre of each small tent.}
-Float Property LargeTentDistance = 85.0 Auto
+Float Property LargeTentDistance = 107.0 Auto
 {Distance from the centre of the fire to the centre of the large tent, which
 always stands in the middle.}
 Float Property SmallTentHalfWidth = 85.0 Auto
