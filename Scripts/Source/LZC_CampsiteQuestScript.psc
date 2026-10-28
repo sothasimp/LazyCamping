@@ -151,7 +151,7 @@ Float Property LargeTentHalfWidth = 150.0 Auto
 Float Property LargeTentHalfDepth = 100.0 Auto
 Int Property LargeTentCapacity = 4 Auto
 {Most bedrolls a large tent holds (1-4).}
-Float Property PairedBedrollSpacing = 60.0 Auto
+Float Property PairedBedrollSpacing = 62.0 Auto
 {Bedrolls in a tent lie in pairs that touch, for couples: the side-to-side
 distance between the two of a pair. Set it to the bedroll's width.}
 Float Property BedrollSpacing = 250.0 Auto
