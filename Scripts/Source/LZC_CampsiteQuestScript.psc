@@ -87,6 +87,12 @@ everything the player is wearing; activating it again puts it back on.}
 Int Property BatheKey = 48 Auto
 {With Bathing in Skyrim: the key (a DirectX scan code; 48 is B) that bathes
 the player while they're in the tub trigger.}
+ObjectReference Property LZC_TubWater Auto
+{Optional. The water in the tub clutter set (a placeable water activator such
+as LargeRainBarrelWater01). Instead of being copied like the other clutter, this
+reference itself moves onto the tub, keeping its offset, turn and scale: the
+game only treats placeable water as real water (for bathing mods, say) when it
+was placed in the Creation Kit.}
 ObjectReference Property LZC_TubTrigger Auto
 {Optional. A persistent, initially disabled trigger box in the holding cell:
 a box primitive on the L_TRIGGER layer, base LZC_CookActivator
@@ -263,6 +269,7 @@ Bool playerInTub = False
 Actor[] tubActors     ; followers undressed by the tub trigger
 Form[] tubClothes     ; what each took off: kTubClothes per tubActors slot
 Float[] tubTriggerOffset   ; the trigger's right, forward, up and turn from the tub anchor
+Float[] tubWaterOffset     ; and the water's
 Int[] tentSizesUsed
 Bool busy = False
 
@@ -754,7 +761,7 @@ Function SetUpCamp()
 	If placedRefs[kFirepit]
 		SetFireLit(False)
 	EndIf
-	PlaceTubTrigger()
+	PlaceOnTub()
 
 	; Sneaking and activating a bedroll sits the player on its seat; the DLL
 	; handles it, so the bedrolls stay the plain vanilla ones.
@@ -900,33 +907,54 @@ Form[] Function WornItems(Actor akActor)
 	Return items
 EndFunction
 
-; Moves the tub trigger onto the camp's tub, where it sits relative to the
-; tub anchor in the holding cell. That's read the first time, while the
-; trigger is still there.
-Function PlaceTubTrigger()
-	ObjectReference tub = placedRefs[kTub]
-	If !LZC_TubTrigger || !tub
+; Moves the tub's persistent pieces (the trigger, the water) onto the camp's
+; tub, each where it sits relative to the tub anchor in the holding cell.
+Function PlaceOnTub()
+	If !placedRefs[kTub]
 		Return
 	EndIf
-	If !tubTriggerOffset
-		tubTriggerOffset = new Float[4]
-		ObjectReference anchor = LZC_TubClutterAnchor
-		If anchor && LZC_TubTrigger.GetParentCell() == anchor.GetParentCell()
-			Float h = anchor.GetAngleZ()
-			Float dx = LZC_TubTrigger.GetPositionX() - anchor.GetPositionX()
-			Float dy = LZC_TubTrigger.GetPositionY() - anchor.GetPositionY()
-			tubTriggerOffset[0] = dx * Math.Cos(h) - dy * Math.Sin(h)
-			tubTriggerOffset[1] = dx * Math.Sin(h) + dy * Math.Cos(h)
-			tubTriggerOffset[2] = LZC_TubTrigger.GetPositionZ() - anchor.GetPositionZ()
-			tubTriggerOffset[3] = LZC_TubTrigger.GetAngleZ() - h
+	If LZC_TubTrigger
+		If !tubTriggerOffset
+			tubTriggerOffset = OffsetFromTubAnchor(LZC_TubTrigger)
 		EndIf
+		MoveOntoTub(LZC_TubTrigger, tubTriggerOffset)
 	EndIf
+	If LZC_TubWater
+		If !tubWaterOffset
+			tubWaterOffset = OffsetFromTubAnchor(LZC_TubWater)
+		EndIf
+		MoveOntoTub(LZC_TubWater, tubWaterOffset)
+	EndIf
+EndFunction
+
+; akRef's right, forward, up and turn from the tub anchor. Read while akRef
+; is still in the holding cell (the first camp); zero if it isn't.
+Float[] Function OffsetFromTubAnchor(ObjectReference akRef)
+	Float[] offset = new Float[4]
+	ObjectReference anchor = LZC_TubClutterAnchor
+	If anchor && akRef.GetParentCell() == anchor.GetParentCell()
+		Float h = anchor.GetAngleZ()
+		Float dx = akRef.GetPositionX() - anchor.GetPositionX()
+		Float dy = akRef.GetPositionY() - anchor.GetPositionY()
+		offset[0] = dx * Math.Cos(h) - dy * Math.Sin(h)
+		offset[1] = dx * Math.Sin(h) + dy * Math.Cos(h)
+		offset[2] = akRef.GetPositionZ() - anchor.GetPositionZ()
+		offset[3] = akRef.GetAngleZ() - h
+	EndIf
+	Return offset
+EndFunction
+
+; Disabled first and enabled after, so akRef loads afresh at the tub: the
+; game only treats placeable water as water when its reference loads.
+Function MoveOntoTub(ObjectReference akRef, Float[] offset)
+	ObjectReference tub = placedRefs[kTub]
 	Float t = tub.GetAngleZ()
-	Float wx = tubTriggerOffset[0] * Math.Cos(t) + tubTriggerOffset[1] * Math.Sin(t)
-	Float wy = tubTriggerOffset[1] * Math.Cos(t) - tubTriggerOffset[0] * Math.Sin(t)
-	LZC_TubTrigger.MoveTo(tub, wx, wy, tubTriggerOffset[2], False)
-	LZC_TubTrigger.SetAngle(0.0, 0.0, t + tubTriggerOffset[3])
-	LZC_TubTrigger.Enable()
+	Float wx = offset[0] * Math.Cos(t) + offset[1] * Math.Sin(t)
+	Float wy = offset[1] * Math.Cos(t) - offset[0] * Math.Sin(t)
+	akRef.Disable()
+	akRef.MoveTo(tub, wx, wy, offset[2], False)
+	akRef.SetAngle(0.0, 0.0, t + offset[3])
+	akRef.Enable()
 EndFunction
 
 ; From LZC_CampObjectScript: something stepped into (or out of) the tub
@@ -1104,6 +1132,9 @@ Function PackUpCamp()
 	EndIf
 	If LZC_TubTrigger
 		LZC_TubTrigger.Disable()
+	EndIf
+	If LZC_TubWater
+		LZC_TubWater.Disable()
 	EndIf
 	RedressAllFromTub()
 	playerInTub = False
@@ -1391,7 +1422,8 @@ EndFunction
 Int Function AddSet(ObjectReference[] setItems, Int[] itemSet, Int count, ObjectReference[] items, Int setNumber)
 	Int i = 0
 	While items && i < items.Length && count < setItems.Length
-		If items[i]
+		; The tub water isn't copied; it moves onto the tub itself.
+		If items[i] && items[i] != LZC_TubWater
 			setItems[count] = items[i]
 			itemSet[count] = setNumber
 			count += 1
