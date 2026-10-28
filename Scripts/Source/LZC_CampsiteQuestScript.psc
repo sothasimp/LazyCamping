@@ -549,8 +549,11 @@ Function SetUpCamp()
 	Float[] side = new Float[39]
 	Float[] lift = new Float[39]
 	Float[] turn = new Float[39]
+	; Which clutter set (1-based; 0 = none) goes around each layout object.
+	Int[] clutterSet = new Int[39]
 
 	forms[kCampfire] = LZC_CampfirePlaced
+	clutterSet[kCampfire] = 1
 	fwd[kCampfire] = FireForward()
 	If PlaceCampfireLight
 		forms[kLight] = LZC_CampfireLight
@@ -576,9 +579,6 @@ Function SetUpCamp()
 	; Where each bedroll is, for matching partners and couples at bedtime: its
 	; group (the tent it's in, or 0 without tents) and its place in the row
 	; (neighbours differ by 1).
-	; Which clutter set (1-based; 0 = none) goes around each layout object.
-	Int[] clutterSet = new Int[39]
-	clutterSet[kCampfire] = 1
 
 	Int[] bedGroup = new Int[12]
 	Int[] bedOrder = new Int[12]
