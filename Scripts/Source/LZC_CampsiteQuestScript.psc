@@ -148,10 +148,14 @@ Float Property TentSetback = 15.0 Auto
 to fit them.}
 Float Property SmallTentHalfWidth = 85.0 Auto
 Float Property SmallTentHalfDepth = 85.0 Auto
+Float Property SmallTentHeight = 0.0 Auto
+{Raises (or, negative, sinks) small tents above the ground, in game units.}
 Int Property SmallTentCapacity = 2 Auto
 {Most bedrolls a small tent holds (1-4).}
 Float Property LargeTentHalfWidth = 150.0 Auto
 Float Property LargeTentHalfDepth = 100.0 Auto
+Float Property LargeTentHeight = 0.0 Auto
+{Raises (or, negative, sinks) the large tent above the ground, in game units.}
 Int Property LargeTentCapacity = 4 Auto
 {Most bedrolls a large tent holds (1-4).}
 Float Property PairedBedrollSpacing = 60.0 Auto
@@ -622,6 +626,7 @@ Function SetUpCamp()
 			fwd[kFirstTent + t] = tentFwd[t]
 			side[kFirstTent + t] = tentSide[t]
 			turn[kFirstTent + t] = tentTurn[t]
+			lift[kFirstTent + t] = TentHeight(sizes[t])
 			clutterSet[kFirstTent + t] = 2 + sizes[t]   ; 2 small, 3 large
 			t += 1
 		EndWhile
@@ -1153,6 +1158,13 @@ EndFunction
 ; the fire when it stands `radius` from it (plus half the clearance).
 Float Function TentSpan(Int size, Float radius)
 	Return Math.atan((TentHalfWidth(size) + kTentClearance / 2.0) / (radius - TentHalfDepth(size)))
+EndFunction
+
+Float Function TentHeight(Int size)
+	If size == kLarge
+		Return LargeTentHeight
+	EndIf
+	Return SmallTentHeight
 EndFunction
 
 Float Function TentHalfDepth(Int size)
