@@ -257,6 +257,7 @@ Int Property kLarge = 1 AutoReadOnly
 Int Property kColors = 5 AutoReadOnly
 Float Property kFireHalfSize = 50.0 AutoReadOnly     ; for the ground check
 Float Property kFanStep = 70.0 AutoReadOnly          ; degrees between neighbours
+Float Property kSeatStep = 60.0 AutoReadOnly         ; between neighbouring fire seats
 Float Property kChoppingBlockGap = 60.0 AutoReadOnly ; from a tent's side to the block
 Int Property kNativeVersion = 10 AutoReadOnly         ; LazyCamping.dll needed
 
@@ -610,8 +611,8 @@ Function SetUpCamp()
 
 	; Seats ring the fire and face it. The player's is at 0, across the fire
 	; in front of their tent. There's a follower seat for each bedroll beyond
-	; the player's, up to kMaxFollowerSeats, fanning out to either side:
-	; kFanStep apart while they fit, otherwise evenly round the ring.
+	; the player's, up to kMaxFollowerSeats, fanning out to either side
+	; kSeatStep apart: with all 5, the six seats ring the fire evenly.
 	Int followerSeats = 0
 	If LZC_SitMarkerFollower
 		followerSeats = bedrolls - 1
@@ -619,10 +620,7 @@ Function SetUpCamp()
 			followerSeats = kMaxFollowerSeats
 		EndIf
 	EndIf
-	Float seatStep = kFanStep
-	If (1 + followerSeats) * kFanStep > 360.0
-		seatStep = 360.0 / (1 + followerSeats)
-	EndIf
+	Float seatStep = kSeatStep
 	SetSeat(forms, fwd, side, turn, kPlayerSeat, LZC_SitMarkerPlayer, 0.0)
 	; The two follower seats either side of the player's, in front of the
 	; middle tent, are the player's kind too, so the player can sit there.
