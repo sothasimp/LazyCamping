@@ -183,8 +183,9 @@ namespace Papyrus
 		// arranged around it. A layout object with a_clutterSet[i] = s + 1 gets a
 		// copy of set s, with each item's offset and rotation relative to the
 		// anchor carried over. The holding cell floor is z = 0: the layout object
-		// is raised by its anchor's height above it, and each item sits on the
-		// ground at its own spot, raised by its own height above it.
+		// is raised by its anchor's height above it and takes the anchor's
+		// scale, and each item sits on the ground at its own spot, raised by its
+		// own height above it.
 		//
 		// The first item found that is one of a_storageMarkers marks where the
 		// player's storage goes: a copy of it is placed and returned at index
@@ -237,6 +238,8 @@ namespace Papyrus
 				if (!anchor) {
 					continue;
 				}
+				// So is its scale.
+				ref.scale = anchor->GetReferenceRuntimeData().refScale;
 				std::size_t setSize = 0;
 				for (std::size_t j = 0; j < a_setItems.size(); ++j) {
 					setSize += a_itemSet[j] == set + 1 && a_setItems[j];
