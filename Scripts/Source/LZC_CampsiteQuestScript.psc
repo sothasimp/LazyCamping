@@ -74,6 +74,12 @@ on. Its water, steps and so on are the tub clutter set.}
 Bool Property PlaceTub = True Auto
 Float Property TubHalfWidth = 50.0 Auto
 {Half the tub's length along the tent ring, for keeping it clear of the tent.}
+Bool Property TubInLargeTent = False Auto
+{When there's a large tent, the tub goes inside it, in place of its third and
+fourth bedrolls: the large tent then holds 2 bedrolls at most.}
+Float Property TubInTentTurn = 0.0 Auto
+{Turns the tub in the large tent, in degrees clockwise, from facing the way
+the bedrolls do.}
 Form Property LZC_ClothesBasket Auto
 {The clothes basket's base (in the tub clutter set). Activating one takes off
 everything the player is wearing; activating it again puts it back on.}
@@ -237,7 +243,7 @@ Int Property kColors = 5 AutoReadOnly
 Float Property kFireHalfSize = 50.0 AutoReadOnly     ; for the ground check
 Float Property kFanStep = 70.0 AutoReadOnly          ; degrees between neighbours
 Float Property kChoppingBlockGap = 60.0 AutoReadOnly ; from a tent's side to the block
-Int Property kNativeVersion = 8 AutoReadOnly         ; LazyCamping.dll needed
+Int Property kNativeVersion = 9 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
 Form[] clothesTaken   ; what a clothes basket took off, until it's put back on
@@ -553,7 +559,7 @@ Function SetUpCamp()
 	lift[kLight] = LightHeight
 	forms[kCookingStation] = LZC_CookingStation
 	If LZC_Tub && PlaceTub
-		SetTub(forms, fwd, side, turn, clutterSet, tents, sizes, tentDistance, bedrolls)
+		SetTub(forms, fwd, side, turn, clutterSet, tents, sizes, tentDistance, tentFwd, tentSide, tentTurn, bedrolls)
 	EndIf
 	fwd[kCookingStation] = FireForward()
 
@@ -961,8 +967,20 @@ EndFunction
 ; chopping block (left of the middle tent with up to two tents, right of the
 ; right-hand tent with three), or in the bedroll fan after the chopping
 ; block's place without tents. The tub clutter set (water, steps...) goes
-; around it.
-Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clutterSet, Int tents, Int[] sizes, Float[] tentDistance, Int bedrolls)
+; around it. With TubInLargeTent, it goes in the large tent instead, where
+; its third and fourth bedrolls would lie.
+Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clutterSet, Int tents, Int[] sizes, Float[] tentDistance, Float[] tentFwd, Float[] tentSide, Float[] tentTurn, Int bedrolls)
+	forms[kTub] = LZC_Tub
+	clutterSet[kTub] = 5
+	; The large tent, if any, is always the middle one.
+	If TubInLargeTent && tents > 0 && sizes[0] == kLarge
+		; Halfway between bedrolls 3 and 4 of a full row (see SetTentBedroll).
+		Float offset = RowPosition(3) / 2.0 - (RowPosition(2) + RowPosition(3)) / 2.0 + LargeTentBedrollLeft
+		fwd[kTub] = tentFwd[0] + offset * Math.Cos(tentTurn[0] + 90.0) - LargeTentBedrollBack * Math.Cos(tentTurn[0])
+		side[kTub] = tentSide[0] + offset * Math.Sin(tentTurn[0] + 90.0) - LargeTentBedrollBack * Math.Sin(tentTurn[0])
+		turn[kTub] = tentTurn[0] + TubInTentTurn
+		Return
+	EndIf
 	Float bearing = FanBearing(bedrolls + 1)
 	Float distance = BedrollRingRadius
 	If tents > 0
@@ -975,11 +993,9 @@ Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clu
 		distance = tentDistance[beside]
 		bearing = FanBearing(beside) + outward * (TentHalfWidth(sizes[beside]) + kChoppingBlockGap + TubHalfWidth) / distance * 57.29578
 	EndIf
-	forms[kTub] = LZC_Tub
 	fwd[kTub] = FireForward() + distance * Math.Cos(bearing)
 	side[kTub] = distance * Math.Sin(bearing)
 	turn[kTub] = bearing + 180.0
-	clutterSet[kTub] = 5
 EndFunction
 
 ; How far in front of the player the fire goes: one seat radius, so the
@@ -1130,6 +1146,10 @@ Int Function TentCapacity(Int size)
 	Int capacity = SmallTentCapacity
 	If size == kLarge
 		capacity = LargeTentCapacity
+		; The tub takes the third and fourth bedrolls' place.
+		If TubInLargeTent && PlaceTub && LZC_Tub && capacity > 2
+			capacity = 2
+		EndIf
 	EndIf
 	If capacity < 1
 		Return 1

@@ -24,6 +24,7 @@ namespace Menu
 			bool         hideGrassUnderCamp{ true };
 			bool         placeCampfireLight{ true };
 			bool         placeTub{ true };
+			bool         tubInLargeTent{ false };
 		};
 
 		std::mutex                            lock;
@@ -53,9 +54,11 @@ namespace Menu
 			auto*  grass = object ? AutoProperty(object.get(), "HideGrassUnderCamp") : nullptr;
 			auto*  light = object ? AutoProperty(object.get(), "PlaceCampfireLight") : nullptr;
 			auto*  tub = object ? AutoProperty(object.get(), "PlaceTub") : nullptr;
-			const bool found = firewood && burnHours && block && grass && light && tub;
+			auto*  tubInTent = object ? AutoProperty(object.get(), "TubInLargeTent") : nullptr;
+			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent;
 			if (found) {
-				values = { firewood->GetBool(), burnHours->GetFloat(), block->GetBool(), grass->GetBool(), light->GetBool(), tub->GetBool() };
+				values = { firewood->GetBool(), burnHours->GetFloat(), block->GetBool(), grass->GetBool(), light->GetBool(), tub->GetBool(),
+					tubInTent->GetBool() };
 			}
 
 			std::scoped_lock guard(lock);
@@ -86,6 +89,9 @@ namespace Menu
 				}
 				if (auto* tub = AutoProperty(object.get(), "PlaceTub")) {
 					tub->SetBool(a_values.placeTub);
+				}
+				if (auto* tubInTent = AutoProperty(object.get(), "TubInLargeTent")) {
+					tubInTent->SetBool(a_values.tubInLargeTent);
 				}
 			}
 			--pendingWrites;
@@ -132,6 +138,10 @@ namespace Menu
 			ImGuiMCP::SetItemTooltip("Place a light with the campfire. Turn off if a Light Placer config already lights it. Takes effect at the next camp.");
 			changed |= ImGuiMCP::Checkbox("Bathtub", &values.placeTub);
 			ImGuiMCP::SetItemTooltip("Place a bathtub of water beside the tents. Takes effect at the next camp.");
+			ImGuiMCP::BeginDisabled(!values.placeTub);
+			changed |= ImGuiMCP::Checkbox("Bathtub in the large tent", &values.tubInLargeTent);
+			ImGuiMCP::SetItemTooltip("Put the bathtub inside the large tent, in place of its third and fourth bedrolls, so it holds 2 at most. Takes effect at the next camp.");
+			ImGuiMCP::EndDisabled();
 
 			if (changed) {
 				{

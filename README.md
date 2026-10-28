@@ -23,7 +23,7 @@ The mod adds a **Set Up Camp** Lesser Power, named " Set Up Camp" with a leading
 - **the other tents** stand 70° to either side of it: the second to the right, the third to the left. The near side of the fire stays open. Small tents stand 250 units from the centre of the fire (`SmallTentDistance`), and the large tent, always in the middle, 107 (`LargeTentDistance`), measured to each tent's centre.
 - **with no tent kits**, there are no tents. The bedrolls (up to 4) lie sideways in the same fan, just outside the seats: the player's behind their seat, the rest beside it. With one bedroll per person, each lies behind its owner's seat. The player and a partner, and a follower couple, get neighbouring places with their bedrolls head to head.
 
-A **bathtub** (`LZC_Tub`, a static with your tub mesh) stands beside the outermost tent, on the other side from the chopping block, or along the bedroll fan without tents. It can be turned off (`PlaceTub`). What's in and around it is the **tub clutter set**, arranged in the Creation Kit: by default the vanilla rain barrel water (`LargeRainBarrelWater01`) in it and a **clothes basket** (`LZC_ClothesBasket`): activating it takes off everything the player is wearing, and activating it again puts it all back on; add steps, invisible seats inside the tub and so on.
+A **bathtub** (`LZC_Tub`, a static with your tub mesh) stands beside the outermost tent, on the other side from the chopping block, or along the bedroll fan without tents. It can be turned off (`PlaceTub`). With `TubInLargeTent` on, it goes inside the large tent instead, where the third and fourth bedrolls would lie, turned like the bedrolls (`TubInTentTurn` turns it further); the large tent then holds 2 bedrolls at most, and the chopping block stays outside. What's in and around it is the **tub clutter set**, arranged in the Creation Kit: by default the vanilla rain barrel water (`LargeRainBarrelWater01`) in it and a **clothes basket** (`LZC_ClothesBasket`): activating it takes off everything the player is wearing, and activating it again puts it all back on; add steps, invisible seats inside the tub and so on.
 
 **Clutter sets** add clutter around the camp, such as pelts, packs, firewood and lanterns. You arrange each set by eye in the Creation Kit around a stand-in marker, and every fire, tent or tentless bedroll gets a copy, turned to match. One **backpack** can be the player's storage: it's a single real container that moves from camp to camp, so whatever's in it stays there.
 
@@ -39,7 +39,7 @@ Every bedroll also has a **seat on it**, facing the fire. Followers sit at the f
 
 While a camp is up, the power is called **Pack Up Camp** (" Pack Up Camp"). It keeps its place in favourites and the voice slot. **Casting it** asks *Pack up your camp?* and packs it up if confirmed, from anywhere, so a camp left behind never stops the player making a new one.
 
-With **SKSE Menu Framework** installed (optional), its Mod Control Panel gets a *Lazy Camping* page for the firewood mechanic, how long a fire burns, the chopping block, the bathtub, clearing grass around the camp, and the campfire light marker (turn it off if a *Light Placer* config already lights the campfire). The settings are kept in the save. Without it, change them on the quest in the Creation Kit.
+With **SKSE Menu Framework** installed (optional), its Mod Control Panel gets a *Lazy Camping* page for the firewood mechanic, how long a fire burns, the chopping block, the bathtub and whether it goes in the large tent, clearing grass around the camp, and the campfire light marker (turn it off if a *Light Placer* config already lights the campfire). The settings are kept in the save. Without it, change them on the quest in the Creation Kit.
 
 All EditorIDs use the prefix `LZC_`.
 
@@ -231,7 +231,7 @@ The follower quest's `CampRadius` setting (default 1024, in the follower quest's
 
 ### 2c. Settings on the quest scripts
 
-The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, `PlaceCampfireLight`, the tent sizes, `SeatRadius`, `SmallTentDistance`, `LargeTentDistance`, `BedrollRingRadius`, `BedrollSpacing`, `PairedBedrollSpacing`, `LargeTentBedrollBack`, `LargeTentBedrollLeft`, `FirewoodMechanic`, `FireBurnHours`, `PlaceChoppingBlock`, `PlaceTub`, `TubHalfWidth` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file.
+The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, `PlaceCampfireLight`, the tent sizes, `SeatRadius`, `SmallTentDistance`, `LargeTentDistance`, `BedrollRingRadius`, `BedrollSpacing`, `PairedBedrollSpacing`, `LargeTentBedrollBack`, `LargeTentBedrollLeft`, `FirewoodMechanic`, `FireBurnHours`, `PlaceChoppingBlock`, `PlaceTub`, `TubHalfWidth`, `TubInLargeTent`, `TubInTentTurn` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file.
 
 ### 2d. How players get the kits
 

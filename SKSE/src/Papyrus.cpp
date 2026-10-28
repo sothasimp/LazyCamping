@@ -17,7 +17,7 @@ namespace Papyrus
 	namespace
 	{
 		constexpr auto         kClass = "LZC_Native"sv;
-		constexpr std::int32_t kVersion = 8;
+		constexpr std::int32_t kVersion = 9;
 
 		constexpr RE::FormID kXMarkerHeading = 0x34;  // Skyrim.esm
 
