@@ -82,6 +82,9 @@ fourth bedrolls: the large tent then holds 2 bedrolls at most.}
 Float Property TubInTentRight = 137.0 Auto
 {How far right of the large tent's centre (as seen from the fire) the tub
 stands when it's in the tent.}
+Float Property TubInTentTurn = 60.0 Auto
+{Turns the tub and its clutter in the large tent, in degrees clockwise seen
+from above, on top of the tub anchor's own turn.}
 Float Property TubBesideSmallTentForward = 60.0 Auto
 {How much nearer the fire than the small tent's centre the tub stands when
 it's beside a small tent (negative: further back).}
@@ -1217,7 +1220,7 @@ Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clu
 		Float offset = LargeTentBedrollLeft - TubInTentRight
 		fwd[kTub] = tentFwd[0] + offset * Math.Cos(tentTurn[0] + 90.0) - LargeTentBedrollBack * Math.Cos(tentTurn[0])
 		side[kTub] = tentSide[0] + offset * Math.Sin(tentTurn[0] + 90.0) - LargeTentBedrollBack * Math.Sin(tentTurn[0])
-		turn[kTub] = tentTurn[0]
+		turn[kTub] = tentTurn[0] + TubInTentTurn
 		Return
 	EndIf
 	If tents > 0

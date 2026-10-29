@@ -231,7 +231,7 @@ The follower quest's `CampRadius` setting (default 1024, in the follower quest's
 
 ### 2c. Settings on the quest scripts
 
-The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, `PlaceCampfireLight`, the tent sizes, `SeatRadius`, `SmallTentDistance`, `LargeTentDistance`, `BedrollRingRadius`, `BedrollSpacing`, `PairedBedrollSpacing`, `LargeTentBedrollBack`, `LargeTentBedrollLeft`, `FirewoodMechanic`, `FireBurnHours`, `PlaceChoppingBlock`, `PlaceTub`, `TubHalfWidth`, `TubInLargeTent`, `TubInTentRight`, `TubBesideSmallTentForward`, `BatheKey` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file.
+The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, `PlaceCampfireLight`, the tent sizes, `SeatRadius`, `SmallTentDistance`, `LargeTentDistance`, `BedrollRingRadius`, `BedrollSpacing`, `PairedBedrollSpacing`, `LargeTentBedrollBack`, `LargeTentBedrollLeft`, `FirewoodMechanic`, `FireBurnHours`, `PlaceChoppingBlock`, `PlaceTub`, `TubHalfWidth`, `TubInLargeTent`, `TubInTentRight`, `TubInTentTurn`, `TubBesideSmallTentForward`, `BatheKey` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file.
 
 ### 2d. How players get the kits
 
