@@ -82,7 +82,7 @@ fourth bedrolls: the large tent then holds 2 bedrolls at most.}
 Float Property TubInTentRight = 137.0 AutoReadOnly
 {How far right of the large tent's centre (as seen from the fire) the tub
 stands when it's in the tent.}
-Float Property TubInTentTurn = 17.0 AutoReadOnly
+Float Property TubInTentTurn = 20.0 AutoReadOnly
 {Turns the tub and its clutter in the large tent, in degrees clockwise seen
 from above, on top of the tub anchor's own turn.}
 Float Property TubBesideSmallTentForward = 170.0 AutoReadOnly
