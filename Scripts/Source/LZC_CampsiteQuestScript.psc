@@ -265,6 +265,7 @@ Float Property kFireHalfSize = 50.0 AutoReadOnly     ; for the ground check
 Float Property kFanStep = 70.0 AutoReadOnly          ; degrees between neighbours
 Float Property kSeatStep = 60.0 AutoReadOnly         ; between neighbouring fire seats
 Float Property kChoppingBlockGap = 60.0 AutoReadOnly ; from a tent's side to the block
+Float Property kBedrollHalfLength = 100.0 AutoReadOnly ; head to foot, halved
 Int Property kNativeVersion = 11 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
@@ -1149,8 +1150,8 @@ EndFunction
 
 ; The tub stands beside the outermost tent on the other side from the
 ; chopping block (left of the middle tent with up to two tents, right of the
-; right-hand tent with three), or in the bedroll fan after the chopping
-; block's place without tents. The tub clutter set (water, steps...) goes
+; right-hand tent with three), or left of the player's bedroll without
+; tents. The tub clutter set (water, steps...) goes
 ; around it. With TubInLargeTent, it goes in the large tent instead, where
 ; its third and fourth bedrolls would lie.
 Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clutterSet, Int tents, Int[] sizes, Float[] tentFwd, Float[] tentSide, Float[] tentTurn, Int bedrolls)
@@ -1203,10 +1204,9 @@ Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clu
 		EndIf
 		Return
 	EndIf
-	Float bearing = FanBearing(bedrolls + 1)
-	fwd[kTub] = FireForward() + BedrollRingRadius * Math.Cos(bearing)
-	side[kTub] = BedrollRingRadius * Math.Sin(bearing)
-	turn[kTub] = bearing + 180.0
+	; Without tents: straight out to the left of the player's bedroll (as the
+	; player sees it across the fire), facing the fire like the bedroll's seat.
+	SetBesideTent(fwd, side, turn, kTub, FireForward() + BedrollRingRadius, 0.0, 180.0, -1.0, kBedrollHalfLength + kChoppingBlockGap + TubHalfWidth)
 EndFunction
 
 ; How far in front of the player the fire goes: one seat radius, so the
