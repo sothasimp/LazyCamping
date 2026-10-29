@@ -263,6 +263,7 @@ Int Property kSmall = 0 AutoReadOnly
 Int Property kLarge = 1 AutoReadOnly
 Float Property kFireHalfSize = 50.0 AutoReadOnly     ; for the ground check
 Float Property kFanStep = 70.0 AutoReadOnly          ; degrees between neighbours
+Float Property kRingStep = 50.0 AutoReadOnly         ; between bedrolls without tents
 Float Property kSeatStep = 60.0 AutoReadOnly         ; between neighbouring fire seats
 Float Property kChoppingBlockGap = 60.0 AutoReadOnly ; from a tent's side to the block
 Float Property kBedrollHalfLength = 100.0 AutoReadOnly ; head to foot, halved
@@ -1132,7 +1133,7 @@ Function SetChoppingBlock(Form[] forms, Float[] fwd, Float[] side, Float[] turn,
 		SetBesideTent(fwd, side, turn, kChoppingBlock, tentFwd[outer], tentSide[outer], tentTurn[outer], outward, TentHalfWidth(sizes[outer]) + kChoppingBlockGap)
 		Return
 	EndIf
-	Float bearing = FanBearing(bedrolls)
+	Float bearing = FanPlace(bedrolls) * kRingStep
 	fwd[kChoppingBlock] = FireForward() + BedrollRingRadius * Math.Cos(bearing)
 	side[kChoppingBlock] = BedrollRingRadius * Math.Sin(bearing)
 	turn[kChoppingBlock] = bearing + 180.0
@@ -1277,7 +1278,7 @@ EndFunction
 ; are 1 apart, so only pairs count as neighbours for couples.
 Function SetRingBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] bedOrder, Int[] clutterSet, Float[] ringSeatTurn, Bool[] used, Int index, Int place, Bool pairHigh)
 	Int slot = kFirstBedroll + index
-	Float bearing = place * kFanStep
+	Float bearing = place * kRingStep
 	forms[slot] = LZC_BedrollPlaced
 	fwd[slot] = FireForward() + BedrollRingRadius * Math.Cos(bearing)
 	side[slot] = BedrollRingRadius * Math.Sin(bearing)
