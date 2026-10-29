@@ -1287,7 +1287,10 @@ Function SetRingBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, I
 		turn[slot] = turn[slot] + 180.0
 		bedOrder[index] = place * 2 - 1
 	EndIf
-	clutterSet[slot] = 4
+	; Only the player's bedroll gets the bedroll clutter set.
+	If index == 0
+		clutterSet[slot] = 4
+	EndIf
 	ringSeatTurn[index] = bearing + 180.0
 	used[place + 2] = True
 EndFunction
