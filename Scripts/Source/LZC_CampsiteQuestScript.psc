@@ -730,7 +730,11 @@ Function SetUpCamp()
 				fwd[kFirstBedrollSeat + bs] = fwd[kFirstBedroll + bs]
 				side[kFirstBedrollSeat + bs] = side[kFirstBedroll + bs]
 				If tents > 0
-					turn[kFirstBedrollSeat + bs] = turn[kFirstBedroll + bs]
+					; The way the tent faces, whichever way its bedrolls lie.
+					Int seatSlot = kFirstBedrollSeat + bs
+					Int tentSlot = kFirstTent + bedGroup[bs]
+					Float tentFacing = turn[tentSlot]
+					turn[seatSlot] = tentFacing
 				Else
 					turn[kFirstBedrollSeat + bs] = ringSeatTurn[bs]
 				EndIf
@@ -1300,6 +1304,10 @@ Function SetTentBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, I
 	fwd[slot] = tentFwd + offset * Math.Cos(tentTurn + 90.0) - back * Math.Cos(tentTurn)
 	side[slot] = tentSide + offset * Math.Sin(tentTurn + 90.0) - back * Math.Sin(tentTurn)
 	turn[slot] = tentTurn
+	If size == kLarge
+		; Turned round, pillows at the back, away from the entrance.
+		turn[slot] = tentTurn + 180.0
+	EndIf
 EndFunction
 
 ; A bedroll in the ring (without tents), lying sideways at fan `place` round
