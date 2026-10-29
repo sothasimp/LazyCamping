@@ -16,8 +16,9 @@ Spell Property LZC_SetUpCampPower Auto
 ; up camp doesn't use them up.
 ; ---------------------------------------------------------------------------
 MiscObject[] Property LZC_SmallTentKits Auto
-{Small tent kits by colour: 0 brown, 1 blue, 2 green, 3 red, 4 white. Every
-tent kit the player carries is pitched (up to 4 tents).}
+{Small tent kits by colour: 0 brown, 1 blue, 2 green, 3 red, 4 white, then
+any you add (plaid, say). Every tent kit the player carries is pitched (up to
+4 tents), in this order.}
 MiscObject[] Property LZC_LargeTentKits Auto
 {Large tent kits, same colour order as LZC_SmallTentKits.}
 MiscObject Property LZC_BedrollKit Auto
@@ -254,7 +255,6 @@ Int Property kMaxBedrolls = 12 AutoReadOnly
 Int Property kRingBedrolls = 4 AutoReadOnly        ; without tents
 Int Property kSmall = 0 AutoReadOnly
 Int Property kLarge = 1 AutoReadOnly
-Int Property kColors = 5 AutoReadOnly
 Float Property kFireHalfSize = 50.0 AutoReadOnly     ; for the ground check
 Float Property kFanStep = 70.0 AutoReadOnly          ; degrees between neighbours
 Float Property kSeatStep = 60.0 AutoReadOnly         ; between neighbouring fire seats
@@ -425,7 +425,7 @@ Function SetUpCamp()
 	Int[] colors = new Int[4]
 	Int tents = 0
 	Int color = 0
-	While color < kColors && tents == 0 && bedrollsCarried > 0
+	While color < KitCount(kLarge) && tents == 0 && bedrollsCarried > 0
 		MiscObject large = TentKit(kLarge, color)
 		If large && PlayerRef.GetItemCount(large) > 0
 			kits[0] = large
@@ -436,7 +436,7 @@ Function SetUpCamp()
 		color += 1
 	EndWhile
 	color = 0
-	While color < kColors && tents < kMaxTents && tents < bedrollsCarried
+	While color < KitCount(kSmall) && tents < kMaxTents && tents < bedrollsCarried
 		MiscObject small = TentKit(kSmall, color)
 		If small
 			Int have = PlayerRef.GetItemCount(small)
@@ -1380,6 +1380,18 @@ EndFunction
 ; takes a pair that touches.
 Int Function PairedOrder(Int index)
 	Return index + index / 2
+EndFunction
+
+; How many kits (colours and variants) there are of this size.
+Int Function KitCount(Int size)
+	MiscObject[] kits = LZC_SmallTentKits
+	If size == kLarge
+		kits = LZC_LargeTentKits
+	EndIf
+	If !kits
+		Return 0
+	EndIf
+	Return kits.Length
 EndFunction
 
 MiscObject Function TentKit(Int size, Int color)
