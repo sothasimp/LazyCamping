@@ -332,11 +332,9 @@ namespace Papyrus
 				if (!ref.base) {
 					continue;
 				}
-				// CreateReferenceAtLocation negates the X angle it's given (a ladder
-				// at X 14 in the Creation Kit came out at X -14), so it gets -X to
-				// end up with X. Z is brought into 0-360 degrees.
+				// Z brought into 0-360 degrees.
 				const float        fullTurn = 2.0f * std::numbers::pi_v<float>;
-				const RE::NiPoint3 angles{ -ref.angles.x, ref.angles.y,
+				const RE::NiPoint3 angles{ ref.angles.x, ref.angles.y,
 					ref.angles.z - fullTurn * std::floor(ref.angles.z / fullTurn) };
 				const auto handle = dataHandler->CreateReferenceAtLocation(ref.base, ref.position, angles,
 					CellAt(a_origin, ref.position.x, ref.position.y), a_origin->GetWorldspace(),
