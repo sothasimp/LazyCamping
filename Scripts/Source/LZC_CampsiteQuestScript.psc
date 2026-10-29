@@ -821,6 +821,9 @@ Function SetUpCamp()
 			LZC_CampStorage.MoveTo(storageSpot)
 			; Its lean too, which MoveTo may not carry over in full.
 			LZC_CampStorage.SetAngle(storageSpot.GetAngleX(), storageSpot.GetAngleY(), storageSpot.GetAngleZ())
+			; Held where it's put: a container with havok in its mesh would
+			; otherwise topple or settle onto the ground.
+			LZC_CampStorage.SetMotionType(LZC_CampStorage.Motion_Keyframed, False)
 			If LZC_CampStorage.GetDistance(storageSpot) > 100.0
 				Debug.Trace("Lazy Camping: the backpack didn't move to its spot")
 				Debug.Notification("Lazy Camping: the backpack couldn't be moved to the camp.")
