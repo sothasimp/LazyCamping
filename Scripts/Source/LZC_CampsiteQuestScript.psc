@@ -774,6 +774,11 @@ Function SetUpCamp()
 		Return
 	EndIf
 
+	; The chopping block always stands level, even with AlignToSlope.
+	If AlignToSlope && placedRefs[kChoppingBlock]
+		placedRefs[kChoppingBlock].SetAngle(0.0, 0.0, heading + turn[kChoppingBlock])
+	EndIf
+
 	; The cook box goes over the fire, enabled only while the fire is lit.
 	If LZC_CookBox
 		LZC_CookBox.MoveTo(placedRefs[kCampfire])
