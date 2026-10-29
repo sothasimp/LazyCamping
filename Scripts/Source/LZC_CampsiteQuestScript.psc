@@ -88,6 +88,9 @@ from above, on top of the tub anchor's own turn.}
 Float Property TubBesideSmallTentForward = 170.0 Auto
 {How much nearer the fire than the small tent's centre the tub stands when
 it's beside a small tent (negative: further back).}
+Float Property TubBesideSmallTentSwing = 80.0 Auto
+{Then how far the tub swings round the fire toward that small tent, measured
+along the circle (negative: away from it). It turns with the swing.}
 Activator Property LZC_ClothesBasket Auto
 {The clothes basket's base (in the tub clutter set). Activating one takes off
 everything the player is wearing; activating it again puts it back on.}
@@ -182,7 +185,7 @@ Int Property LargeTentCapacity = 4 Auto
 Float Property PairedBedrollSpacing = 60.0 Auto
 {Bedrolls in a tent lie in pairs that touch, for couples: the side-to-side
 distance between the two of a pair. Set it to the bedroll's width.}
-Float Property BedrollSpacing = 154.0 Auto
+Float Property BedrollSpacing = 314.0 Auto
 {Side-to-side distance from one pair's bedroll to the next pair's, in a tent.}
 Float Property LargeTentBedrollBack = 60.0 Auto
 {Moves the large tent's bedrolls this much further from the fire (negative:
@@ -1240,6 +1243,27 @@ Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clu
 			; Toward the fire, along the way the tent faces.
 			fwd[kTub] = fwd[kTub] + TubBesideSmallTentForward * Math.Cos(tentTurn[beside])
 			side[kTub] = side[kTub] + TubBesideSmallTentForward * Math.Sin(tentTurn[beside])
+			; Then round the fire toward the tent, turning with it.
+			Float dx = fwd[kTub] - FireForward()
+			Float dy = side[kTub]
+			Float radius = Math.Sqrt(dx * dx + dy * dy)
+			If radius > 1.0
+				Float swing = -outward * TubBesideSmallTentSwing / radius * 57.29578
+				Float tubBearing = 90.0
+				If dy < 0.0
+					tubBearing = -90.0
+				EndIf
+				If Math.abs(dx) > 0.001
+					tubBearing = Math.atan(dy / dx)
+					If dx < 0.0
+						tubBearing += 180.0
+					EndIf
+				EndIf
+				tubBearing += swing
+				fwd[kTub] = FireForward() + radius * Math.Cos(tubBearing)
+				side[kTub] = radius * Math.Sin(tubBearing)
+				turn[kTub] = turn[kTub] + swing
+			EndIf
 		EndIf
 		Return
 	EndIf
