@@ -83,9 +83,16 @@ namespace Placement
 
 	RE::NiPoint3 AnglesFromMatrix(const RE::NiMatrix3& a_matrix)
 	{
-		RE::NiPoint3 angles;
-		a_matrix.ToEulerAnglesXYZ(angles);
-		return angles;
+		// The inverse of SetEulerAnglesXYZ. Not NiMatrix3::ToEulerAnglesXYZ:
+		// the NiFastATan2 it uses gets the sign wrong for half the angles.
+		const auto& m = a_matrix.entry;
+		const float cosY = std::sqrt(m[0][0] * m[0][0] + m[0][1] * m[0][1]);
+		const float y = std::atan2(-m[0][2], cosY);
+		if (cosY < 1e-6f) {
+			// Straight up or down: X and Z turn about the same axis, so Z is 0.
+			return { std::atan2(-m[0][2] * m[1][0], m[1][1]), y, 0.0f };
+		}
+		return { std::atan2(m[1][2], m[2][2]), y, std::atan2(m[0][1], m[0][0]) };
 	}
 
 	float SlopeDegrees(const RE::NiPoint3& a_normal)
