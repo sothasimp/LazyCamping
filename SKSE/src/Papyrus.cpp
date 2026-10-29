@@ -175,7 +175,6 @@ namespace Papyrus
 			a_ref.angles = Placement::AnglesFromMatrix(frame * a_relative);
 		}
 
-
 		// Places every form in the layout on the ground, tilted to the slope if
 		// asked, plus the clutter around each layout object.
 		//
