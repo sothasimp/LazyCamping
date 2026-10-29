@@ -73,22 +73,22 @@ Static Property LZC_Tub Auto
 the chopping block (or along the bedroll fan without tents) when PlaceTub is
 on. Its water, steps and so on are the tub clutter set.}
 Bool Property PlaceTub = True Auto
-Float Property TubHalfWidth = 110.0 Auto
+Float Property TubHalfWidth = 110.0 AutoReadOnly
 {Half the width of the tub and its clutter (basket, steps...) out from the tent
 side, for keeping them clear of the tent beside them. Raise it if they clip.}
 Bool Property TubInLargeTent = False Auto
 {When there's a large tent, the tub goes inside it, in place of its third and
 fourth bedrolls: the large tent then holds 2 bedrolls at most.}
-Float Property TubInTentRight = 137.0 Auto
+Float Property TubInTentRight = 137.0 AutoReadOnly
 {How far right of the large tent's centre (as seen from the fire) the tub
 stands when it's in the tent.}
-Float Property TubInTentTurn = 17.0 Auto
+Float Property TubInTentTurn = 17.0 AutoReadOnly
 {Turns the tub and its clutter in the large tent, in degrees clockwise seen
 from above, on top of the tub anchor's own turn.}
-Float Property TubBesideSmallTentForward = 170.0 Auto
+Float Property TubBesideSmallTentForward = 170.0 AutoReadOnly
 {How much nearer the fire than the small tent's centre the tub stands when
 it's beside a small tent (negative: further back).}
-Float Property TubBesideSmallTentSwing = 80.0 Auto
+Float Property TubBesideSmallTentSwing = 80.0 AutoReadOnly
 {Then how far the tub swings round the fire toward that small tent, measured
 along the circle (negative: away from it). It turns with the swing.}
 Activator Property LZC_ClothesBasket Auto
@@ -163,41 +163,41 @@ to it, unless fast travel is disabled globally.}
 ; Layout, in game units. ~70 units is roughly one metre. Everything is
 ; arranged around the fire; tweak to fit your meshes.
 ; ---------------------------------------------------------------------------
-Float Property LightHeight = 40.0 Auto
-Float Property SeatRadius = 110.0 Auto
+Float Property LightHeight = 40.0 AutoReadOnly
+Float Property SeatRadius = 110.0 AutoReadOnly
 {Distance of the seats from the centre of the fire. The fire goes this far in
 front of the player, so they stand at the near edge of the seat ring; their
 own seat is across the fire, in front of their tent.}
 
-Float Property SmallTentDistance = 250.0 Auto
+Float Property SmallTentDistance = 250.0 AutoReadOnly
 {Distance from the centre of the fire to the centre of each small tent.}
-Float Property LargeTentDistance = 107.0 Auto
+Float Property LargeTentDistance = 107.0 AutoReadOnly
 {Distance from the centre of the fire to the centre of the large tent, which
 always stands in the middle.}
-Float Property SmallTentHalfWidth = 85.0 Auto
-Float Property SmallTentHalfDepth = 85.0 Auto
+Float Property SmallTentHalfWidth = 85.0 AutoReadOnly
+Float Property SmallTentHalfDepth = 85.0 AutoReadOnly
 Int Property SmallTentCapacity = 2 Auto
 {Most bedrolls a small tent holds (1-4).}
-Float Property LargeTentHalfWidth = 150.0 Auto
-Float Property LargeTentHalfDepth = 100.0 Auto
+Float Property LargeTentHalfWidth = 150.0 AutoReadOnly
+Float Property LargeTentHalfDepth = 100.0 AutoReadOnly
 Int Property LargeTentCapacity = 4 Auto
 {Most bedrolls a large tent holds (1-4).}
-Float Property PairedBedrollSpacing = 60.0 Auto
+Float Property PairedBedrollSpacing = 60.0 AutoReadOnly
 {Bedrolls in a tent lie in pairs that touch, for couples: the side-to-side
 distance between the two of a pair. Set it to the bedroll's width.}
-Float Property BedrollSpacing = 314.0 Auto
+Float Property BedrollSpacing = 314.0 AutoReadOnly
 {Side-to-side distance from one pair's bedroll to the next pair's, in a tent.}
-Float Property LargeTentBedrollBack = 60.0 Auto
+Float Property LargeTentBedrollBack = 60.0 AutoReadOnly
 {Moves the large tent's bedrolls this much further from the fire (negative:
 nearer), from the tent's centre.}
-Float Property LargeTentBedrollLeft = 0.0 Auto
+Float Property LargeTentBedrollLeft = 0.0 AutoReadOnly
 {Moves the large tent's row of bedrolls this much to the left as seen from the
 fire (negative: right), from the centre of the tent.}
 
-Float Property BedrollRingRadius = 190.0 Auto
+Float Property BedrollRingRadius = 190.0 AutoReadOnly
 {Without tents: distance of the bedrolls from the centre of the fire, just
 outside the seats.}
-Float Property BedrollRingYaw = 90.0 Auto
+Float Property BedrollRingYaw = 90.0 AutoReadOnly
 {Without tents: added to each bedroll's facing so it lies sideways along the
 circle, head clockwise. Use 270 to flip head and foot, or adjust if your
 bedroll model's long axis isn't its forward axis.}
