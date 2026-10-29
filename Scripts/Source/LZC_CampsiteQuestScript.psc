@@ -266,6 +266,8 @@ Float Property kFanStep = 70.0 AutoReadOnly          ; degrees between neighbour
 Float Property kRingStep = 50.0 AutoReadOnly         ; between bedrolls without tents
 Float Property kSeatStep = 60.0 AutoReadOnly         ; between neighbouring fire seats
 Float Property kChoppingBlockGap = 60.0 AutoReadOnly ; from a tent's side to the block
+Float Property kChoppingBlockOut = 90.0 AutoReadOnly ; without tents: beyond the bedroll arc
+Float Property kChoppingBlockAside = 40.0 AutoReadOnly ; and round from the nearest bedroll
 Float Property kBedrollHalfLength = 100.0 AutoReadOnly ; head to foot, halved
 Int Property kNativeVersion = 11 AutoReadOnly         ; LazyCamping.dll needed
 
@@ -1133,9 +1135,18 @@ Function SetChoppingBlock(Form[] forms, Float[] fwd, Float[] side, Float[] turn,
 		SetBesideTent(fwd, side, turn, kChoppingBlock, tentFwd[outer], tentSide[outer], tentTurn[outer], outward, TentHalfWidth(sizes[outer]) + kChoppingBlockGap)
 		Return
 	EndIf
-	Float bearing = FanPlace(bedrolls) * kRingStep
-	fwd[kChoppingBlock] = FireForward() + BedrollRingRadius * Math.Cos(bearing)
-	side[kChoppingBlock] = BedrollRingRadius * Math.Sin(bearing)
+	; Without tents: the next place in the bedroll arc, kChoppingBlockOut
+	; further from the fire and kChoppingBlockAside further round, away from
+	; the bedroll beside it.
+	Int place = FanPlace(bedrolls)
+	Float radius = BedrollRingRadius + kChoppingBlockOut
+	Float aside = kChoppingBlockAside / radius * 57.29578
+	If place < 0
+		aside = -aside
+	EndIf
+	Float bearing = place * kRingStep + aside
+	fwd[kChoppingBlock] = FireForward() + radius * Math.Cos(bearing)
+	side[kChoppingBlock] = radius * Math.Sin(bearing)
 	turn[kChoppingBlock] = bearing + 180.0
 EndFunction
 
