@@ -82,6 +82,9 @@ fourth bedrolls: the large tent then holds 2 bedrolls at most.}
 Float Property TubInTentRight = 137.0 Auto
 {How far right of the large tent's centre (as seen from the fire) the tub
 stands when it's in the tent.}
+Float Property TubBesideSmallTentForward = 60.0 Auto
+{How much nearer the fire than the small tent's centre the tub stands when
+it's beside a small tent (negative: further back).}
 Activator Property LZC_ClothesBasket Auto
 {The clothes basket's base (in the tub clutter set). Activating one takes off
 everything the player is wearing; activating it again puts it back on.}
@@ -1226,6 +1229,11 @@ Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clu
 		EndIf
 		; Straight out from the tent's side, with room for the tub's clutter.
 		SetBesideTent(fwd, side, turn, kTub, tentFwd[beside], tentSide[beside], tentTurn[beside], outward, TentHalfWidth(sizes[beside]) + kChoppingBlockGap + TubHalfWidth)
+		If sizes[beside] == kSmall
+			; Toward the fire, along the way the tent faces.
+			fwd[kTub] = fwd[kTub] + TubBesideSmallTentForward * Math.Cos(tentTurn[beside])
+			side[kTub] = side[kTub] + TubBesideSmallTentForward * Math.Sin(tentTurn[beside])
+		EndIf
 		Return
 	EndIf
 	Float bearing = FanBearing(bedrolls + 1)
