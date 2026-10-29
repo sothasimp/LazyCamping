@@ -185,9 +185,9 @@ namespace Papyrus
 		// copy of set s, with each item's offset and rotation relative to the
 		// anchor carried over. The anchor's turn turns the layout object, and the
 		// holding cell floor is z = 0: the layout object is raised by its
-		// anchor's height above it. The clutter moves with the object as one
-		// piece, from the ground under the object, each item as high above that
-		// as it is above the holding cell floor, turned and tilted with it.
+		// anchor's height above it. The clutter is fixed rigidly to the object,
+		// level: from the object's own spot, each item as high above it as it is
+		// above the holding cell floor, turned with it, whatever the ground does.
 		//
 		// The first item found that is one of a_storageMarkers marks where the
 		// player's storage goes: a copy of it is placed and returned at index
@@ -256,12 +256,11 @@ namespace Papyrus
 					set + 1, anchor->GetFormID(), setSize);
 				const RE::NiMatrix3 anchorRotation = Placement::MatrixFromAngles(anchor->GetAngle());
 				const RE::NiMatrix3 toAnchor = anchorRotation.Transpose();
-				// The clutter is fixed to the object like one model: placed from
-				// the ground under the object, turned and tilted with it, so it
-				// sits against the object just as in the holding cell, whatever
-				// the ground under each item does.
+				// The clutter is fixed rigidly to the object: placed from the
+				// object's own spot and turned with it, level, exactly as around
+				// the anchor in the holding cell. The ground and any slope tilt
+				// don't come into it.
 				const RE::NiPoint3  objectGround{ ref.position.x, ref.position.y, ref.position.z - lift };
-				const RE::NiMatrix3 objectFrame = Placement::MatrixFromAngles(ref.angles);
 				const RE::NiMatrix3 levelFrame = Placement::MatrixFromAngles({ 0.0f, 0.0f, yaw });
 
 				for (std::size_t j = 0; j < a_setItems.size(); ++j) {
@@ -281,9 +280,8 @@ namespace Papyrus
 
 					// Its height is its own above the holding cell floor (z = 0), so
 					// moving the anchor up or down doesn't carry the clutter with it.
-					// The storage spot keeps only its own lean, never the slope's.
 					const bool          isStorage = std::ranges::find(a_storageMarkers, item) != a_storageMarkers.end();
-					const RE::NiMatrix3 frame = isStorage ? levelFrame : objectFrame;
+					const RE::NiMatrix3 frame = levelFrame;
 					const RE::NiPoint3  local{ offset.x, offset.y, item->GetPosition().z };
 
 					PendingRef clutter;
