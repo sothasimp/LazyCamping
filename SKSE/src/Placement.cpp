@@ -53,11 +53,8 @@ namespace Placement
 
 	RE::NiPoint3 AnglesForSurface(float a_yaw, RE::NiPoint3 a_normal)
 	{
-		// The game builds a reference's rotation with NiMatrix3::EulerAnglesToAxesZXY,
-		// whose columns are the object's right, forward and up axes in world space:
-		//   forward = (sin z cos x, cos z cos x, -sin x)
-		//   right.z = cos x sin y,  up.z = cos x cos y
-		// Build the frame we want, then solve for x, y and z.
+		// The frame we want, as the object's right, forward and up axes in
+		// world space, turned into angles.
 		RE::NiPoint3 up = a_normal;
 		up.Unitize();
 
@@ -68,28 +65,27 @@ namespace Placement
 		}
 		const RE::NiPoint3 right = forward.Cross(up);
 
-		return {
-			std::asin(std::clamp(-forward.z, -1.0f, 1.0f)),
-			std::atan2(right.z, up.z),
-			std::atan2(forward.x, forward.y)
-		};
+		RE::NiMatrix3 frame;
+		for (std::size_t i = 0; i < 3; ++i) {
+			frame.entry[i][0] = right[i];
+			frame.entry[i][1] = forward[i];
+			frame.entry[i][2] = up[i];
+		}
+		return AnglesFromMatrix(frame);
 	}
 
 	RE::NiMatrix3 MatrixFromAngles(const RE::NiPoint3& a_angles)
 	{
 		RE::NiMatrix3 matrix;
-		matrix.EulerAnglesToAxesZXY(a_angles);
+		matrix.SetEulerAnglesXYZ(a_angles);
 		return matrix;
 	}
 
 	RE::NiPoint3 AnglesFromMatrix(const RE::NiMatrix3& a_matrix)
 	{
-		// Inverse of EulerAnglesToAxesZXY (see AnglesForSurface).
-		return {
-			std::asin(std::clamp(-a_matrix.entry[2][1], -1.0f, 1.0f)),
-			std::atan2(a_matrix.entry[2][0], a_matrix.entry[2][2]),
-			std::atan2(a_matrix.entry[0][1], a_matrix.entry[1][1])
-		};
+		RE::NiPoint3 angles;
+		a_matrix.ToEulerAnglesXYZ(angles);
+		return angles;
 	}
 
 	float SlopeDegrees(const RE::NiPoint3& a_normal)

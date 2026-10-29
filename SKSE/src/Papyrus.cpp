@@ -157,24 +157,23 @@ namespace Papyrus
 		};
 
 		// Finds the ground under (x, y) and works out the angles for an object
-		// turned to `a_yaw` with its own angles `a_ownAngles` (X and Y tilt, and
-		// a turn added to the yaw; `a_relative` is the same as a matrix). Fills
-		// in the position's z (ground + lift, or origin height + lift if no
-		// ground was found) and the angles.
+		// with rotation `a_relative` in a frame facing `a_yaw` (tilted to the
+		// slope if asked). Fills in the position's z (ground + lift, or origin
+		// height + lift if no ground was found) and the angles.
 		void GroundAndTilt(RE::TESObjectREFR* a_origin, PendingRef& a_ref, float a_yaw, const RE::NiMatrix3& a_relative,
-			const RE::NiPoint3& a_ownAngles, float a_lift, bool a_alignToSlope, float a_maxTiltDegrees)
+			float a_lift, bool a_alignToSlope, float a_maxTiltDegrees)
 		{
-			// Level: the object's own X and Y angles as they are, and its turn
-			// added to the yaw, the way the Creation Kit's angles combine with a
-			// turn. Only a slope needs the angles worked out afresh.
-			a_ref.angles = { a_ownAngles.x, a_ownAngles.y, a_yaw + a_ownAngles.z };
+			RE::NiMatrix3 frame = Placement::MatrixFromAngles({ 0.0f, 0.0f, a_yaw });
 			if (const auto hit = GroundAt(a_origin, a_ref.position.x, a_ref.position.y)) {
 				a_ref.position.z = hit->point.z;
 				if (a_alignToSlope) {
-					const RE::NiMatrix3 frame = Placement::MatrixFromAngles(
+					frame = Placement::MatrixFromAngles(
 						Placement::AnglesForSurface(a_yaw, Placement::ClampTilt(hit->normal, a_maxTiltDegrees)));
-					a_ref.angles = Placement::AnglesFromMatrix(frame * a_relative);
 				}
+			}
+			a_ref.position.z += a_lift;
+			a_ref.angles = Placement::AnglesFromMatrix(frame * a_relative);
+		}
 			}
 			a_ref.position.z += a_lift;
 		}
@@ -248,7 +247,7 @@ namespace Papyrus
 				// (z = 0) raises it.
 				const float yaw = heading + ToRadians(a_turn[i]) + (anchor ? anchor->GetAngle().z : 0.0f);
 				const float lift = a_lift[i] + (anchor ? anchor->GetPosition().z : 0.0f);
-				GroundAndTilt(a_origin, ref, yaw, identity, {}, lift, a_alignToSlope, a_maxTiltDegrees);
+				GroundAndTilt(a_origin, ref, yaw, identity, lift, a_alignToSlope, a_maxTiltDegrees);
 				if (!anchor) {
 					continue;
 				}
@@ -277,7 +276,6 @@ namespace Papyrus
 					const RE::NiPoint3  offset = toAnchor * (item->GetPosition() - anchor->GetPosition());
 					const RE::NiMatrix3 relative = toAnchor * Placement::MatrixFromAngles(item->GetAngle());
 					const RE::NiPoint3  itemAngles = item->GetAngle();
-					const RE::NiPoint3  ownAngles{ itemAngles.x, itemAngles.y, itemAngles.z - anchor->GetAngle().z };
 
 					PendingRef clutter;
 					clutter.base = itemBase;
@@ -291,7 +289,7 @@ namespace Papyrus
 					// the anchor up or down doesn't carry the clutter with it. The
 					// storage spot keeps only its own lean, never the slope's.
 					const bool isStorage = std::ranges::find(a_storageMarkers, item) != a_storageMarkers.end();
-					GroundAndTilt(a_origin, clutter, yaw, relative, ownAngles, item->GetPosition().z, a_alignToSlope && !isStorage,
+					GroundAndTilt(a_origin, clutter, yaw, relative, item->GetPosition().z, a_alignToSlope && !isStorage,
 						a_maxTiltDegrees);
 					if (isStorage) {
 						if (!storageFound) {

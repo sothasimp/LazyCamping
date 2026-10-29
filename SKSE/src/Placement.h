@@ -16,8 +16,10 @@ namespace Placement
 	// object upright on a surface with the given normal while facing `a_yaw`.
 	RE::NiPoint3 AnglesForSurface(float a_yaw, RE::NiPoint3 a_normal);
 
-	// Rotation matrix for reference angles (radians), and back. The game
-	// builds a reference's rotation with NiMatrix3::EulerAnglesToAxesZXY.
+	// Rotation matrix for reference angles (radians), and back, as the game
+	// builds it (NiMatrix3::SetEulerAnglesXYZ): turned about Z first, then
+	// tilted about the world's Y and X. Its columns are the object's right,
+	// forward and up axes in world space.
 	RE::NiMatrix3 MatrixFromAngles(const RE::NiPoint3& a_angles);
 	RE::NiPoint3  AnglesFromMatrix(const RE::NiMatrix3& a_matrix);
 
