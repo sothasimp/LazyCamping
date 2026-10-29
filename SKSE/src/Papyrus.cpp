@@ -37,6 +37,7 @@ namespace Papyrus
 		};
 
 		constexpr float ToRadians(float a_deg) { return a_deg * std::numbers::pi_v<float> / 180.0f; }
+		constexpr float ToDegrees(float a_rad) { return a_rad * 180.0f / std::numbers::pi_v<float>; }
 
 		RE::TESObjectCELL* CellAt(RE::TESObjectREFR* a_origin, float a_x, float a_y)
 		{
@@ -305,6 +306,15 @@ namespace Papyrus
 						}
 						continue;
 					}
+					{
+						const auto ip = item->GetPosition();
+						const auto ap = anchor->GetPosition();
+						const auto aa = anchor->GetAngle();
+						logger::info("PlaceCamp:   clutter {:08X} (index {}): CK pos ({:.1f}, {:.1f}, {:.1f}) angles ({:.1f}, {:.1f}, {:.1f}); "
+									 "anchor pos ({:.1f}, {:.1f}, {:.1f}) angles ({:.1f}, {:.1f}, {:.1f}); object yaw {:.1f}",
+							item->GetFormID(), pending.size(), ip.x, ip.y, ip.z, ToDegrees(itemAngles.x), ToDegrees(itemAngles.y),
+							ToDegrees(itemAngles.z), ap.x, ap.y, ap.z, ToDegrees(aa.x), ToDegrees(aa.y), ToDegrees(aa.z), ToDegrees(yaw));
+					}
 					pending.push_back(clutter);
 				}
 			}
@@ -337,6 +347,15 @@ namespace Papyrus
 				}
 				if (!created) {
 					logger::warn("PlaceCamp: couldn't create {:08X} (index {})", ref.base->GetFormID(), i);
+				}
+				if (created) {
+					const auto cp = created->GetPosition();
+					const auto ca = created->GetAngle();
+					logger::info("PlaceCamp:   created {:08X} (index {}, base {:08X}): asked pos ({:.1f}, {:.1f}, {:.1f}) angles ({:.1f}, {:.1f}, {:.1f}); "
+								 "got pos ({:.1f}, {:.1f}, {:.1f}) angles ({:.1f}, {:.1f}, {:.1f})",
+						created->GetFormID(), i, ref.base->GetFormID(), ref.position.x, ref.position.y, ref.position.z,
+						ToDegrees(ref.angles.x), ToDegrees(ref.angles.y), ToDegrees(ref.angles.z), cp.x, cp.y, cp.z,
+						ToDegrees(ca.x), ToDegrees(ca.y), ToDegrees(ca.z));
 				}
 				refs[i] = created;
 			}
