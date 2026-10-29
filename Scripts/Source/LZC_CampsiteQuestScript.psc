@@ -38,17 +38,17 @@ Bool Property PlaceChoppingBlock = True Auto
 ; ---------------------------------------------------------------------------
 ; World objects placed when the camp is set up
 ; ---------------------------------------------------------------------------
-Form[] Property LZC_SmallTents Auto
+Activator[] Property LZC_SmallTents Auto
 {Small tent Activators, same colour order as LZC_SmallTentKits. Each needs
 LZC_CampObjectScript.}
-Form[] Property LZC_LargeTents Auto
+Activator[] Property LZC_LargeTents Auto
 {Large tent Activators, same colour order as LZC_SmallTents.}
-Form Property LZC_BedrollPlaced Auto
+Furniture Property LZC_BedrollPlaced Auto
 {Furniture with a sleep marker, so the player can sleep / wait in it. Can be
 the vanilla bedroll: this script needs nothing on it.}
 Form Property LZC_CampfirePlaced Auto
 {Static or Activator: the burning campfire. Can be the vanilla one.}
-Form Property LZC_CookingStation Auto
+Furniture Property LZC_CookingStation Auto
 {Optional. Furniture with the cooking pot's crafting keyword and an empty
 model (no furniture marker), placed hidden at the fire. Activating
 LZC_CookBox activates it, which opens the Cook menu without an animation.}
@@ -62,13 +62,13 @@ Light Property LZC_CampfireLight Auto
 Bool Property PlaceCampfireLight = True Auto
 {Place LZC_CampfireLight. Turn off if a Light Placer config already gives the
 campfire its own light.}
-Form Property LZC_Firepit Auto
+Activator Property LZC_Firepit Auto
 {The unlit firepit placed when FirewoodMechanic is on: an Activator with
 LZC_CampObjectScript. The fire and its light are placed hidden in its spot.}
-Form Property LZC_ChoppingBlock Auto
+Furniture Property LZC_ChoppingBlock Auto
 {Optional. A woodcutting block placed beside the outermost tent (or along the
 bedroll fan without tents) when FirewoodMechanic is on. Can be the vanilla one.}
-Form Property LZC_Tub Auto
+Static Property LZC_Tub Auto
 {Optional. A bathtub, placed beside the outermost tent on the side away from
 the chopping block (or along the bedroll fan without tents) when PlaceTub is
 on. Its water, steps and so on are the tub clutter set.}
@@ -82,7 +82,7 @@ fourth bedrolls: the large tent then holds 2 bedrolls at most.}
 Float Property TubInTentRight = 137.0 Auto
 {How far right of the large tent's centre (as seen from the fire) the tub
 stands when it's in the tent.}
-Form Property LZC_ClothesBasket Auto
+Activator Property LZC_ClothesBasket Auto
 {The clothes basket's base (in the tub clutter set). Activating one takes off
 everything the player is wearing; activating it again puts it back on.}
 Int Property BatheKey = 48 Auto
@@ -99,13 +99,13 @@ ObjectReference Property LZC_TubTrigger Auto
 a box primitive on the L_TRIGGER layer, base LZC_CookActivator
 (LZC_CampObjectScript). It moves onto the tub, matching its turn; followers who
 step into it take off their clothes, and put them back on when they step out.}
-Form Property LZC_SitMarkerPlayer Auto
+Furniture Property LZC_SitMarkerPlayer Auto
 {Optional. Visible cross-legged seat by the fire that the player can use.}
-Form Property LZC_BedrollSitMarker Auto
+Furniture Property LZC_BedrollSitMarker Auto
 {Optional. Cross-legged seat placed on every bedroll, facing the fire.
 Invisible but selectable: its model is a small collision box with no visible
 geometry, so the player can aim at it apart from the bedroll.}
-Form Property LZC_SitMarkerFollower Auto
+Furniture Property LZC_SitMarkerFollower Auto
 {Optional. Cross-legged sit marker by the fire, one per follower.}
 
 ; ---------------------------------------------------------------------------
@@ -1407,7 +1407,7 @@ EndFunction
 
 ; Returns the tent for a size and colour, falling back to the first (brown).
 Form Function TentForm(Int size, Int color)
-	Form[] tents = LZC_SmallTents
+	Activator[] tents = LZC_SmallTents
 	If size == kLarge
 		tents = LZC_LargeTents
 	EndIf
