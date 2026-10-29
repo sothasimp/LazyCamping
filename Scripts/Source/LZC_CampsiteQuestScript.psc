@@ -761,8 +761,6 @@ Function SetUpCamp()
 		EndIf
 		Return
 	EndIf
-	; Where the clutter was put, before any havok in its meshes moves it.
-	Float[] clutterPlaced = PlacedClutterTransforms()
 
 	; The cook box goes over the fire, enabled only while the fire is lit.
 	If LZC_CookBox
@@ -820,21 +818,7 @@ Function SetUpCamp()
 	ObjectReference storageSpot = placedRefs[kSlotCount]
 	If storageSpot
 		If LZC_CampStorage
-			; Disabled while it moves and enabled after, so its 3D loads afresh
-			; at the spot with the spot's full lean, which MoveTo alone may not
-			; carry over to the model.
-			LZC_CampStorage.Disable()
 			LZC_CampStorage.MoveTo(storageSpot)
-			LZC_CampStorage.SetAngle(storageSpot.GetAngleX(), storageSpot.GetAngleY(), storageSpot.GetAngleZ())
-			LZC_CampStorage.Enable()
-			; Held where it's put: a container with havok in its mesh would
-			; otherwise topple or settle onto the ground.
-			Int wait = 0
-			While !LZC_CampStorage.Is3DLoaded() && wait < 20
-				Utility.Wait(0.1)
-				wait += 1
-			EndWhile
-			LZC_CampStorage.SetMotionType(LZC_CampStorage.Motion_Keyframed, False)
 			If LZC_CampStorage.GetDistance(storageSpot) > 100.0
 				Debug.Trace("Lazy Camping: the backpack didn't move to its spot")
 				Debug.Notification("Lazy Camping: the backpack couldn't be moved to the camp.")
@@ -847,8 +831,6 @@ Function SetUpCamp()
 	Else
 		Debug.Notification("Lazy Camping: this camp has no backpack spot.")
 	EndIf
-
-	HoldClutter(clutterPlaced)
 
 	If HideGrassUnderCamp
 		; The storage borrows the spot's slot so its grass goes too.
@@ -932,63 +914,6 @@ Form[] Function WornItems(Actor akActor)
 		i += 1
 	EndWhile
 	Return items
-EndFunction
-
-; Each clutter reference's position and angles (6 floats each, in
-; placedRefs order after the storage spot), read straight after placing.
-Float[] Function PlacedClutterTransforms()
-	Float[] placed = new Float[128]
-	Int i = kSlotCount + 1
-	Int n = 0
-	While i < placedRefs.Length && n + 6 <= placed.Length
-		ObjectReference item = placedRefs[i]
-		If item
-			placed[n] = item.GetPositionX()
-			placed[n + 1] = item.GetPositionY()
-			placed[n + 2] = item.GetPositionZ()
-			placed[n + 3] = item.GetAngleX()
-			placed[n + 4] = item.GetAngleY()
-			placed[n + 5] = item.GetAngleZ()
-		EndIf
-		n += 6
-		i += 1
-	EndWhile
-	Return placed
-EndFunction
-
-; Keyframes the clutter so havok in its meshes can't tip it over or let it
-; settle, and puts back anything that already moved. Statics are unaffected.
-Function HoldClutter(Float[] placed)
-	; Each item's 3D has to be loaded to be held; wait up to 2 seconds for
-	; the last of them.
-	Int wait = 0
-	While !ClutterLoaded() && wait < 20
-		Utility.Wait(0.1)
-		wait += 1
-	EndWhile
-	Int i = kSlotCount + 1
-	Int n = 0
-	While i < placedRefs.Length && n + 6 <= placed.Length
-		ObjectReference item = placedRefs[i]
-		If item && item.Is3DLoaded()
-			item.SetMotionType(item.Motion_Keyframed, False)
-			item.SetPosition(placed[n], placed[n + 1], placed[n + 2])
-			item.SetAngle(placed[n + 3], placed[n + 4], placed[n + 5])
-		EndIf
-		n += 6
-		i += 1
-	EndWhile
-EndFunction
-
-Bool Function ClutterLoaded()
-	Int i = kSlotCount + 1
-	While i < placedRefs.Length
-		If placedRefs[i] && !placedRefs[i].Is3DLoaded()
-			Return False
-		EndIf
-		i += 1
-	EndWhile
-	Return True
 EndFunction
 
 ; Moves the tub's persistent pieces (the trigger, the water) onto the camp's
