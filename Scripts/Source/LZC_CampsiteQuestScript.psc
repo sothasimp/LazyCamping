@@ -94,9 +94,6 @@ along the circle (negative: away from it). It turns with the swing.}
 Activator Property LZC_ClothesBasket Auto
 {The clothes basket's base (in the tub clutter set). Activating one takes off
 everything the player is wearing; activating it again puts it back on.}
-Int Property BatheKey = 48 Auto
-{With Bathing in Skyrim: the key (a DirectX scan code; 48 is B) that bathes
-the player while they're in the tub trigger.}
 ObjectReference Property LZC_TubWater Auto
 {Optional. The water in the tub clutter set (a placeable water activator such
 as LargeRainBarrelWater01). Instead of being copied like the other clutter, this
@@ -274,8 +271,6 @@ ObjectReference[] placedRefs
 Form[] clothesTaken   ; what a clothes basket took off, until it's put back on
 Bool undressed = False
 Int Property kTubClothes = 16 AutoReadOnly   ; per follower in the tub
-String Property kBathingPlugin = "Bathing in Skyrim.esp" AutoReadOnly
-Bool playerInTub = False
 Actor[] tubActors     ; followers undressed by the tub trigger
 Form[] tubClothes     ; what each took off: kTubClothes per tubActors slot
 Float[] tubTriggerOffset   ; the trigger's right, forward, up and turn from the tub anchor
@@ -972,30 +967,15 @@ Function MoveOntoTub(ObjectReference akRef, Float[] offset)
 EndFunction
 
 ; From LZC_CampObjectScript: something stepped into (or out of) the tub
-; trigger. With Bathing in Skyrim, followers who step in are washed, and the
-; player can bathe by pressing BatheKey while in it. Followers are also
-; undressed, as the player has the clothes basket.
+; trigger. Followers who step in are undressed (the player has the clothes
+; basket) and dress again when they step out.
 Function OnCampTrigger(ObjectReference akRef, ObjectReference akActionRef, Bool entered)
 	If !akRef || akRef != LZC_TubTrigger
 		Return
 	EndIf
 	Actor follower = akActionRef as Actor
-	If !follower || (follower != PlayerRef && !follower.IsPlayerTeammate())
+	If !follower || follower == PlayerRef || !follower.IsPlayerTeammate()
 		Return
-	EndIf
-	If follower == PlayerRef
-		; The player bathes by pressing BatheKey while in the tub.
-		playerInTub = entered && CampDeployed
-		If playerInTub && BathingInstalled()
-			RegisterForKey(BatheKey)
-			Debug.Notification("Press B to bathe.")
-		Else
-			UnregisterForKey(BatheKey)
-		EndIf
-		Return
-	EndIf
-	If entered && CampDeployed
-		BatheInTub(follower)
 	EndIf
 	If !tubActors
 		tubActors = new Actor[8]
@@ -1022,48 +1002,6 @@ Function OnCampTrigger(ObjectReference akRef, ObjectReference akActionRef, Bool 
 		i += 1
 	EndWhile
 EndFunction
-
-; Washes akActor the way Bathing in Skyrim's own water does, if it's
-; installed (looked up at run time, so it isn't a master): its dirt goes and
-; it's marked clean.
-Function BatheInTub(Actor akActor)
-	If !BathingInstalled()
-		Return
-	EndIf
-	MagicEffect cleanStatus = Game.GetFormFromFile(0x26, kBathingPlugin) as MagicEffect
-	Spell batheSpell = Game.GetFormFromFile(0x3D, kBathingPlugin) as Spell
-	Spell cleanSpell = Game.GetFormFromFile(0x43, kBathingPlugin) as Spell
-	If !cleanStatus || !cleanSpell || akActor.HasMagicEffect(cleanStatus)
-		Return
-	EndIf
-	If batheSpell
-		akActor.AddSpell(batheSpell, False)
-	EndIf
-	Int dirt = 0x44
-	While dirt <= 0x46
-		Spell dirtSpell = Game.GetFormFromFile(dirt, kBathingPlugin) as Spell
-		If dirtSpell
-			akActor.RemoveSpell(dirtSpell)
-		EndIf
-		dirt += 1
-	EndWhile
-	akActor.AddSpell(cleanSpell, False)
-	If akActor == PlayerRef
-		Debug.Notification("You are now clean.")
-	EndIf
-EndFunction
-
-; Either kind of plugin: a full one, or one flagged as light.
-Bool Function BathingInstalled()
-	Return Game.GetModByName(kBathingPlugin) != 255 || Game.GetLightModByName(kBathingPlugin) != 65535
-EndFunction
-
-Event OnKeyDown(Int keyCode)
-	If keyCode != BatheKey || !playerInTub || !CampDeployed || Utility.IsInMenuMode() || UI.IsTextInputEnabled()
-		Return
-	EndIf
-	BatheInTub(PlayerRef)
-EndEvent
 
 ; Puts back on what the tub trigger took off the follower in `slot`.
 Function RedressFromTub(Int slot)
@@ -1151,8 +1089,6 @@ Function PackUpCamp()
 		LZC_TubWater.Disable()
 	EndIf
 	RedressAllFromTub()
-	playerInTub = False
-	UnregisterForKey(BatheKey)
 
 	If LZC_CampFollowersQuest && LZC_CampFollowersQuest.IsRunning()
 		(LZC_CampFollowersQuest as LZC_CampFollowersScript).Shutdown()
