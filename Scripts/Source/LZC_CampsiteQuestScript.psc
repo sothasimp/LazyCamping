@@ -85,7 +85,7 @@ stands when it's in the tent.}
 Float Property TubInTentTurn = 17.0 Auto
 {Turns the tub and its clutter in the large tent, in degrees clockwise seen
 from above, on top of the tub anchor's own turn.}
-Float Property TubBesideSmallTentForward = 60.0 Auto
+Float Property TubBesideSmallTentForward = 170.0 Auto
 {How much nearer the fire than the small tent's centre the tub stands when
 it's beside a small tent (negative: further back).}
 Activator Property LZC_ClothesBasket Auto
