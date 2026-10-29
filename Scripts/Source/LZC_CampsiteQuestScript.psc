@@ -959,6 +959,13 @@ EndFunction
 ; Keyframes the clutter so havok in its meshes can't tip it over or let it
 ; settle, and puts back anything that already moved. Statics are unaffected.
 Function HoldClutter(Float[] placed)
+	; Each item's 3D has to be loaded to be held; wait up to 2 seconds for
+	; the last of them.
+	Int wait = 0
+	While !ClutterLoaded() && wait < 20
+		Utility.Wait(0.1)
+		wait += 1
+	EndWhile
 	Int i = kSlotCount + 1
 	Int n = 0
 	While i < placedRefs.Length && n + 6 <= placed.Length
@@ -971,6 +978,17 @@ Function HoldClutter(Float[] placed)
 		n += 6
 		i += 1
 	EndWhile
+EndFunction
+
+Bool Function ClutterLoaded()
+	Int i = kSlotCount + 1
+	While i < placedRefs.Length
+		If placedRefs[i] && !placedRefs[i].Is3DLoaded()
+			Return False
+		EndIf
+		i += 1
+	EndWhile
+	Return True
 EndFunction
 
 ; Moves the tub's persistent pieces (the trigger, the water) onto the camp's
