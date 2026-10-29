@@ -819,6 +819,8 @@ Function SetUpCamp()
 	If storageSpot
 		If LZC_CampStorage
 			LZC_CampStorage.MoveTo(storageSpot)
+			; Its lean too, which MoveTo may not carry over in full.
+			LZC_CampStorage.SetAngle(storageSpot.GetAngleX(), storageSpot.GetAngleY(), storageSpot.GetAngleZ())
 			If LZC_CampStorage.GetDistance(storageSpot) > 100.0
 				Debug.Trace("Lazy Camping: the backpack didn't move to its spot")
 				Debug.Notification("Lazy Camping: the backpack couldn't be moved to the camp.")
