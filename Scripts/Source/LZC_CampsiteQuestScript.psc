@@ -267,6 +267,7 @@ Float Property kRingStep = 50.0 AutoReadOnly         ; between bedrolls without 
 Float Property kSeatStep = 60.0 AutoReadOnly         ; between neighbouring fire seats
 Float Property kChoppingBlockGap = 60.0 AutoReadOnly ; from a tent's side to the block
 Float Property kChoppingBlockOut = 90.0 AutoReadOnly ; without tents: beyond the bedroll arc
+Float Property kChoppingBlockBesideSmallTent = 90.0 AutoReadOnly ; further out beside a small tent
 Float Property kChoppingBlockAside = 40.0 AutoReadOnly ; and round from the nearest bedroll
 Float Property kBedrollHalfLength = 100.0 AutoReadOnly ; head to foot, halved
 Int Property kNativeVersion = 11 AutoReadOnly         ; LazyCamping.dll needed
@@ -1137,7 +1138,11 @@ Function SetChoppingBlock(Form[] forms, Float[] fwd, Float[] side, Float[] turn,
 			outward = -1.0
 		EndIf
 		; Straight out from the tent's side, kChoppingBlockGap clear of it.
-		SetBesideTent(fwd, side, turn, kChoppingBlock, tentFwd[outer], tentSide[outer], tentTurn[outer], outward, TentHalfWidth(sizes[outer]) + kChoppingBlockGap)
+		Float distance = TentHalfWidth(sizes[outer]) + kChoppingBlockGap
+		If sizes[outer] == kSmall
+			distance += kChoppingBlockBesideSmallTent
+		EndIf
+		SetBesideTent(fwd, side, turn, kChoppingBlock, tentFwd[outer], tentSide[outer], tentTurn[outer], outward, distance)
 		Return
 	EndIf
 	; Without tents: the next place in the bedroll arc, kChoppingBlockOut
