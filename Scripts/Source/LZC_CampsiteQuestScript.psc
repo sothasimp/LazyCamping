@@ -820,11 +820,20 @@ Function SetUpCamp()
 	ObjectReference storageSpot = placedRefs[kSlotCount]
 	If storageSpot
 		If LZC_CampStorage
+			; Disabled while it moves and enabled after, so its 3D loads afresh
+			; at the spot with the spot's full lean, which MoveTo alone may not
+			; carry over to the model.
+			LZC_CampStorage.Disable()
 			LZC_CampStorage.MoveTo(storageSpot)
-			; Its lean too, which MoveTo may not carry over in full.
 			LZC_CampStorage.SetAngle(storageSpot.GetAngleX(), storageSpot.GetAngleY(), storageSpot.GetAngleZ())
+			LZC_CampStorage.Enable()
 			; Held where it's put: a container with havok in its mesh would
 			; otherwise topple or settle onto the ground.
+			Int wait = 0
+			While !LZC_CampStorage.Is3DLoaded() && wait < 20
+				Utility.Wait(0.1)
+				wait += 1
+			EndWhile
 			LZC_CampStorage.SetMotionType(LZC_CampStorage.Motion_Keyframed, False)
 			If LZC_CampStorage.GetDistance(storageSpot) > 100.0
 				Debug.Trace("Lazy Camping: the backpack didn't move to its spot")
