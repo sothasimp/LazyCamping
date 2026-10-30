@@ -32,7 +32,7 @@ namespace Menu
 		};
 
 		constexpr const char* kBedrollStyles[] = { "Vanilla", "Bedroll Alternative green", "Bedroll Alternative blue",
-			"Bedroll Alternative red", "Bedroll Alternative random" };
+			"Bedroll Alternative red", "Bedroll Alternative mixed" };
 		constexpr auto        kBedrollAltPlugin = "Bedroll Alternative - BOS Color Variance.esp"sv;
 
 		constexpr const char* kSeatColors[] = { "Brown", "White", "Plaid green", "Plaid yellow", "Plaid blue" };
@@ -163,7 +163,7 @@ namespace Menu
 			ImGuiMCP::SetItemTooltip("The colour of the seats by the fire, matching the tents. Takes effect at the next camp.");
 			ImGuiMCP::BeginDisabled(!values.bedrollAltLoaded);
 			changed |= ImGuiMCP::Combo("Bedroll", &values.bedrollStyle, kBedrollStyles, static_cast<int>(std::size(kBedrollStyles)));
-			ImGuiMCP::SetItemTooltip("Needs Bedroll Alternative - BOS Color Variance. The camp's bedrolls: vanilla, one of its colours, or a random colour for each. Takes effect at the next camp.");
+			ImGuiMCP::SetItemTooltip("Needs Bedroll Alternative - BOS Color Variance. The camp's bedrolls: vanilla, one of its colours, or its colours in turn with each pair matching. Takes effect at the next camp.");
 			ImGuiMCP::EndDisabled();
 			changed |= ImGuiMCP::Checkbox("Clear grass around the camp", &values.hideGrassUnderCamp);
 			ImGuiMCP::SetItemTooltip("Clear the grass in a circle around the camp while it's up. Takes effect at the next camp.");

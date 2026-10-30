@@ -49,8 +49,8 @@ Furniture Property LZC_BedrollPlaced Auto
 the vanilla bedroll: this script needs nothing on it.}
 Int Property BedrollStyle = 0 Auto
 {With Bedroll Alternative - BOS Color Variance installed (SKSE menu): 0 the
-vanilla bedroll (LZC_BedrollPlaced), 1 green, 2 blue, 3 red, 4 a random one of
-the three for each bedroll. Looked up at run time, so it isn't a master.}
+vanilla bedroll (LZC_BedrollPlaced), 1 green, 2 blue, 3 red, 4 mixed: green,
+blue and red in turn round the camp, each pair of bedrolls matching. Looked up at run time, so it isn't a master.}
 Form Property LZC_CampfirePlaced Auto
 {Static or Activator: the burning campfire. Can be the vanilla one.}
 Furniture Property LZC_CookingStation Auto
@@ -685,10 +685,20 @@ Function SetUpCamp()
 
 		; Bedroll slots: first each tent's first bedroll (the player's is in the
 		; first tent, followers' first beds in the others), then the rest.
+		; Each touching pair of bedrolls, counted tent by tent, takes the next
+		; colour step, so with mixed colours a pair matches.
+		Int[] pairBase = new Int[4]
+		Int pairs = 0
+		t = 0
+		While t < tents
+			pairBase[t] = pairs
+			pairs += (bedsInTent[t] + 1) / 2
+			t += 1
+		EndWhile
 		Int nextSlot = kFirstBedroll
 		t = 0
 		While t < tents
-			SetTentBedroll(forms, fwd, side, turn, nextSlot, tentFwd[t], tentSide[t], tentTurn[t], 0, bedsInTent[t], sizes[t])
+			SetTentBedroll(forms, fwd, side, turn, nextSlot, tentFwd[t], tentSide[t], tentTurn[t], 0, bedsInTent[t], sizes[t], pairBase[t])
 			bedGroup[nextSlot - kFirstBedroll] = t
 			Int firstOrder = PairedOrder(0)
 			bedOrder[nextSlot - kFirstBedroll] = firstOrder
@@ -699,7 +709,7 @@ Function SetUpCamp()
 		While t < tents
 			Int b = 1
 			While b < bedsInTent[t]
-				SetTentBedroll(forms, fwd, side, turn, nextSlot, tentFwd[t], tentSide[t], tentTurn[t], b, bedsInTent[t], sizes[t])
+				SetTentBedroll(forms, fwd, side, turn, nextSlot, tentFwd[t], tentSide[t], tentTurn[t], b, bedsInTent[t], sizes[t], pairBase[t] + b / 2)
 				bedGroup[nextSlot - kFirstBedroll] = t
 				Int nextOrder = PairedOrder(b)
 				bedOrder[nextSlot - kFirstBedroll] = nextOrder
@@ -1288,7 +1298,7 @@ EndFunction
 ; to right as seen from the fire. A small tent's row is centred in it; a large
 ; tent's is laid out for a full tent and filled from the left, so its pairs
 ; always sit 1+2, 3+4.
-Function SetTentBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int slot, Float tentFwd, Float tentSide, Float tentTurn, Int index, Int count, Int size)
+Function SetTentBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int slot, Float tentFwd, Float tentSide, Float tentTurn, Int index, Int count, Int size, Int colorSeq)
 	Int rowLength = count
 	Float back = 0.0
 	Float left = 0.0
@@ -1301,7 +1311,7 @@ Function SetTentBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, I
 	; tent faces the fire, so its right is the left as seen from the fire.
 	; The tent's forward axis, at tentTurn, points at the fire.
 	Float offset = RowPosition(rowLength - 1) / 2.0 - RowPosition(index) + left
-	forms[slot] = BedrollForm()
+	forms[slot] = BedrollForm(colorSeq)
 	fwd[slot] = tentFwd + offset * Math.Cos(tentTurn + 90.0) - back * Math.Cos(tentTurn)
 	side[slot] = tentSide + offset * Math.Sin(tentTurn + 90.0) - back * Math.Sin(tentTurn)
 	turn[slot] = tentTurn
@@ -1319,7 +1329,6 @@ EndFunction
 Function SetRingBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] bedOrder, Int[] clutterSet, Float[] ringSeatTurn, Bool[] used, Int index, Int place, Bool pairHigh)
 	Int slot = kFirstBedroll + index
 	Float bearing = place * kRingStep
-	forms[slot] = BedrollForm()
 	fwd[slot] = FireForward() + BedrollRingRadius * Math.Cos(bearing)
 	side[slot] = BedrollRingRadius * Math.Sin(bearing)
 	turn[slot] = bearing + BedrollRingYaw
@@ -1328,6 +1337,9 @@ Function SetRingBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, I
 		turn[slot] = turn[slot] + 180.0
 		bedOrder[index] = place * 2 - 1
 	EndIf
+	; A head-to-head pair's two orders share one colour step; places go
+	; round the arc in order, so the colours do too.
+	forms[slot] = BedrollForm((bedOrder[index] + 10) / 2)
 	; Only the player's bedroll gets the bedroll clutter set.
 	If index == 0
 		clutterSet[slot] = 4
@@ -1351,13 +1363,15 @@ EndFunction
 
 ; A camp bedroll in the style chosen in the SKSE menu: the vanilla one, or
 ; one of Bedroll Alternative's colours if it's installed.
-Furniture Function BedrollForm()
+; colorSeq is the bedroll's colour step for mixed colours: green, blue, red
+; in turn, the same for both bedrolls of a pair.
+Furniture Function BedrollForm(Int colorSeq)
 	Int style = BedrollStyle
 	If style < 1 || style > 4 || (Game.GetModByName(kBedrollAltPlugin) == 255 && Game.GetLightModByName(kBedrollAltPlugin) == 65535)
 		Return LZC_BedrollPlaced
 	EndIf
 	If style == 4
-		style = Utility.RandomInt(1, 3)
+		style = colorSeq % 3 + 1
 	EndIf
 	Int id = 0xD62   ; green
 	If style == 2
