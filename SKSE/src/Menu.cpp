@@ -26,7 +26,7 @@ namespace Menu
 			bool         placeTub{ true };
 			bool         tubInLargeTent{ false };
 			bool         alignToSlope{ true };
-			int          seatColor{ 0 };
+			int          seatColor{ 2 };
 		};
 
 		constexpr const char* kSeatColors[] = { "Brown", "White", "Plaid green", "Plaid yellow" };
