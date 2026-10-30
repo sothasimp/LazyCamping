@@ -292,6 +292,7 @@ Int Property kFirewoodPerFire = 2 AutoReadOnly
 Float Property kTentGap = 15.0 AutoReadOnly         ; between a side tent and the large tent
 Float Property kSideTentShift = 250.0 AutoReadOnly   ; side tents beside the large tent, toward the player
 Float Property kSideTentAngle = 60.0 AutoReadOnly    ; and turned from facing the fire
+Float Property kSideTentSpread = 90.0 AutoReadOnly   ; and moved out sideways, away from the large tent
 String Property kBedrollAltPlugin = "Bedroll Alternative - BOS Color Variance.esp" AutoReadOnly
 Float Property kChoppingBlockAside = 40.0 AutoReadOnly ; and round from the nearest bedroll
 Float Property kBedrollHalfLength = 100.0 AutoReadOnly ; head to foot, halved
@@ -581,6 +582,12 @@ Function SetUpCamp()
 			; their entrances together.
 			Float shiftedFwd = tentFwd[t] - kSideTentShift
 			tentFwd[t] = shiftedFwd
+			; And kSideTentSpread further out to its side, away from the large tent.
+			Float shiftedSide = tentSide[t] + kSideTentSpread
+			If tentSide[t] < 0.0
+				shiftedSide = tentSide[t] - kSideTentSpread
+			EndIf
+			tentSide[t] = shiftedSide
 			Float dx = shiftedFwd - FireForward()
 			Float dy = tentSide[t]
 			Float facing = 90.0
