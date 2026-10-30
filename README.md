@@ -235,13 +235,13 @@ The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFol
 
 ### 2d. How players get the kits
 
-The builder doesn't create these; add them in the Creation Kit. Some ideas:
+The builder doesn't create these, but the committed `LazyCamping.esp` has a recipe for every kit (`LZC_Recipe…`), all at a tanning rack (`CraftingTanningRack`), every colour alike:
 
-- **Crafting** at a tanning rack (workbench keyword `CraftingTanningRack`):
-  - Small tent kit = 3× `Leather01` + 3× `LeatherStrips` + 2× `Firewood01`
-  - Large tent kit = 6× `Leather01` + 5× `LeatherStrips` + 3× `Firewood01`
-  - For colours, add a dye ingredient to the brown recipe, for example Blue Mountain Flower for blue, Red Mountain Flower for red, Hanging Moss for green and Bone Meal for white.
-  - Bedroll = 2× `Leather01` + 2× `LeatherStrips`
+- Bedroll = 2× Linen Wrap + 2× `LeatherStrips`
+- Small tent kit = 3× Linen Wrap + 3× `LeatherStrips` + 2× `Firewood01`
+- Large tent kit = 6× Linen Wrap + 5× `LeatherStrips` + 3× `Firewood01`
+
+Kits added in the Creation Kit need a recipe of their own. Other ideas:
 - **Merchants:** add the kits to a general goods leveled list, such as `LItemMiscVendorMiscItems75`.
 
 ---
