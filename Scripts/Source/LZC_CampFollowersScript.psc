@@ -167,8 +167,11 @@ Int[] Function ChooseTubMate(Int playerTubSeat)
 	Int free = -1
 	i = 0
 	While free < 0 && i < tubSeats.Length
-		If i != playerTubSeat && tubSeats[i]
-			free = i
+		If i != playerTubSeat
+			ObjectReference seat = tubSeats[i]
+			If seat
+				free = i
+			EndIf
 		EndIf
 		i += 1
 	EndWhile
