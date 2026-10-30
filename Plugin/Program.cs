@@ -1,198 +1,22 @@
 using LazyCamping.PluginBuilder;
-using Mutagen.Bethesda;
-using Mutagen.Bethesda.Plugins;
-using Mutagen.Bethesda.Plugins.Binary.Parameters;
-using Mutagen.Bethesda.Plugins.Cache;
-using Mutagen.Bethesda.Plugins.Records;
-using Mutagen.Bethesda.Skyrim;
 
-// Builds the starting LazyCamping.esp once; after that the plugin is edited in
-// the Creation Kit, and --verify checks it against the scripts.
+// Checks LazyCamping.esp's script properties against the .psc sources: every
+// property set in the plugin must be declared in its script, and properties
+// left empty are listed. LazyCamping.esp itself is edited in the Creation Kit.
 //
-// Usage:
-//   build:        dotnet run --project Plugin -- --master "<Skyrim>/Data/Skyrim.esm" [--out LazyCamping.esp] [--force]
-//   update:       dotnet run --project Plugin -- --master "<Skyrim>/Data/Skyrim.esm" --update [--out LazyCamping.esp] [--scripts Scripts/Source]
-//                 or --update --from <a freshly built esp> instead of --master
-//   verify:       dotnet run --project Plugin -- --verify <LazyCamping.esp> --scripts Scripts/Source [--master <Skyrim.esm>]
-//   search:       dotnet run --project Plugin -- --master <Skyrim.esm> --find <text>
-//   test master:  dotnet run --project Plugin -- --make-test-master <path>
-var options = ParseArgs(args);
-var here = AppContext.BaseDirectory;
+// Usage: dotnet run --project Plugin -- <LazyCamping.esp> <Scripts/Source>
+if (args.Length != 2)
+{
+    Console.Error.WriteLine("Usage: dotnet run --project Plugin -- <LazyCamping.esp> <Scripts/Source>");
+    return 2;
+}
 
 try
 {
-    if (options.TryGetValue("make-test-master", out var testMaster))
-    {
-        var settingsForTest = Settings.Load(options.GetValueOrDefault("settings") ?? Path.Combine(here, "settings.json"));
-        TestMaster.Write(testMaster, settingsForTest);
-        Console.WriteLine($"Wrote stand-in master {testMaster}");
-        return 0;
-    }
-
-    if (options.TryGetValue("verify", out var verifyPath))
-    {
-        // Links can only be checked with the master; script properties only need the plugin.
-        var linksOk = !options.TryGetValue("master", out var verifyMaster) || Verify(verifyPath, verifyMaster) == 0;
-        var scriptsOk = !options.TryGetValue("scripts", out var scriptDir) || ScriptCheck.Run(verifyPath, scriptDir);
-        return linksOk && scriptsOk ? 0 : 1;
-    }
-
-    // Update from a plugin built earlier, instead of building one now.
-    if (options.ContainsKey("update") && options.TryGetValue("from", out var builtPath))
-    {
-        var updatePath = options.GetValueOrDefault("out") ?? "LazyCamping.esp";
-        var built = SkyrimMod.CreateFromBinary(builtPath, SkyrimRelease.SkyrimSE);
-        return Update(updatePath, built, options.GetValueOrDefault("scripts") ?? (Directory.Exists("Scripts/Source") ? "Scripts/Source" : null));
-    }
-
-    if (!options.TryGetValue("master", out var masterPath))
-    {
-        Console.Error.WriteLine("Pass --master with the path to Skyrim.esm (in the game's Data folder).");
-        return 2;
-    }
-
-    if (options.TryGetValue("find", out var findText))
-    {
-        using var searched = SkyrimMod.CreateFromBinaryOverlay(masterPath, SkyrimRelease.SkyrimSE);
-        var found = Builder.Search(searched, findText).ToList();
-        Console.WriteLine(found.Count == 0 ? $"No EditorID contains \"{findText}\"." : string.Join(Environment.NewLine, found));
-        return 0;
-    }
-
-    var settings = Settings.Load(options.GetValueOrDefault("settings") ?? Path.Combine(here, "settings.json"));
-    var clutter = ClutterSets.Load(options.GetValueOrDefault("clutter") ?? Path.Combine(here, "clutter.json"));
-    var outPath = options.GetValueOrDefault("out") ?? "LazyCamping.esp";
-    var update = options.ContainsKey("update");
-    if (update && !File.Exists(outPath))
-    {
-        Console.Error.WriteLine($"{outPath} doesn't exist yet: build it without --update first.");
-        return 1;
-    }
-    if (!update && File.Exists(outPath) && !options.ContainsKey("force"))
-    {
-        Console.Error.WriteLine($"{outPath} already exists. It may have Creation Kit edits, so it won't be overwritten; pass --force to replace it.");
-        return 1;
-    }
-
-    using var skyrim = SkyrimMod.CreateFromBinaryOverlay(masterPath, SkyrimRelease.SkyrimSE);
-    var builder = new Builder(skyrim, settings, clutter);
-    var mod = builder.Build();
-    if (builder.Problems.Count > 0)
-    {
-        Console.Error.WriteLine("Couldn't build LazyCamping.esp. Fix these in settings.json or clutter.json:");
-        foreach (var problem in builder.Problems)
-        {
-            Console.Error.WriteLine($"  - {problem}");
-        }
-        return 1;
-    }
-
-    if (update)
-    {
-        return Update(outPath, mod, options.GetValueOrDefault("scripts") ?? (Directory.Exists("Scripts/Source") ? "Scripts/Source" : null));
-    }
-
-    mod.WriteToBinary(outPath);
-    Console.WriteLine($"Wrote {outPath}: {mod.EnumerateMajorRecords().Count()} records.");
-    return 0;
+    return ScriptCheck.Run(args[0], args[1]) ? 0 : 1;
 }
 catch (Exception e)
 {
     Console.Error.WriteLine(e);
     return 1;
-}
-
-// Adds what a fresh build has and the plugin lacks (see Updater), keeping a
-// backup of the plugin as it was.
-static int Update(string pluginPath, SkyrimMod fresh, string? scriptDir)
-{
-    var plugin = SkyrimMod.CreateFromBinary(pluginPath, SkyrimRelease.SkyrimSE);
-    var updater = new Updater(plugin, fresh, scriptDir);
-    updater.Run();
-    var dangling = updater.DanglingLinks().ToList();
-    if (dangling.Count > 0)
-    {
-        Console.Error.WriteLine("Not written: these links would point at nothing in the plugin:");
-        dangling.ForEach(d => Console.Error.WriteLine($"  {d}"));
-        return 1;
-    }
-    if (updater.Report.Count == 0)
-    {
-        Console.WriteLine($"{pluginPath} is already up to date.");
-        return 0;
-    }
-
-    var backup = pluginPath + ".bak";
-    File.Copy(pluginPath, backup, overwrite: true);
-    var masters = plugin.ModHeader.MasterReferences.Select(m => m.Master).ToList();
-    var written = Path.GetTempFileName();
-    plugin.WriteToBinary(written, BinaryWriteParameters.Default with
-    {
-        MastersListOrdering = new MastersListOrderingByLoadOrder(masters),
-        ModKey = ModKeyOption.NoCheck,
-    });
-    // Records the update didn't change are copied from the original as they were.
-    var masterIndex = (uint)masters.Count << 24;
-    var changed = updater.Changed.Select(k => masterIndex | k.ID).ToHashSet();
-    File.WriteAllBytes(pluginPath, Splice.Run(File.ReadAllBytes(backup), File.ReadAllBytes(written), changed));
-    File.Delete(written);
-    foreach (var line in updater.Report)
-    {
-        Console.WriteLine($"  {line}");
-    }
-    Console.WriteLine($"Updated {pluginPath} ({updater.Report.Count} changes); the old one is {backup}.");
-    if (scriptDir is null)
-    {
-        Console.WriteLine("Pass --scripts <Scripts/Source> to also drop properties the scripts no longer declare.");
-    }
-    return 0;
-}
-
-// Reads the built plugin back and checks that every link points at a record
-// in it or in the master.
-static int Verify(string pluginPath, string masterPath)
-{
-    using var master = SkyrimMod.CreateFromBinaryOverlay(masterPath, SkyrimRelease.SkyrimSE);
-    using var plugin = SkyrimMod.CreateFromBinaryOverlay(pluginPath, SkyrimRelease.SkyrimSE);
-    var cache = new ISkyrimModGetter[] { master, plugin }.ToImmutableLinkCache();
-
-    var broken = 0;
-    foreach (var record in plugin.EnumerateMajorRecords())
-    {
-        foreach (var link in record.EnumerateFormLinks())
-        {
-            if (link.IsNull || link.FormKey == Builder.PlayerRefKey)
-            {
-                continue; // PlayerRef is a placed actor in the real Skyrim.esm.
-            }
-            if (!cache.TryResolve(link.FormKey, link.Type, out _))
-            {
-                Console.Error.WriteLine($"  {record.EditorID ?? record.FormKey.ToString()} -> missing {link.FormKey} ({link.Type.Name})");
-                broken++;
-            }
-        }
-    }
-
-    var counts = plugin.EnumerateMajorRecords()
-        .GroupBy(r => r.GetType().Name.Replace("BinaryOverlay", ""))
-        .OrderBy(g => g.Key)
-        .Select(g => $"{g.Key} {g.Count()}");
-    Console.WriteLine($"Records: {string.Join(", ", counts)}");
-    Console.WriteLine(broken == 0 ? "All links resolve." : $"{broken} broken links.");
-    return broken == 0 ? 0 : 1;
-}
-
-static Dictionary<string, string> ParseArgs(string[] args)
-{
-    var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-    for (var i = 0; i < args.Length; i++)
-    {
-        if (args[i].StartsWith("--"))
-        {
-            var key = args[i][2..];
-            var value = i + 1 < args.Length && !args[i + 1].StartsWith("--") ? args[++i] : "";
-            result[key] = value;
-        }
-    }
-    return result;
 }

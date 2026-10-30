@@ -20,7 +20,7 @@ The mod adds a **Set Up Camp** Lesser Power, named " Set Up Camp" with a leading
   - spare bedrolls then fill the tents in turn, up to each tent's capacity: 2 for a small tent, 4 for a large one
   - in a tent, the bedrolls lie in pairs that touch, with a small gap between pairs (`BedrollSpacing` minus `PairedBedrollSpacing`), so a couple (or the player and a partner) shares a touching pair. They run left to right as seen from the fire, the player's first. A large tent's row is laid out for a full tent, 1+2, gap, 3+4, and fills from the far left; it sits 60 further from the fire than the tent's centre (`LargeTentBedrollBack`), and can be shifted sideways (`LargeTentBedrollLeft`). A small tent's row is centred.
 - **the player's tent** stands in the middle, straight across the fire from the player, entrance facing them, with the player's bedroll in it. It's the large tent if there is one; otherwise it's the small tent with the most bedrolls.
-- **the other tents** stand 70° to either side of it: the second to the right, the third to the left. The near side of the fire stays open. Small tents stand 250 units from the centre of the fire (`SmallTentDistance`), and the large tent, always in the middle, 107 (`LargeTentDistance`), measured to each tent's centre. Small tents beside the large tent are pushed out just far enough to clear it by 15 (about 295 with the default sizes).
+- **the other tents** go to either side of it: the second on the right, the third on the left. With only small tents, they stand 70° round the fire to either side, all 250 from its centre, facing it. Beside the large tent (107 from the fire), the small tents come round toward the player's side and angle in, so the three entrances face each other around the fire. All of these spots are constants in `LZC_CampsiteQuestScript.psc`.
 - **with no tent kits**, there are no tents. The bedrolls (up to 4) lie sideways in a close amphitheater arc just outside the seats, 50° apart round the fire: the player's straight across the fire, behind their seat, the rest to either side. The player and a partner, and a follower couple, get neighbouring places with their bedrolls head to head.
 
 A **bathtub** (`LZC_Tub`, a static with your tub mesh) stands beside the outermost tent, on the other side from the chopping block, or, without tents, just left of the player's bedroll as the player sees it across the fire. It can be turned off (`PlaceTub`). With `TubInLargeTent` on, it goes inside the large tent instead, in place of the third and fourth bedrolls, 137 right of the tent's centre (`TubInTentRight`) and turned like the bedrolls; the large tent then holds 2 bedrolls at most, and the chopping block stays outside. What's in and around it is the **tub clutter set**, arranged in the Creation Kit: by default the vanilla rain barrel water (`LargeRainBarrelWater01`) in it and a **clothes basket** (`LZC_ClothesBasket`): activating it takes off everything the player is wearing, and activating it again puts it all back on; add steps, invisible seats inside the tub and so on. The **water** should be the clutter set's own reference, filled into `LZC_TubWater`: instead of being copied it moves onto the tub (keeping its offset, turn and scale), because the game only treats placeable water as real water, which bathing mods such as *Bathing in Skyrim* look for, when the reference was placed in the Creation Kit. An optional **tub trigger** (`LZC_TubTrigger`) moves onto the tub: followers who step into it take off their clothes, and put them back on when they step out or the camp is packed up. Its water is real water to the game, so *Bathing in Skyrim* lets you bathe in it.
@@ -67,12 +67,8 @@ SKSE/                           C++ plugin (LazyCamping.dll), required
   src/Menu.cpp                  the optional SKSE Menu Framework page
   src/ScriptObjects.cpp         reading and writing other scripts' properties
   extern/SKSEMenuFramework/     SKSE Menu Framework 3's API header (LGPL-2.1)
-Plugin/                         builds the starting LazyCamping.esp once, and checks it (.NET 8, Mutagen)
-  settings.json                 vanilla EditorIDs, mesh paths, kit names (for the one-time build)
-  clutter.json                  starting storage spots (and any starting clutter)
-  Builder.cs                    creates every record
-  ScriptCheck.cs                checks script properties against the .psc files
-  TestMaster.cs                 stand-in Skyrim.esm for the GitHub build
+LazyCamping.esp                 the plugin, edited in the Creation Kit
+Plugin/                         checks the plugin's script properties against the .psc files (.NET 8, Mutagen)
 ```
 
 ### How the scripts and the plugin split the work
@@ -92,68 +88,28 @@ Compiled `.pex` files go in `Data/Scripts/`.
 
 ## 2. The plugin (`LazyCamping.esp`)
 
-The starting `LazyCamping.esp` is generated **once** by a small .NET program in `Plugin/`, using the [Mutagen](https://github.com/Mutagen-Modding/Mutagen) library. It creates every record the scripts expect, with the same `LZC_` names, and fills in every script property, so the starting point has nothing mistyped or forgotten. **From then on, the plugin is edited in the Creation Kit** and committed to the repository like any other file.
+`LazyCamping.esp` is edited in the Creation Kit and committed to the repository like any other file. (It was first generated by a .NET program using [Mutagen](https://github.com/Mutagen-Modding/Mutagen); that generator has been retired, since the plugin has long since outgrown it.)
 
-### Building it (once)
-
-You need the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) and Skyrim Special Edition installed. From the repository folder:
+**Checking it.** On every push, GitHub checks that every script property set in the plugin is declared in its `.psc` file, so a renamed or misspelt property is caught before it fails silently in game; it also lists object properties left empty. To run the check yourself (needs the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)):
 
 ```powershell
-dotnet run --project Plugin -- --master "C:\Program Files (x86)\Steam\steamapps\common\Skyrim Special Edition\Data\Skyrim.esm" --out LazyCamping.esp
+dotnet run --project Plugin -- LazyCamping.esp Scripts/Source
 ```
 
-The builder reads `Skyrim.esm` to look up vanilla records and to copy the ones the mod builds on, and writes `LazyCamping.esp`. Then check it:
+**Before editing it in the Creation Kit,** take the latest `LazyCamping.esp` from the repository: some records (the recipes, the merchant list) are sometimes added to it directly, and saving over an older copy loses them. After saving, check that the quest's object properties are still filled.
 
-```powershell
-dotnet run --project Plugin -- --verify LazyCamping.esp --master "<same Skyrim.esm>" --scripts Scripts/Source
-```
-
-That checks that every link in the plugin points at a real record, and that the script properties it sets match the property names in the `.psc` files.
-
-The builder **won't overwrite an existing `LazyCamping.esp`**, so Creation Kit work can't be lost by running it again. Pass `--force` only if you really want to start over.
-
-Once it's built:
-1. Copy `LazyCamping.esp` into the repository's root folder and commit it.
-2. Work on it in the Creation Kit as usual (see 2a–2d below), and commit the changes.
-3. After editing, check the script properties again. This doesn't need `Skyrim.esm`:
-   ```powershell
-   dotnet run --project Plugin -- --verify LazyCamping.esp --scripts Scripts/Source
-   ```
-   It reports any property set in the plugin that a script doesn't declare (for example after renaming one in a `.psc` file), and lists script properties left empty.
-
-**On GitHub:** the builder can't run for real there, because `Skyrim.esm` can't be in the repository. Instead, the build compiles the builder and test-runs it against a small stand-in `Skyrim.esm`. Once `LazyCamping.esp` is committed, it also checks that plugin's script properties against the `.psc` files on every push.
-
-### Updating it after Creation Kit edits
-
-When the mod gains records or script properties, bring your edited plugin up to date instead of rebuilding it:
-
-```
-dotnet run --project Plugin -- --master "<Skyrim Data>\Skyrim.esm" --update
-```
-
-Run it in the repo folder, next to `LazyCamping.esp`. If you've built a fresh plugin elsewhere (say `New.esp`), `--update --from New.esp` takes the new records from it instead of building, and needs no `--master`. It matches records by EditorID and only:
-- **adds** records the builder makes and the plugin lacks, with links pointed at your existing records. Holding-cell references are added only if they have an EditorID, or belong to a clutter set the plugin doesn't have yet, so hand-placed clutter is never duplicated;
-- on records you already have, **attaches** the `LZC_` scripts the builder attaches, **removes** `LZC_` scripts it no longer uses, **adds** missing script properties, and **drops** properties the scripts in `Scripts/Source` no longer declare.
-
-Everything else stays as you made it: models, bounds, texture sets (normal maps and all), packages, aliases, quest settings and any non-`LZC_` scripts. Records it doesn't change are copied byte for byte from your plugin, so they stay exactly as the Creation Kit saved them, and new records get FormIDs after the highest one in use. It keeps the old plugin as `LazyCamping.esp.bak`, prints what it changed, and refuses to write if a link would point at nothing. Running it again when nothing's new changes nothing.
-
-### Settings (`Plugin/settings.json`)
-
-- **`vanilla`:** EditorIDs of the vanilla records used: the burning campfire (an activator; any placeable type works), the cooking pot furniture (copied as the hidden `LZC_CookingStation`), its light, the unlit firepit (its model is used for `LZC_Firepit`), the woodcutting block, an optional sound played as the camp is set up and packed up (by default `ITMClothingDownSD`; a vanilla *Sound Marker* is used as it is, and a *Sound Descriptor* gets a sound marker of its own, `LZC_UnpackSound`), the ground bedroll, the cross-legged sit marker, the *Voice* equip slot, `Firewood01`, `LocTypeCity`, `LocTypeTown`, and an optional partner faction (for example `PlayerMarriedFaction`). **Some of the defaults are educated guesses.** If one isn't in `Skyrim.esm`, the builder stops and lists the closest EditorIDs it found, so you can correct it. To list every record whose EditorID contains some text, run `dotnet run --project Plugin -- --master "<Skyrim Data>\Skyrim.esm" --find campfire`.
-- **`models`:** mesh paths, relative to `Data/Meshes`, for the kits, both tent sizes, the player's fire seat, the bedroll seat, the bathtub, and the storage backpack.
-- **`tentTextures`:** how the colours are made (see below).
-- **`kits`:** inventory names, weights and values. `{Colour}` in a name becomes the tent's colour.
-
-### What the builder creates
+### What's in it
 
 | Records | EditorIDs | Notes |
 |---|---|---|
-| Kits | `LZC_BedrollKit`, `LZC_TentKitSmallBrown` … `LZC_TentKitLargeWhite` | 11 MiscItems |
-| Tents | `LZC_TentSmallBrown` … `LZC_TentLargeWhite` | 10 Activators with `LZC_CampObjectScript` |
+| Kits | `LZC_BedrollKit`, `LZC_TentKitSmallBrown` … `LZC_TentKitLargePlaidBlue` | MiscItems: the bedroll and a small and large tent in each colour (brown, blue, green, red, white, plaid green, plaid yellow, plaid blue) |
+| Recipes | `LZC_RecipeBedrollKit`, `LZC_RecipeTentKit…` | one per kit, at a tanning rack (see 2d) |
+| Merchants | `LZC_LItemCampingKits`, `LZC_VendorLists` | a leveled list of the kits, and the merchant lists it's added to (see 2d) |
+| Tents | `LZC_TentSmallBrown` … `LZC_TentLargePlaidBlue` | Activators with `LZC_CampObjectScript`; colours are texture sets swapped onto the canvas |
 | Bath | `LZC_Tub`, `LZC_ClothesBasket` | the tub (static, your mesh); a clothes basket activator (*Use*: undress, then dress again; `LZC_CampObjectScript`; model from `models.clothesBasket`) |
 | Cooking | `LZC_CookActivator`, `LZC_CookingStation` | the base for the cook box (named *Campfire*, shows *Cook*, with `LZC_CampObjectScript`); a copy of the vanilla cooking pot furniture with the XMarker's mesh and *Is Marker*, placed hidden at the fire, which activating the box activates |
 | Firepit | `LZC_Firepit` | an Activator with the vanilla unlit firepit's model and `LZC_CampObjectScript`, for the firewood mechanic |
-| Seats | `LZC_SitMarkerPlayer`, `LZC_BedrollSitMarker` | copies of the vanilla cross-legged marker with the models from `settings.json` |
+| Seats | `LZC_SitMarkerPlayer`, `LZC_BedrollSitMarker`, `LZC_SitMarkerPlayer{White,Plaid…}` | copies of the vanilla cross-legged marker; the coloured fire seats are listed in `LZC_SeatColors` |
 | Storage | `LZC_CampStorageContainer` | a container that never respawns |
 | Power | `LZC_SetUpCampPower`, `LZC_SetUpCampEffect` | lesser power in the Voice slot; script magic effect |
 | Message | `LZC_PackUpConfirmMsg` | *Pack up your camp?* with *Yes* / *No* |
@@ -163,11 +119,11 @@ Everything else stays as you made it: models, bounds, texture sets (normal maps 
 
 The campfire, light, bedroll and follower sit marker are the vanilla objects themselves, not copies, so mods that change those objects also change the camp's.
 
-Not generated: crafting recipes and merchant lists for the kits (see 2d). For testing, run `help LZC_ 4` in the console to find the kits' form IDs, then `player.additem <id> 1`.
+For testing, run `help LZC_ 4` in the console to find the kits' form IDs, then `player.additem <id> 1`.
 
 ### Clutter sets
 
-The builder lays out five clutter sets in the holding cell, `LZC_HoldingCell`, each around an anchor that is the object itself (the campfire, a brown small or large tent, the bedroll, the tub), so you can see what you're arranging around. The camp only reads the anchor's position and rotation, so any reference works as an anchor, an `XMarkerHeading` included.
+The clutter sets are laid out in the holding cell, `LZC_HoldingCell`, each around an anchor that is the object itself (the campfire, a brown small or large tent, the bedroll, the tub), so you can see what you're arranging around. The camp only reads the anchor's position and rotation, so any reference works as an anchor, an `XMarkerHeading` included.
 
 | Set | Anchor | Copied around |
 |---|---|---|
@@ -189,20 +145,19 @@ The camp copies the arrangement around each fire, tent or tentless bedroll, keep
 
 **Switching an older plugin's markers to real objects.** In the Creation Kit, select an `XMarkerHeading` anchor or storage marker in `LZC_HoldingCell` and use *Edit > Search and Replace* with *Selected only* to swap its base object for the tent, campfire, bedroll, tub or `LZC_CampStorageContainer`. The reference stays the same one, so the quest's properties still point at it (check they do). Keep the position and rotation as they are.
 
-`Plugin/clutter.json` only decides what the builder puts in the sets to start with. After that, the Creation Kit is the place to change them.
 
-### 2a. Art the builder can't make
+### 2a. Art
 
-These go in `Data/Meshes/LazyCamping/` and `Data/Textures/LazyCamping/`, at the paths in `settings.json`:
+These go under `Data/Meshes/` and `Data/Textures/`, at the paths the plugin's records use:
 
 - **Tent meshes**, small (170 × 170) and large (300 × 200).
 - **The player's fire seat:** something visible to sit on, such as a fur pelt or a log, with collision. The player can only activate furniture they can point the crosshair at.
 - **The bedroll seat** needs no art: give `LZC_BedrollSitMarker` the vanilla cross-legged sit marker's model, which is invisible in game and has the furniture marker the game needs to seat the player (furniture markers live in the `.nif`). The player reaches it by sneak-activating the bedroll, so it doesn't need to be selectable.
-- **The cooking station** needs no art: the builder gives `LZC_CookingStation` the editor XMarker's mesh and the *Is Marker* flag, so it isn't drawn in game, and has no furniture marker (no stirring animation) or collision. Set `models.cookingStation` only to use a mesh of your own.
+- **The cooking station** needs no art: `LZC_CookingStation` has the editor XMarker's mesh and the *Is Marker* flag, so it isn't drawn in game, and has no furniture marker (no stirring animation) or collision.
 - **The storage backpack** mesh.
-- **Tent colours.** Brown is each tent mesh's own texture. For the other four colours, make recoloured copies of the canvas texture, named like `Textures/LazyCamping/TentSmallBlue_d.dds` (the pattern is `tentTextures.path`). Then set `tentTextures.smallShape` and `largeShape` to the name of the canvas shape in each mesh (look it up in NifSkope). The builder makes a texture set per colour and swaps it onto that shape. With the shape names left empty, every colour uses the mesh's own texture.
+- **Tent colours.** Brown is each tent mesh's own texture. Each other colour is a texture set (`LZC_TentTexture…`) given to the tent as an alternate texture on its canvas shape.
 
-The builder gives the tents, kits and backpack approximate object bounds. Once your meshes are in place, recalculate them in the Creation Kit.
+After changing a mesh, recalculate the record's object bounds in the Creation Kit.
 
 ### 2b. How followers behave
 
@@ -220,7 +175,7 @@ The camp also uses these when it shares bedrolls out between the tents, so partn
 | 2 | the player is sleeping within `CampRadius` of the fire | sleep in their bedrolls |
 | 3 | the player is at camp, awake and not sitting | sandbox around the campfire (`CampCenter` alias) |
 
-**Making the follower packages (once, in the Creation Kit).** The builder doesn't make these: the Creation Kit couldn't load the packages it wrote. For each N from 1 to 5, make two packages, both with **Owner Quest** `LZC_CampFollowersQuest`:
+**Making the follower packages (once, in the Creation Kit).** Packages are made in the Creation Kit (it couldn't load generated ones). For each N from 1 to 5, make two packages, both with **Owner Quest** `LZC_CampFollowersQuest`:
 
 | Package | Template | Data | Condition (run on subject) |
 |---|---|---|---|
@@ -228,7 +183,7 @@ The camp also uses these when it shares bedrolls out between the tents, so partn
 | `LZC_FollowerSitN` | *Sit* | Sit Location: *Near Reference Alias* `SeatN`, radius 64; Search Criteria / target: alias `SeatN` | `GetGlobalValue LZC_CampActivity == 1` |
 | `LZC_FollowerSandbox` (one for all) | *Sandbox* | Location: *Near Reference Alias* `CampCenter`, radius about 600 | `GetGlobalValue LZC_CampActivity == 3` |
 
-Give `LZC_CampFollowersQuest` a high **Priority** on its *Quest Data* tab (the builder uses 90): alias packages compete by quest priority, and the vanilla follower quest's follow package would otherwise win, so followers would never sit or sleep. Then open `LZC_CampFollowersQuest`'s **Quest Aliases** tab, and in each `FollowerN` alias add `LZC_FollowerSleepN` and `LZC_FollowerSitN` to its *Alias Package Data*. Without them followers just follow the player as normal: they don't sit or sleep at camp.
+Give `LZC_CampFollowersQuest` a high **Priority** on its *Quest Data* tab (the plugin uses 100): alias packages compete by quest priority, and the vanilla follower quest's follow package would otherwise win, so followers would never sit or sleep. Then open `LZC_CampFollowersQuest`'s **Quest Aliases** tab, and in each `FollowerN` alias add `LZC_FollowerSleepN` and `LZC_FollowerSitN` to its *Alias Package Data*. Without them followers just follow the player as normal: they don't sit or sleep at camp.
 
 The follower quest's `CampRadius` setting (default 1024, in the follower quest's script) is how near the fire counts as "at camp", for sleeping and for seated followers staying put.
 
@@ -241,7 +196,7 @@ The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFol
 **Merchants.** `LazyCamping.esp` has a leveled list of every kit, `LZC_LItemCampingKits` (one random kit, 50% chance none), and a form list, `LZC_VendorLists`, of merchant leveled lists to add it to: fill that in the Creation Kit with the general goods vendor lists (the leveled lists their merchant chests use). LazyCamping.dll adds the kit list to each of them while the game runs, so no vanilla list is overridden in the plugin and nothing conflicts with other mods that edit them. The SKSE menu's *Sell kits at general goods merchants* turns it off (`KitsAtMerchants`); merchants show the change at their next restock.
 
 
-The builder doesn't create these, but the committed `LazyCamping.esp` has a recipe for every kit (`LZC_Recipe…`), all at a tanning rack (`CraftingTanningRack`), every colour alike:
+The committed `LazyCamping.esp` has a recipe for every kit (`LZC_Recipe…`), all at a tanning rack (`CraftingTanningRack`), every colour alike:
 
 - Bedroll = 2× Linen Wrap + 2× `LeatherStrips`
 - Small tent kit = 3× Linen Wrap + 3× `LeatherStrips` + 2× `Firewood01`
@@ -289,7 +244,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 ## 4. Compile scripts and package
 
 1. In the CK, compile all six scripts (*Gameplay > Papyrus Script Manager*). `LZC_Native` compiles without the DLL; its functions are only bound at runtime.
-2. Build `LazyCamping.esp` with the builder (section 2). It adds only new records, so you can flag it as ESL with xEdit.
+2. `LazyCamping.esp` adds only new records, so you can flag it as ESL with xEdit.
 3. Package these files:
    ```
    LazyCamping.esp

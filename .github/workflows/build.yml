@@ -51,7 +51,7 @@ jobs:
           if-no-files-found: error
 
   esp-builder:
-    name: Plugin builder
+    name: Plugin check
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -66,20 +66,7 @@ jobs:
       - name: Build the builder
         run: dotnet build -c Release
 
-      # Skyrim.esm can't be in CI, so build against a stand-in that has just
-      # the records the builder looks up. This checks the code paths, not the
-      # real game data.
-      - name: Make a stand-in Skyrim.esm
-        run: dotnet run -c Release --no-build -- --make-test-master "$RUNNER_TEMP/Skyrim.esm"
-
-      - name: Build LazyCamping.esp against it
-        run: dotnet run -c Release --no-build -- --master "$RUNNER_TEMP/Skyrim.esm" --out "$RUNNER_TEMP/LazyCamping.esp"
-
-      - name: Check links and script properties
-        run: dotnet run -c Release --no-build -- --verify "$RUNNER_TEMP/LazyCamping.esp" --master "$RUNNER_TEMP/Skyrim.esm" --scripts ../Scripts/Source
-
-      # Once LazyCamping.esp is committed (built once, then edited in the
-      # Creation Kit), check its script properties against the sources.
-      - name: Check the committed LazyCamping.esp
-        if: hashFiles('LazyCamping.esp') != ''
-        run: dotnet run -c Release --no-build -- --verify ../LazyCamping.esp --scripts ../Scripts/Source
+      # LazyCamping.esp is edited in the Creation Kit; check its script
+      # properties against the sources.
+      - name: Check LazyCamping.esp's script properties
+        run: dotnet run -c Release --no-build -- ../LazyCamping.esp ../Scripts/Source
