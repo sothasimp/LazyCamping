@@ -35,7 +35,7 @@ namespace Menu
 			"Bedroll Alternative - Red", "Bedroll Alternative - Random Color" };
 		constexpr auto        kBedrollAltPlugin = "Bedroll Alternative - BOS Color Variance.esp"sv;
 
-		constexpr const char* kSeatColors[] = { "Brown", "White", "Plaid green", "Plaid yellow", "Plaid blue" };
+		constexpr const char* kSeatColors[] = { "Brown", "White", "Plaid - Green", "Plaid - Yellow", "Plaid - Blue" };
 
 		std::mutex                            lock;
 		Values                                shown;
