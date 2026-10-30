@@ -4,10 +4,26 @@ namespace VendorKits
 {
 	namespace
 	{
-		constexpr auto       kPlugin = "LazyCamping.esp"sv;
-		constexpr RE::FormID kKitList = 0x5409;     // LZC_LItemCampingKits
-		constexpr RE::FormID kVendorLists = 0x540A;  // LZC_VendorLists
+		constexpr auto          kPlugin = "LazyCamping.esp"sv;
 		constexpr std::uint16_t kLevel = 1;
+
+		// The plugin's only form of this type (LZC_LItemCampingKits, LZC_VendorLists),
+		// whatever its FormID: their EditorIDs aren't kept in game.
+		template <class T>
+		T* OnlyFormInPlugin()
+		{
+			auto* dataHandler = RE::TESDataHandler::GetSingleton();
+			if (!dataHandler) {
+				return nullptr;
+			}
+			for (auto* form : dataHandler->GetFormArray<T>()) {
+				const auto* file = form ? form->GetFile(0) : nullptr;
+				if (file && file->GetFilename() == kPlugin) {
+					return form;
+				}
+			}
+			return nullptr;
+		}
 
 		// Takes the kits out of a_list, then puts them back in if a_add, keeping
 		// the entries in level order as the game expects.
@@ -35,9 +51,8 @@ namespace VendorKits
 
 	void Apply(bool a_enabled)
 	{
-		auto* dataHandler = RE::TESDataHandler::GetSingleton();
-		auto* kits = dataHandler ? dataHandler->LookupForm<RE::TESLevItem>(kKitList, kPlugin) : nullptr;
-		auto* lists = dataHandler ? dataHandler->LookupForm<RE::BGSListForm>(kVendorLists, kPlugin) : nullptr;
+		static auto* kits = OnlyFormInPlugin<RE::TESLevItem>();
+		static auto* lists = OnlyFormInPlugin<RE::BGSListForm>();
 		if (!kits || !lists) {
 			return;
 		}
