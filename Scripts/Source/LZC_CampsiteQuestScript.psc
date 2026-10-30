@@ -2,7 +2,8 @@ Scriptname LZC_CampsiteQuestScript extends Quest
 {Central controller for the Set Up Camp power. Tracks the deployed campsite,
 handles the camp objects and packs the camp back up. LazyCamping.dll (SKSE)
 lays out the camp from this script's properties, checks the ground and places
-it in one go (LZC_Native.BuildCamp).}
+it in one go (BuildCamp). It also passes on the game events the camp reacts
+to: casting the power, activating camp objects, followers in the tub.}
 
 ; ---------------------------------------------------------------------------
 ; Core
@@ -40,8 +41,7 @@ Bool Property PlaceChoppingBlock = True Auto
 ; World objects placed when the camp is set up
 ; ---------------------------------------------------------------------------
 Activator[] Property LZC_SmallTents Auto
-{Small tent Activators, same colour order as LZC_SmallTentKits. Each needs
-LZC_CampObjectScript.}
+{Small tent Activators, same colour order as LZC_SmallTentKits.}
 Activator[] Property LZC_LargeTents Auto
 {Large tent Activators, same colour order as LZC_SmallTents.}
 Furniture Property LZC_BedrollPlaced Auto
@@ -65,7 +65,7 @@ LZC_CookBox activates it, which opens the Cook menu without an animation.}
 ObjectReference Property LZC_CookBox Auto
 {Optional. A persistent, initially disabled activator box in the holding cell:
 a box primitive with Player Activation ticked, base LZC_CookActivator
-(LZC_CampObjectScript). It moves onto the fire while the fire is lit, so looking
+It moves onto the fire while the fire is lit, so looking
 at the fire shows "Cook".}
 Light Property LZC_CampfireLight Auto
 {Optional. Flickering firelight placed above the campfire.}
@@ -73,8 +73,8 @@ Bool Property PlaceCampfireLight = True Auto
 {Place LZC_CampfireLight. Turn off if a Light Placer config already gives the
 campfire its own light.}
 Activator Property LZC_Firepit Auto
-{The unlit firepit placed when FirewoodMechanic is on: an Activator with
-LZC_CampObjectScript. The fire and its light are placed hidden in its spot.}
+{The unlit firepit placed when FirewoodMechanic is on: an Activator. The fire
+and its light are placed hidden in its spot.}
 Furniture Property LZC_ChoppingBlock Auto
 {Optional. A woodcutting block placed beside the outermost tent (or along the
 bedroll fan without tents) when FirewoodMechanic is on. Can be the vanilla one.}
@@ -98,7 +98,7 @@ was placed in the Creation Kit.}
 ObjectReference Property LZC_TubTrigger Auto
 {Optional. A persistent, initially disabled trigger box in the holding cell:
 a box primitive on the L_TRIGGER layer, base LZC_CookActivator
-(LZC_CampObjectScript). It moves onto the tub, matching its turn; followers who
+It moves onto the tub, matching its turn; followers who
 step into it take off their clothes, and put them back on when they step out.}
 Furniture Property LZC_SitMarkerPlayer Auto
 {Optional. Visible cross-legged seat by the fire that the player can use.}
@@ -229,7 +229,7 @@ Int Property kSlotCount = 39 AutoReadOnly
 
 Int Property kLarge = 1 AutoReadOnly
 Int Property kFirewoodPerFire = 2 AutoReadOnly
-Int Property kNativeVersion = 12 AutoReadOnly         ; LazyCamping.dll needed
+Int Property kNativeVersion = 13 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
 Form[] clothesTaken   ; what a clothes basket took off, until it's put back on
@@ -242,11 +242,48 @@ Float[] tubWaterOffset     ; and the water's
 Int[] tentSizesUsed
 Bool busy = False
 
+; ---------------------------------------------------------------------------
+; Native functions, provided by LazyCamping.dll (SKSE). If it isn't loaded
+; they're unbound and GetVersion() returns 0.
+; ---------------------------------------------------------------------------
+Int Function GetVersion() Global Native
+
+; Sets up a camp in front of the player in one go: works out which tents and
+; bedrolls go up and where everything stands from this script's properties
+; (partners and couples are the follower counts), checks the ground, places it
+; all with its clutter, moves the cook box, backpack and map marker to the
+; camp, sets up the bedroll seats and hides the grass. Returns the placed
+; references in placedRefs' slots, then the clutter; or an empty array if the
+; camp couldn't go up, GetBuildStatus saying why (see NotifySiteProblem).
+ObjectReference[] Function BuildCamp(Quest campQuest, Int partners, Int couples) Global Native
+Int Function GetBuildStatus() Global Native
+
+; What the last BuildCamp laid out, for the follower quest: the fire seats
+; (the player's first) and their places in the fan, the bedrolls and the seat
+; on each, each bedroll's group (its tent) and order in its row, the seats in
+; the tub, and the tents' sizes and count.
+ObjectReference[] Function GetFireSeats() Global Native
+Int[] Function GetFirePlaces() Global Native
+ObjectReference[] Function GetCampBeds() Global Native
+ObjectReference[] Function GetBedSeats() Global Native
+Int[] Function GetBedGroups() Global Native
+Int[] Function GetBedOrders() Global Native
+ObjectReference[] Function GetTubSeats() Global Native
+Int[] Function GetTentSizes() Global Native
+Int Function GetTentCount() Global Native
+
+; Brings back the grass hidden when the camp went up.
+Function ShowGrass() Global Native
+; Forgets the camp's bedroll seats.
+Function ClearBedrollSeats() Global Native
+; Renames a form, or gives it its own name back if name is empty; kept in the save.
+Function RenameForm(Form akForm, String name) Global Native
+
 Event OnInit()
 	PlayerRef.AddSpell(LZC_SetUpCampPower, False)
 EndEvent
 
-; Called by the power's magic effect. Casting it while a camp is up asks
+; Called by LazyCamping.dll when the player casts the power. Casting it while a camp is up asks
 ; whether to pack the camp up, wherever the player is.
 Function HandlePowerCast()
 	If CampDeployed
@@ -258,10 +295,10 @@ Function HandlePowerCast()
 		Return
 	EndIf
 	; 0 means the DLL's functions aren't bound: no SKSE, no DLL (or Address
-	; Library), or no LZC_Native.pex.
-	Int nativeVersion = LZC_Native.GetVersion()
+	; Library).
+	Int nativeVersion = GetVersion()
 	If nativeVersion == 0
-		Debug.Notification("Lazy Camping: LazyCamping.dll isn't loaded (check SKSE, Address Library and LZC_Native.pex).")
+		Debug.Notification("Lazy Camping: LazyCamping.dll isn't loaded (check SKSE and Address Library).")
 		Return
 	ElseIf nativeVersion < kNativeVersion
 		Debug.Notification("Lazy Camping: LazyCamping.dll is out of date.")
@@ -278,7 +315,7 @@ Function HandlePowerCast()
 	busy = False
 EndFunction
 
-; Called by LZC_CampObjectScript, on every camp object the player can use:
+; Called by LazyCamping.dll when the player activates a camp object:
 ; the tents, the unlit firepit, the cook box over the fire and the clothes
 ; basket. Works out which one it is and reacts.
 Function OnCampObjectActivated(ObjectReference akRef, ObjectReference akActionRef)
@@ -384,8 +421,8 @@ Function SetUpCamp()
 	; LazyCamping.dll works out the whole layout from this script's
 	; properties, checks the ground, places everything in one frame and moves
 	; the cook box, backpack and map marker to the camp.
-	placedRefs = LZC_Native.BuildCamp(Self, partners, couples)
-	Int status = LZC_Native.GetBuildStatus()
+	placedRefs = BuildCamp(Self, partners, couples)
+	Int status = GetBuildStatus()
 	If status != 0 || placedRefs.Length <= kSlotCount
 		NotifySiteProblem(status)
 		placedRefs = new ObjectReference[39]
@@ -404,15 +441,15 @@ Function SetUpCamp()
 		; Every camp bedroll goes to the follower quest, which hands them out
 		; when the player sleeps; the fire seats, the player's first, with their
 		; places in the fan; where each bedroll is, for partners and couples.
-		followers.Assign(placedRefs[kCampfire], LZC_Native.GetFireSeats(), LZC_Native.GetFirePlaces(), LZC_Native.GetCampBeds(), LZC_Native.GetBedSeats(), LZC_Native.GetBedGroups(), LZC_Native.GetBedOrders())
-		followers.SetTubSeats(LZC_Native.GetTubSeats())
+		followers.Assign(placedRefs[kCampfire], GetFireSeats(), GetFirePlaces(), GetCampBeds(), GetBedSeats(), GetBedGroups(), GetBedOrders())
+		followers.SetTubSeats(GetTubSeats())
 	EndIf
 
-	tentSizesUsed = LZC_Native.GetTentSizes()
-	TentCount = LZC_Native.GetTentCount()
+	tentSizesUsed = GetTentSizes()
+	TentCount = GetTentCount()
 	CampDeployed = True
 	; The leading space sorts the power to the top of the magic menu.
-	LZC_Native.RenameForm(LZC_SetUpCampPower, " Pack Up Camp")
+	RenameForm(LZC_SetUpCampPower, " Pack Up Camp")
 EndFunction
 
 ; The cook box over the fire opens the Cook menu, through the hidden cooking
@@ -526,7 +563,7 @@ Function MoveOntoTub(ObjectReference akRef, Float[] offset)
 	akRef.Enable()
 EndFunction
 
-; From LZC_CampObjectScript: something stepped into (or out of) the tub
+; From LazyCamping.dll: a follower stepped into (or out of) the tub
 ; trigger. Followers who step in are undressed (the player has the clothes
 ; basket) and dress again when they step out.
 Function OnCampTrigger(ObjectReference akRef, ObjectReference akActionRef, Bool entered)
@@ -638,7 +675,7 @@ Function PackUpCamp()
 		LZC_UnpackSound.Play(PlayerRef)
 	EndIf
 	UnregisterForUpdateGameTime()
-	LZC_Native.ShowGrass()
+	ShowGrass()
 	If LZC_CookBox
 		LZC_CookBox.Disable()
 	EndIf
@@ -660,7 +697,7 @@ Function PackUpCamp()
 		LZC_CampStorage.MoveTo(LZC_CampStorageMarkers[0])
 	EndIf
 
-	LZC_Native.ClearBedrollSeats()
+	ClearBedrollSeats()
 
 	Int i = 0
 	While i < placedRefs.Length
@@ -674,7 +711,7 @@ Function PackUpCamp()
 
 	TentCount = 0
 	CampDeployed = False
-	LZC_Native.RenameForm(LZC_SetUpCampPower, "")
+	RenameForm(LZC_SetUpCampPower, "")
 EndFunction
 
 Float Function TentHalfWidth(Int size)

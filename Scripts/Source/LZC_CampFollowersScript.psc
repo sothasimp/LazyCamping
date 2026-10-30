@@ -134,7 +134,7 @@ Function SetActivity(Int activity)
 	EndWhile
 EndFunction
 
-; Called by LZC_CampPlayerAliasScript. Sitting in any fire seat sends
+; Called by LazyCamping.dll when the player sits down. Sitting in any fire seat sends
 ; followers to the other fire seats; sitting on a bedroll's seat sends them to
 ; the other bedrolls' seats. Partners take the seats next to the player's.
 Function OnPlayerSat(ObjectReference akFurniture)

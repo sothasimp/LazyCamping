@@ -43,4 +43,14 @@ namespace ScriptObjects
 		// An Auto property's value is in a hidden variable named ::Name_var.
 		return a_object->GetVariable("::" + std::string(a_name) + "_var");
 	}
+
+	RE::TESForm* FormValue(const RE::BSScript::Variable* a_value)
+	{
+		if (!a_value || !a_value->IsObject()) {
+			return nullptr;
+		}
+		const auto object = a_value->GetObject();
+		// A form's handle carries its FormID in the low 32 bits.
+		return object ? RE::TESForm::LookupByID(static_cast<RE::FormID>(object->GetHandle() & 0xFFFFFFFF)) : nullptr;
+	}
 }

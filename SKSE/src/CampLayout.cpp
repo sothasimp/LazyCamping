@@ -15,7 +15,7 @@ namespace CampLayout
 {
 	namespace
 	{
-		constexpr auto kClass = "LZC_Native"sv;
+		constexpr auto kClass = "LZC_CampsiteQuestScript"sv;
 		constexpr auto kScript = "LZC_CampsiteQuestScript";
 		constexpr auto kBedrollAltPlugin = "Bedroll Alternative - BOS Color Variance.esp"sv;
 
@@ -100,15 +100,7 @@ namespace CampLayout
 
 		// --- The quest script's properties -----------------------------------
 
-		RE::TESForm* FormOf(const RE::BSScript::Variable* a_value)
-		{
-			if (!a_value || !a_value->IsObject()) {
-				return nullptr;
-			}
-			const auto object = a_value->GetObject();
-			// A form's handle carries its FormID in the low 32 bits.
-			return object ? RE::TESForm::LookupByID(static_cast<RE::FormID>(object->GetHandle() & 0xFFFFFFFF)) : nullptr;
-		}
+		using ScriptObjects::FormValue;
 
 		class Properties
 		{
@@ -120,7 +112,7 @@ namespace CampLayout
 			template <class T>
 			T* Form(std::string_view a_name) const
 			{
-				auto* form = FormOf(Value(a_name));
+				auto* form = FormValue(Value(a_name));
 				return form ? form->As<T>() : nullptr;
 			}
 
@@ -132,7 +124,7 @@ namespace CampLayout
 				const auto      array = value && value->IsArray() ? value->GetArray() : nullptr;
 				if (array) {
 					for (const auto& element : *array) {
-						auto* form = FormOf(&element);
+						auto* form = FormValue(&element);
 						forms.push_back(form ? form->As<T>() : nullptr);
 					}
 				}

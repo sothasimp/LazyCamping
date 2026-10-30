@@ -6,7 +6,7 @@
 #include "GrassHider.h"
 #include "Placement.h"
 
-// Native functions for LZC_Native.psc. They are registered as not callable
+// Native functions, declared Global Native in LZC_CampsiteQuestScript.psc. They are registered as not callable
 // from tasklets, so the VM runs them in sync with the main thread, which is
 // required for the Havok raycasts and for creating references.
 //
@@ -17,8 +17,8 @@ namespace Papyrus
 {
 	namespace
 	{
-		constexpr auto         kClass = "LZC_Native"sv;
-		constexpr std::int32_t kVersion = 12;
+		constexpr auto         kClass = "LZC_CampsiteQuestScript"sv;
+		constexpr std::int32_t kVersion = 13;
 
 		constexpr RE::FormID kXMarkerHeading = 0x34;  // Skyrim.esm
 
