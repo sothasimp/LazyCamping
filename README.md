@@ -20,7 +20,7 @@ The mod adds a **Set Up Camp** Lesser Power, named " Set Up Camp" with a leading
   - spare bedrolls then fill the tents in turn, up to each tent's capacity: 2 for a small tent, 4 for a large one
   - in a tent, the bedrolls lie in pairs that touch, with a small gap between pairs (`BedrollSpacing` minus `PairedBedrollSpacing`), so a couple (or the player and a partner) shares a touching pair. They run left to right as seen from the fire, the player's first. A large tent's row is laid out for a full tent, 1+2, gap, 3+4, and fills from the far left; it sits 60 further from the fire than the tent's centre (`LargeTentBedrollBack`), and can be shifted sideways (`LargeTentBedrollLeft`). A small tent's row is centred.
 - **the player's tent** stands in the middle, straight across the fire from the player, entrance facing them, with the player's bedroll in it. It's the large tent if there is one; otherwise it's the small tent with the most bedrolls.
-- **the other tents** go to either side of it: the second on the right, the third on the left. With only small tents, they stand 70° round the fire to either side, all 250 from its centre, facing it. Beside the large tent (107 from the fire), the small tents come round toward the player's side and angle in, so the three entrances face each other around the fire. All of these spots are constants in `LZC_CampsiteQuestScript.psc`.
+- **the other tents** go to either side of it: the second on the right, the third on the left. With only small tents, they stand 70° round the fire to either side, all 250 from its centre, facing it. Beside the large tent (107 from the fire), the small tents come round toward the player's side and angle in, so the three entrances face each other around the fire. All of these spots are constants in `SKSE/src/CampLayout.cpp`.
 - **with no tent kits**, there are no tents. The bedrolls (up to 4) lie sideways in a close amphitheater arc just outside the seats, 50° apart round the fire: the player's straight across the fire, behind their seat, the rest to either side. The player and a partner, and a follower couple, get neighbouring places with their bedrolls head to head.
 
 A **bathtub** (`LZC_Tub`, a static with your tub mesh) stands beside the outermost tent, on the other side from the chopping block, or, without tents, just left of the player's bedroll as the player sees it across the fire. It can be turned off (`PlaceTub`). With `TubInLargeTent` on, it goes inside the large tent instead, in place of the third and fourth bedrolls, 137 right of the tent's centre (`TubInTentRight`) and turned like the bedrolls; the large tent then holds 2 bedrolls at most, and the chopping block stays outside. What's in and around it is the **tub clutter set**, arranged in the Creation Kit: by default the vanilla rain barrel water (`LargeRainBarrelWater01`) in it and a **clothes basket** (`LZC_ClothesBasket`): activating it takes off everything the player is wearing, and activating it again puts it all back on; add steps, invisible seats inside the tub and so on. The **water** should be the clutter set's own reference, filled into `LZC_TubWater`: instead of being copied it moves onto the tub (keeping its offset, turn and scale), because the game only treats placeable water as real water, which bathing mods such as *Bathing in Skyrim* look for, when the reference was placed in the Creation Kit. An optional **tub trigger** (`LZC_TubTrigger`) moves onto the tub: followers who step into it take off their clothes, and put them back on when they step out or the camp is packed up. Its water is real water to the game, so *Bathing in Skyrim* lets you bathe in it.
@@ -49,7 +49,7 @@ All EditorIDs use the prefix `LZC_`.
 
 ```
 Scripts/Source/
-  LZC_CampsiteQuestScript.psc   main logic: checks, layout, pack-up, state
+  LZC_CampsiteQuestScript.psc   main logic: checks, camp objects, pack-up, state
   LZC_SetUpCampEffect.psc       on the magic effect; calls the quest
   LZC_CampObjectScript.psc      on the tents, unlit firepit, cook box, clothes basket and tub trigger; passes activation and trigger events to the quest
   LZC_CampFollowersScript.psc   followers' seats and bedrolls; sit/sleep with the player
@@ -58,7 +58,10 @@ Scripts/Source/
 SKSE/                           C++ plugin (LazyCamping.dll), required
   xmake.lua
   src/main.cpp                  plugin entry point, logging
-  src/Papyrus.cpp               native functions for LZC_Native
+  src/Papyrus.cpp               native functions for LZC_Native; ground checks and placing
+  src/CampLayout.cpp            setting up a camp: the layout and everything placed with it
+  src/BedrollKit.cpp            the bedroll kit's colour
+  src/VendorKits.cpp            the kits at general goods merchants
   src/Placement.cpp             ground raycast, slope tilt, water check
   src/GrassHider.cpp            hides the grass under the camp
   src/BedrollSeats.cpp          sneak-activating a camp bedroll sits the player on it
@@ -72,12 +75,14 @@ LazyCamping.esp                 the plugin, edited in the Creation Kit
 
 ### How the scripts and the plugin split the work
 
-The Papyrus scripts decide the layout: which tents and bedrolls go up, and where each object stands relative to the player. `LazyCamping.dll` handles the ground and the placing, in two calls:
+Setting up a camp is one call into `LazyCamping.dll`, **`BuildCamp`**, so it happens in a single frame instead of being spread over many by Papyrus's small time budget. From `LZC_CampsiteQuestScript`'s properties it:
 
-1. **`CheckCampSite`** checks the ground under the fire and every tent's footprint, and refuses the camp if the ground is too steep, uneven, blocked by rocks or logs, underwater, or missing.
-2. **`PlaceCamp`** finds the ground under every object, tilts each one to the slope (up to `MaxSlope` degrees), and creates them all at their final positions in a single frame. It finds the ground for everything before placing anything, so a bedroll's ground check can't hit the tent standing over it.
+1. works out which tents and bedrolls go up and where everything stands relative to the player (`SKSE/src/CampLayout.cpp`, where the layout distances and angles live);
+2. checks the ground under the fire and every tent's footprint, and refuses the camp if the ground is too steep, uneven, blocked by rocks or logs, underwater, or missing;
+3. finds the ground under every object, tilts each one to the slope (up to `MaxSlope` degrees), and creates them all with their clutter at their final positions. It finds the ground for everything before placing anything, so a bedroll's ground check can't hit the tent standing over it;
+4. moves the cook box, storage backpack and map marker to the camp, sets up the bedroll seats, and clears the grass in a circle around the camp (see *Hiding grass* below).
 
-After that, **`HideGrass`** clears the grass in a circle around the placed objects (see *Hiding grass* below), and packing up calls **`ShowGrass`**.
+The script keeps the rest: the events (casting the power, activating camp objects, sitting, sleeping), the follower quest, which it hands the camp's seats and bedrolls, and the tub's trigger and water. Packing up calls **`ShowGrass`**.
 
 If the DLL isn't loaded, or is older than the scripts expect, casting the power tells the player that Lazy Camping needs SKSE, and nothing is placed.
 
@@ -182,7 +187,7 @@ The follower quest's `CampRadius` setting (default 1024, in the follower quest's
 
 ### 2c. Settings on the quest scripts
 
-The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, `PlaceCampfireLight`, the tent capacities, `FirewoodMechanic`, `FireBurnHours`, `PlaceChoppingBlock`, `PlaceTub`, `TubInLargeTent` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file. The camp's layout distances (seat ring, tent distances and sizes, bedroll spacing, where the tub stands and how it turns, the light's height) are fixed constants in `LZC_CampsiteQuestScript.psc`: change them there and recompile.
+The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, `PlaceCampfireLight`, the tent capacities, `FirewoodMechanic`, `FireBurnHours`, `PlaceChoppingBlock`, `PlaceTub`, `TubInLargeTent` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file. The camp's layout distances (seat ring, tent distances and sizes, bedroll spacing, where the tub stands and how it turns, the light's height) are fixed constants in `SKSE/src/CampLayout.cpp`: change them there and rebuild the DLL.
 
 ### 2d. How players get the kits
 
