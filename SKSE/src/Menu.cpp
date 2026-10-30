@@ -31,8 +31,8 @@ namespace Menu
 			bool         bedrollAltLoaded{ false };
 		};
 
-		constexpr const char* kBedrollStyles[] = { "Vanilla", "Bedroll Alternative green", "Bedroll Alternative blue",
-			"Bedroll Alternative red", "Bedroll Alternative mixed" };
+		constexpr const char* kBedrollStyles[] = { "Vanilla", "Bedroll Alternative - Green", "Bedroll Alternative - Blue",
+			"Bedroll Alternative - Red", "Bedroll Alternative - Random Color" };
 		constexpr auto        kBedrollAltPlugin = "Bedroll Alternative - BOS Color Variance.esp"sv;
 
 		constexpr const char* kSeatColors[] = { "Brown", "White", "Plaid green", "Plaid yellow", "Plaid blue" };
