@@ -25,10 +25,11 @@ MiscObject Property LZC_BedrollKit Auto
 {At least one is needed to make camp; the campfire always comes with it.}
 
 MiscObject Property Firewood01 Auto
-{Vanilla firewood: lighting the fire burns one when FirewoodMechanic is on.}
+{Vanilla firewood: lighting the fire burns kFirewoodPerFire when FirewoodMechanic
+is on.}
 Bool Property FirewoodMechanic = False Auto
 {The camp's fire starts out unlit. Activating the firepit with firewood in
-the inventory lights it, burning one; it burns for FireBurnHours, then goes
+the inventory lights it, burning two; it burns for FireBurnHours, then goes
 out. A chopping block stands by the tents. Off: the fire is always lit.}
 Float Property FireBurnHours = 6.0 Auto
 {How long a fire lit with firewood burns, in game hours.}
@@ -270,6 +271,7 @@ Float Property kChoppingBlockOut = 90.0 AutoReadOnly ; without tents: beyond the
 Float Property kChoppingBlockBesideSmallTent = 90.0 AutoReadOnly ; further out beside a small tent
 Float Property kChoppingBlockBesideLargeTent = 170.0 AutoReadOnly ; further out beside the large tent
 Float Property kChoppingBlockTurn = 25.0 AutoReadOnly ; degrees clockwise
+Int Property kFirewoodPerFire = 2 AutoReadOnly
 Float Property kChoppingBlockAside = 40.0 AutoReadOnly ; and round from the nearest bedroll
 Float Property kBedrollHalfLength = 100.0 AutoReadOnly ; head to foot, halved
 Int Property kNativeVersion = 11 AutoReadOnly         ; LazyCamping.dll needed
@@ -875,14 +877,14 @@ Function Cook()
 	EndIf
 EndFunction
 
-; Activating the camp's unlit firepit lights the fire, burning one firewood,
-; for FireBurnHours.
+; Activating the camp's unlit firepit lights the fire, burning
+; kFirewoodPerFire firewood, for FireBurnHours.
 Function LightFire()
-	If !Firewood01 || PlayerRef.GetItemCount(Firewood01) < 1
-		Debug.Notification("You need firewood to light the fire.")
+	If !Firewood01 || PlayerRef.GetItemCount(Firewood01) < kFirewoodPerFire
+		Debug.Notification("You need 2 firewood to light the fire.")
 		Return
 	EndIf
-	PlayerRef.RemoveItem(Firewood01, 1)
+	PlayerRef.RemoveItem(Firewood01, kFirewoodPerFire)
 	SetFireLit(True)
 	RegisterForSingleUpdateGameTime(FireBurnHours)
 EndFunction
