@@ -78,6 +78,11 @@ namespace CampLayout
 		constexpr float kTubBesideSmallForward = 98.0f;
 		constexpr float kTubBesideSmallRight = 220.0f;
 		constexpr float kTubBesideSmallTurn = 17.0f;
+		// Ground limits. Fixed here rather than script properties, whose values
+		// stay in the save even after the script's default changes.
+		constexpr float kMaxSlope = 30.0f;  // refuse to camp on steeper ground
+		constexpr float kMaxTilt = 10.0f;   // most an object tilts with the ground
+		constexpr float kMaxStep = 48.0f;   // most the ground under a tent may vary
 
 		inline float Cos(float a_degrees) { return std::cos(a_degrees * std::numbers::pi_v<float> / 180.0f); }
 		inline float Sin(float a_degrees) { return std::sin(a_degrees * std::numbers::pi_v<float> / 180.0f); }
@@ -211,7 +216,7 @@ namespace CampLayout
 				_layout.level.assign(kSlotCount, false);
 				_layout.clutterSet.assign(kSlotCount, 0);
 				_layout.alignToSlope = a_props.Bool("AlignToSlope", true);
-				_layout.maxTiltDegrees = a_props.Float("MaxTilt", 10.0f);
+				_layout.maxTiltDegrees = kMaxTilt;
 				_bedGroup.assign(kMaxBedrolls, 0);
 				_bedOrder.assign(kMaxBedrolls, 0);
 				_ringSeatTurn.assign(kMaxBedrolls, 0.0f);
@@ -229,7 +234,7 @@ namespace CampLayout
 					footprints.push_back({ tent.fwd, tent.side, tent.turn, TentHalfWidth(tent.size), TentHalfDepth(tent.size) });
 				}
 				built.status = Papyrus::Camp::CheckSite(_player, _layout.headingDegrees, footprints,
-					_props.Float("MaxStep", 48.0f), _props.Float("MaxSlope", 30.0f));
+					kMaxStep, kMaxSlope);
 				if (built.status != Papyrus::Camp::kClear) {
 					return {};
 				}
