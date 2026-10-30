@@ -6,6 +6,7 @@ namespace BedrollKit
 	{
 		constexpr auto       kPlugin = "LazyCamping.esp"sv;
 		constexpr auto       kShape = "cloth"sv;
+		constexpr std::uint32_t kShapeIndex = 5;  // the cloth shape's index in the kit's mesh
 		constexpr RE::FormID kKit = 0x803;     // LZC_BedrollKit
 		constexpr RE::FormID kGreen = 0x5403;  // LZC_BedrollTextureGreen
 		constexpr RE::FormID kBlue = 0x5404;   // LZC_BedrollTextureBlue
@@ -59,7 +60,7 @@ namespace BedrollKit
 			swap = RE::calloc<AlternateTexture>(1);
 		}
 		swap->textureSet = textureSet;
-		swap->index3D = 0;
+		swap->index3D = kShapeIndex;
 		swap->name3D = kShape;
 		kit->alternateTextures = swap;
 		kit->numAlternateTextures = 1;
