@@ -50,7 +50,8 @@ the vanilla bedroll: this script needs nothing on it.}
 Int Property BedrollStyle = 0 Auto
 {With Bedroll Alternative - BOS Color Variance installed (SKSE menu): 0 the
 vanilla bedroll (LZC_BedrollPlaced), 1 green, 2 blue, 3 red, 4 mixed: green,
-blue and red in turn round the camp, each pair of bedrolls matching. Looked up at run time, so it isn't a master.}
+blue and red in turn round the camp, the two of a pair in a tent matching.
+Looked up at run time, so it isn't a master.}
 Form Property LZC_CampfirePlaced Auto
 {Static or Activator: the burning campfire. Can be the vanilla one.}
 Furniture Property LZC_CookingStation Auto
@@ -1337,9 +1338,9 @@ Function SetRingBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, I
 		turn[slot] = turn[slot] + 180.0
 		bedOrder[index] = place * 2 - 1
 	EndIf
-	; A head-to-head pair's two orders share one colour step; places go
-	; round the arc in order, so the colours do too.
-	forms[slot] = BedrollForm((bedOrder[index] + 10) / 2)
+	; Each bedroll takes its own colour step, in order round the arc, so the
+	; two of a head-to-head pair differ.
+	forms[slot] = BedrollForm(bedOrder[index] + 10)
 	; Only the player's bedroll gets the bedroll clutter set.
 	If index == 0
 		clutterSet[slot] = 4
@@ -1364,7 +1365,7 @@ EndFunction
 ; A camp bedroll in the style chosen in the SKSE menu: the vanilla one, or
 ; one of Bedroll Alternative's colours if it's installed.
 ; colorSeq is the bedroll's colour step for mixed colours: green, blue, red
-; in turn, the same for both bedrolls of a pair.
+; in turn (the same for both of a pair in a tent).
 Furniture Function BedrollForm(Int colorSeq)
 	Int style = BedrollStyle
 	If style < 1 || style > 4 || (Game.GetModByName(kBedrollAltPlugin) == 255 && Game.GetLightModByName(kBedrollAltPlugin) == 65535)
