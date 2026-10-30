@@ -176,6 +176,7 @@ The builder lays out five clutter sets in the holding cell, `LZC_HoldingCell`, e
 | Large tent | `LZC_LargeTentClutterAnchor` | each large tent |
 | Ring bedroll | `LZC_RingBedrollClutterAnchor` | the player's bedroll in a camp without tents |
 | Tub | `LZC_TubClutterAnchor` | the bathtub: its water, steps, clothes basket and seats |
+| Fire, second set (optional) | `LZC_FireClutterAnchor2` | the fire, instead of the first fire set, in about half of all camps |
 
 Each starts out with just a storage marker (see below). To fill a set, **arrange clutter around its anchor by eye in the Creation Kit**:
 1. Open `LZC_HoldingCell`. Each anchor points the way its object faces: a tent's entrance, or along a bedroll. It helps to place a real tent or bedroll on the anchor while you work, then delete it.

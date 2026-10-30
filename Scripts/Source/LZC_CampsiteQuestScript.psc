@@ -136,6 +136,10 @@ Furniture Property LZC_SitMarkerFollower Auto
 ; ---------------------------------------------------------------------------
 ObjectReference Property LZC_FireClutterAnchor Auto
 ObjectReference[] Property LZC_FireClutter Auto
+ObjectReference Property LZC_FireClutterAnchor2 Auto
+ObjectReference[] Property LZC_FireClutter2 Auto
+{Optional. A second fire clutter set, laid out like the first around its own
+anchor; each camp takes one of the two at random.}
 ObjectReference Property LZC_SmallTentClutterAnchor Auto
 {Faces the way the tent's entrance does.}
 ObjectReference[] Property LZC_SmallTentClutter Auto
@@ -605,7 +609,12 @@ Function SetUpCamp()
 	Int[] clutterSet = new Int[39]
 
 	forms[kCampfire] = LZC_CampfirePlaced
-	clutterSet[kCampfire] = 1
+	; One of the two fire clutter sets, at random, if there's a second.
+	Int fireSet = 1
+	If LZC_FireClutterAnchor2 && LZC_FireClutter2 && Utility.RandomInt(0, 1) == 1
+		fireSet = 6
+	EndIf
+	clutterSet[kCampfire] = fireSet
 	fwd[kCampfire] = FireForward()
 	If PlaceCampfireLight
 		forms[kLight] = LZC_CampfireLight
@@ -778,12 +787,13 @@ Function SetUpCamp()
 	EndIf
 
 	; The plugin puts everything on the ground and places it in one frame.
-	Int[] setAnchorIDs = new Int[5]
+	Int[] setAnchorIDs = new Int[6]
 	setAnchorIDs[0] = AnchorID(LZC_FireClutterAnchor)
 	setAnchorIDs[1] = AnchorID(LZC_SmallTentClutterAnchor)
 	setAnchorIDs[2] = AnchorID(LZC_LargeTentClutterAnchor)
 	setAnchorIDs[3] = AnchorID(LZC_RingBedrollClutterAnchor)
 	setAnchorIDs[4] = AnchorID(LZC_TubClutterAnchor)
+	setAnchorIDs[5] = AnchorID(LZC_FireClutterAnchor2)
 	ObjectReference[] setItems = new ObjectReference[128]
 	Int[] itemSet = new Int[128]
 	Int itemCount = AddSet(setItems, itemSet, 0, LZC_FireClutter, 1)
@@ -791,6 +801,7 @@ Function SetUpCamp()
 	itemCount = AddSet(setItems, itemSet, itemCount, LZC_LargeTentClutter, 3)
 	itemCount = AddSet(setItems, itemSet, itemCount, LZC_RingBedrollClutter, 4)
 	itemCount = AddSet(setItems, itemSet, itemCount, LZC_TubClutter, 5)
+	itemCount = AddSet(setItems, itemSet, itemCount, LZC_FireClutter2, 6)
 
 	; The cloth sound plays as the camp appears.
 	If LZC_UnpackSound
