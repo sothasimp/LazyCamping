@@ -195,9 +195,9 @@ down or gathered.}
 
 Bool Property AlignToSlope = True Auto
 {Tilt the tents, bedrolls, seats and fire to match the ground.}
-Float Property MaxSlope = 25.0 Auto
+Float Property MaxSlope = 30.0 Auto
 {Refuse to camp where the ground is steeper than this (degrees).}
-Float Property MaxTilt = 25.0 Auto
+Float Property MaxTilt = 10.0 Auto
 {With AlignToSlope, the most the camp's objects tilt with the ground
 (degrees); on steeper ground they stay at this tilt.}
 Float Property MaxStep = 48.0 Auto
