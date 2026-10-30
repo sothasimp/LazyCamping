@@ -110,10 +110,10 @@ Furniture Property LZC_SitMarkerPlayer Auto
 {Optional. Visible cross-legged seat by the fire that the player can use.}
 Furniture[] Property LZC_SeatColors Auto
 {Optional. The fire seat in each colour SeatColor can pick: 0 brown, 1 white,
-2 plaid green, 3 plaid yellow. Copies of LZC_SitMarkerPlayer with a small
-tent's texture set (a brown one included) as alternate textures. Empty
-entries use LZC_SitMarkerPlayer.}
-Int Property SeatColor = 2 Auto
+2 plaid green, 3 plaid yellow. Brown is LZC_SitMarkerPlayer itself (the mesh's
+own texture); the others are copies of it with the small tents' texture sets
+as alternate textures. Empty entries use LZC_SitMarkerPlayer.}
+Int Property SeatColor = 0 Auto
 {Which of LZC_SeatColors the three player fire seats use (SKSE menu).}
 Furniture Property LZC_BedrollSitMarker Auto
 {Optional. Cross-legged seat placed on every bedroll, facing the fire.
