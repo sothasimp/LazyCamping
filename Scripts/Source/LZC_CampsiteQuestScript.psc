@@ -268,6 +268,7 @@ Float Property kSeatStep = 60.0 AutoReadOnly         ; between neighbouring fire
 Float Property kChoppingBlockGap = 60.0 AutoReadOnly ; from a tent's side to the block
 Float Property kChoppingBlockOut = 90.0 AutoReadOnly ; without tents: beyond the bedroll arc
 Float Property kChoppingBlockBesideSmallTent = 90.0 AutoReadOnly ; further out beside a small tent
+Float Property kChoppingBlockBesideLargeTent = 170.0 AutoReadOnly ; further out beside the large tent
 Float Property kChoppingBlockTurn = 25.0 AutoReadOnly ; degrees clockwise
 Float Property kChoppingBlockAside = 40.0 AutoReadOnly ; and round from the nearest bedroll
 Float Property kBedrollHalfLength = 100.0 AutoReadOnly ; head to foot, halved
@@ -1141,6 +1142,8 @@ Function SetChoppingBlock(Form[] forms, Float[] fwd, Float[] side, Float[] turn,
 		Float distance = TentHalfWidth(sizes[outer]) + kChoppingBlockGap
 		If sizes[outer] == kSmall
 			distance += kChoppingBlockBesideSmallTent
+		Else
+			distance += kChoppingBlockBesideLargeTent
 		EndIf
 		SetBesideTent(fwd, side, turn, kChoppingBlock, tentFwd[outer], tentSide[outer], tentTurn[outer], outward, distance)
 		Return
