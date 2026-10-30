@@ -157,7 +157,7 @@ EndFunction
 
 ; Each follower's tub seat (-1 for none): the first free seat, besides the
 ; player's, for one follower, a partner first.
-Int[] Function ChooseTubMate(Int playerSeat)
+Int[] Function ChooseTubMate(Int playerTubSeat)
 	Int[] chosen = new Int[3]
 	Int i = 0
 	While i < chosen.Length
@@ -167,7 +167,7 @@ Int[] Function ChooseTubMate(Int playerSeat)
 	Int free = -1
 	i = 0
 	While free < 0 && i < tubSeats.Length
-		If i != playerSeat && tubSeats[i]
+		If i != playerTubSeat && tubSeats[i]
 			free = i
 		EndIf
 		i += 1
