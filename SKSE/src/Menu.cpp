@@ -1,5 +1,6 @@
 #include "Menu.h"
 
+#include "BedrollKit.h"
 #include "ScriptObjects.h"
 
 #define WIN32_LEAN_AND_MEAN
@@ -118,6 +119,7 @@ namespace Menu
 				if (auto* bedroll = AutoProperty(object.get(), "BedrollStyle")) {
 					bedroll->SetSInt(a_values.bedrollStyle);
 				}
+				BedrollKit::Apply(a_values.bedrollAltLoaded ? a_values.bedrollStyle : 0);
 			}
 			--pendingWrites;
 		}
@@ -185,6 +187,16 @@ namespace Menu
 				SKSE::GetTaskInterface()->AddTask([values] { Write(values); });
 			}
 		}
+	}
+
+	void ApplyBedrollKit()
+	{
+		auto  object = FindScript();
+		auto* bedroll = object ? AutoProperty(object.get(), "BedrollStyle") : nullptr;
+		auto* dataHandler = RE::TESDataHandler::GetSingleton();
+		const bool loaded = dataHandler && (dataHandler->LookupLoadedModByName(kBedrollAltPlugin) ||
+											   dataHandler->LookupLoadedLightModByName(kBedrollAltPlugin));
+		BedrollKit::Apply(bedroll && loaded ? bedroll->GetSInt() : 0);
 	}
 
 	void Register()

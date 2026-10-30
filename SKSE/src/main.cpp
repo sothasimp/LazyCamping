@@ -44,6 +44,9 @@ SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
 	SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message* a_message) {
 		if (a_message->type == SKSE::MessagingInterface::kPostLoad) {
 			Menu::Register();
+		} else if (a_message->type == SKSE::MessagingInterface::kPostLoadGame ||
+				   a_message->type == SKSE::MessagingInterface::kNewGame) {
+			Menu::ApplyBedrollKit();
 		}
 	});
 
