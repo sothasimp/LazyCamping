@@ -26,7 +26,10 @@ namespace Menu
 			bool         placeTub{ true };
 			bool         tubInLargeTent{ false };
 			bool         alignToSlope{ true };
+			int          seatColor{ 0 };
 		};
+
+		constexpr const char* kSeatColors[] = { "Brown", "White", "Plaid green", "Plaid yellow" };
 
 		std::mutex                            lock;
 		Values                                shown;
@@ -57,10 +60,11 @@ namespace Menu
 			auto*  tub = object ? AutoProperty(object.get(), "PlaceTub") : nullptr;
 			auto*  tubInTent = object ? AutoProperty(object.get(), "TubInLargeTent") : nullptr;
 			auto*  slope = object ? AutoProperty(object.get(), "AlignToSlope") : nullptr;
-			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope;
+			auto*  seat = object ? AutoProperty(object.get(), "SeatColor") : nullptr;
+			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat;
 			if (found) {
 				values = { firewood->GetBool(), burnHours->GetFloat(), block->GetBool(), grass->GetBool(), light->GetBool(), tub->GetBool(),
-					tubInTent->GetBool(), slope->GetBool() };
+					tubInTent->GetBool(), slope->GetBool(), seat->GetSInt() };
 			}
 
 			std::scoped_lock guard(lock);
@@ -97,6 +101,9 @@ namespace Menu
 				}
 				if (auto* slope = AutoProperty(object.get(), "AlignToSlope")) {
 					slope->SetBool(a_values.alignToSlope);
+				}
+				if (auto* seat = AutoProperty(object.get(), "SeatColor")) {
+					seat->SetSInt(a_values.seatColor);
 				}
 			}
 			--pendingWrites;
@@ -139,6 +146,8 @@ namespace Menu
 			ImGuiMCP::EndDisabled();
 			changed |= ImGuiMCP::Checkbox("Align to slope", &values.alignToSlope);
 			ImGuiMCP::SetItemTooltip("Tilt the tents, bedrolls, seats, fire and clutter to match the ground. Takes effect at the next camp.");
+			changed |= ImGuiMCP::Combo("Seat colour", &values.seatColor, kSeatColors, static_cast<int>(std::size(kSeatColors)));
+			ImGuiMCP::SetItemTooltip("The colour of the seats by the fire, matching the tents. Takes effect at the next camp.");
 			changed |= ImGuiMCP::Checkbox("Clear grass around the camp", &values.hideGrassUnderCamp);
 			ImGuiMCP::SetItemTooltip("Clear the grass in a circle around the camp while it's up. Takes effect at the next camp.");
 			changed |= ImGuiMCP::Checkbox("Campfire light marker", &values.placeCampfireLight);

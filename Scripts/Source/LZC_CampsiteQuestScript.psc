@@ -108,6 +108,12 @@ a box primitive on the L_TRIGGER layer, base LZC_CookActivator
 step into it take off their clothes, and put them back on when they step out.}
 Furniture Property LZC_SitMarkerPlayer Auto
 {Optional. Visible cross-legged seat by the fire that the player can use.}
+Furniture[] Property LZC_SeatColors Auto
+{Optional. The fire seat in each colour SeatColor can pick: 0 brown, 1 white,
+2 plaid green, 3 plaid yellow. Copies of LZC_SitMarkerPlayer with the small
+tents' texture sets as alternate textures. Empty entries use LZC_SitMarkerPlayer.}
+Int Property SeatColor = 0 Auto
+{Which of LZC_SeatColors the three player fire seats use (SKSE menu).}
 Furniture Property LZC_BedrollSitMarker Auto
 {Optional. Cross-legged seat placed on every bedroll, facing the fire.
 Invisible but selectable: its model is a small collision box with no visible
@@ -636,19 +642,20 @@ Function SetUpCamp()
 		EndIf
 	EndIf
 	Float seatStep = kSeatStep
-	SetSeat(forms, fwd, side, turn, kPlayerSeat, LZC_SitMarkerPlayer, 0.0)
+	Furniture playerSeat = PlayerSeatForm()
+	SetSeat(forms, fwd, side, turn, kPlayerSeat, playerSeat, 0.0)
 	; The two follower seats either side of the player's, in front of the
 	; middle tent, are the player's kind too, so the player can sit there, and
 	; they're placed even without followers.
 	Int fireSideSeats = followerSeats
-	If LZC_SitMarkerPlayer && fireSideSeats < 2
+	If playerSeat && fireSideSeats < 2
 		fireSideSeats = 2
 	EndIf
 	Int f = 0
 	While f < fireSideSeats
 		Form seat = LZC_SitMarkerFollower
-		If f < 2 && LZC_SitMarkerPlayer
-			seat = LZC_SitMarkerPlayer
+		If f < 2 && playerSeat
+			seat = playerSeat
 		EndIf
 		SetSeat(forms, fwd, side, turn, kFirstFollowerSeat + f, seat, FanPlace(f + 1) * seatStep)
 		f += 1
@@ -1333,6 +1340,14 @@ EndFunction
 ; takes a pair that touches.
 Int Function PairedOrder(Int index)
 	Return index + index / 2
+EndFunction
+
+; The player's fire seat in the colour chosen in the SKSE menu.
+Furniture Function PlayerSeatForm()
+	If LZC_SeatColors && SeatColor >= 0 && SeatColor < LZC_SeatColors.Length && LZC_SeatColors[SeatColor]
+		Return LZC_SeatColors[SeatColor]
+	EndIf
+	Return LZC_SitMarkerPlayer
 EndFunction
 
 ; How many kits (colours and variants) there are of this size.
