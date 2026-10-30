@@ -77,7 +77,7 @@ Setting up a camp is one call into `LazyCamping.dll`, **`BuildCamp`**, so it hap
 
 1. works out which tents and bedrolls go up and where everything stands relative to the player (`SKSE/src/CampLayout.cpp`, where the layout distances and angles live);
 2. checks the ground under the fire and every tent's footprint, and refuses the camp if the ground is too steep, uneven, blocked by rocks or logs, underwater, or missing;
-3. finds the ground under every object, tilts each one to the slope (up to 10 degrees), and creates them all with their clutter at their final positions. It finds the ground for everything before placing anything, so a bedroll's ground check can't hit the tent standing over it;
+3. finds the ground under every object, tilts each one to the slope of the ground under its whole footprint (a plane through the ground at its corners, up to 10 degrees), and creates them all with their clutter at their final positions. It finds the ground for everything before placing anything, so a bedroll's ground check can't hit the tent standing over it;
 4. moves the cook box, storage backpack and map marker to the camp, sets up the bedroll seats, and clears the grass in a circle around the camp (see *Hiding grass* below).
 
 The script keeps the rest: what happens on the camp's events, the follower quest, which it hands the camp's seats and bedrolls, and the tub's trigger and water. The events themselves (casting the power, activating a camp object, sitting down) are caught by the DLL and passed to the scripts, so only the two quests carry scripts, plus `LZC_TubTriggerScript` on the tub's trigger box, which tells the camp script when a follower steps into or out of the tub. Packing up calls **`ShowGrass`**.

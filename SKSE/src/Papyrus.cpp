@@ -130,10 +130,54 @@ namespace Papyrus
 			std::uint16_t       scale{ 100 };
 		};
 
+		// The least the ground is sampled out from an object's centre when
+		// working out its slope, for objects smaller than this.
+		constexpr float kMinSlopeSpan = 32.0f;
+
+		// The slope of the ground under an object's whole footprint (its
+		// bounds, facing `a_yaw`, centred on `a_centre`): a plane through the
+		// ground at the four corners, so a bump or a single terrain triangle
+		// under the centre doesn't tip it. `a_fallback` if a corner finds no
+		// ground.
+		RE::NiPoint3 FootprintNormal(RE::TESObjectREFR* a_origin, const RE::TESBoundObject* a_base, const RE::NiPoint3& a_centre,
+			float a_yaw, const RE::NiPoint3& a_fallback)
+		{
+			const auto& bounds = a_base->boundData;
+			// The bounds in the object's own frame: x right, y forward.
+			const float midX = (bounds.boundMin.x + bounds.boundMax.x) * 0.5f;
+			const float midY = (bounds.boundMin.y + bounds.boundMax.y) * 0.5f;
+			const float halfX = std::max((bounds.boundMax.x - bounds.boundMin.x) * 0.5f, kMinSlopeSpan);
+			const float halfY = std::max((bounds.boundMax.y - bounds.boundMin.y) * 0.5f, kMinSlopeSpan);
+
+			const RE::NiPoint3 right{ std::cos(a_yaw), -std::sin(a_yaw), 0.0f };
+			const RE::NiPoint3 forward{ std::sin(a_yaw), std::cos(a_yaw), 0.0f };
+
+			// Corners in the order (-x,-y), (+x,-y), (-x,+y), (+x,+y).
+			std::array<float, 4> z{};
+			for (std::size_t i = 0; i < z.size(); ++i) {
+				const float        x = midX + ((i & 1) ? halfX : -halfX);
+				const float        y = midY + ((i & 2) ? halfY : -halfY);
+				const RE::NiPoint3 corner = a_centre + right * x + forward * y;
+				const auto         hit = GroundAt(a_origin, corner.x, corner.y);
+				if (!hit) {
+					return a_fallback;
+				}
+				z[i] = hit->point.z;
+			}
+
+			// The rise per unit along the object's right and forward.
+			const float riseX = ((z[1] + z[3]) - (z[0] + z[2])) / (4.0f * halfX);
+			const float riseY = ((z[2] + z[3]) - (z[0] + z[1])) / (4.0f * halfY);
+			RE::NiPoint3 normal = RE::NiPoint3{ 0.0f, 0.0f, 1.0f } - right * riseX - forward * riseY;
+			normal.Unitize();
+			return normal;
+		}
+
 		// Finds the ground under (x, y) and works out the angles for an object
 		// with rotation `a_relative` in a frame facing `a_yaw` (tilted to the
-		// slope if asked). Fills in the position's z (ground + lift, or origin
-		// height + lift if no ground was found) and the angles.
+		// slope under its footprint if asked). Fills in the position's z
+		// (ground + lift, or origin height + lift if no ground was found) and
+		// the angles.
 		void GroundAndTilt(RE::TESObjectREFR* a_origin, PendingRef& a_ref, float a_yaw, const RE::NiMatrix3& a_relative,
 			float a_lift, bool a_alignToSlope, float a_maxTiltDegrees)
 		{
@@ -141,8 +185,9 @@ namespace Papyrus
 			if (const auto hit = GroundAt(a_origin, a_ref.position.x, a_ref.position.y)) {
 				a_ref.position.z = hit->point.z;
 				if (a_alignToSlope) {
+					const RE::NiPoint3 normal = FootprintNormal(a_origin, a_ref.base, hit->point, a_yaw, hit->normal);
 					frame = Placement::MatrixFromAngles(
-						Placement::AnglesForSurface(a_yaw, Placement::ClampTilt(hit->normal, a_maxTiltDegrees)));
+						Placement::AnglesForSurface(a_yaw, Placement::ClampTilt(normal, a_maxTiltDegrees)));
 				}
 			}
 			a_ref.position.z += a_lift;
