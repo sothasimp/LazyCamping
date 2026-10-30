@@ -289,6 +289,7 @@ Float Property kChoppingBlockBesideSmallTent = 90.0 AutoReadOnly ; further out b
 Float Property kChoppingBlockBesideLargeTent = 170.0 AutoReadOnly ; further out beside the large tent
 Float Property kChoppingBlockTurn = 25.0 AutoReadOnly ; degrees clockwise
 Int Property kFirewoodPerFire = 2 AutoReadOnly
+Float Property kTentGap = 15.0 AutoReadOnly         ; between a side tent and the large tent
 String Property kBedrollAltPlugin = "Bedroll Alternative - BOS Color Variance.esp" AutoReadOnly
 Float Property kChoppingBlockAside = 40.0 AutoReadOnly ; and round from the nearest bedroll
 Float Property kBedrollHalfLength = 100.0 AutoReadOnly ; head to foot, halved
@@ -565,6 +566,9 @@ Function SetUpCamp()
 		tentDistance[t] = SmallTentDistance
 		If sizes[t] == kLarge
 			tentDistance[t] = LargeTentDistance
+		ElseIf t > 0 && sizes[0] == kLarge
+			; Beside the large tent: pushed out until it clears it.
+			tentDistance[t] = ClearOfLargeTent(sizes[t], bearing, SmallTentDistance)
 		EndIf
 		tentFwd[t] = FireForward() + tentDistance[t] * Math.Cos(bearing)
 		tentSide[t] = tentDistance[t] * Math.Sin(bearing)
@@ -1515,6 +1519,54 @@ Int Function TentCapacity(Int size)
 		Return 4
 	EndIf
 	Return capacity
+EndFunction
+
+; How far from the fire a tent of this size at `bearing` (degrees) must stand,
+; from `distance` outward in steps of 5, for its footprint to clear the large
+; tent's in the middle by kTentGap. Distances are from the fire's centre.
+Float Function ClearOfLargeTent(Int size, Float bearing, Float distance)
+	While distance < 1000.0 && OverlapsLargeTent(size, bearing, distance)
+		distance += 5.0
+	EndWhile
+	Return distance
+EndFunction
+
+; Whether a tent of this size at `bearing` and `distance`, facing the fire,
+; comes within kTentGap of the large tent in the middle. Both footprints are
+; rectangles; each one's corners and edge midpoints are tested against the
+; other, which catches any overlap between rectangles of these sizes.
+Bool Function OverlapsLargeTent(Int size, Float bearing, Float distance)
+	; In the large tent's frame: x out from the fire, y to the side.
+	Float largeX = LargeTentDistance
+	Float hd = TentHalfDepth(size)
+	Float hw = TentHalfWidth(size)
+	Float c = Math.Cos(bearing)
+	Float sn = Math.Sin(bearing)
+	Float cx = distance * c
+	Float cy = distance * sn
+	Int i = -1
+	While i <= 1
+		Int j = -1
+		While j <= 1
+			; A point of this tent: along its depth (radial) and width.
+			Float px = cx + i * hd * c + j * hw * sn
+			Float py = cy + i * hd * sn - j * hw * c
+			If Math.abs(px - largeX) < LargeTentHalfDepth + kTentGap && Math.abs(py) < LargeTentHalfWidth + kTentGap
+				Return True
+			EndIf
+			; A point of the large tent, in this tent's frame.
+			Float qx = largeX + i * LargeTentHalfDepth - cx
+			Float qy = j * LargeTentHalfWidth - cy
+			Float u = qx * c + qy * sn
+			Float v = qx * sn - qy * c
+			If Math.abs(u) < hd + kTentGap && Math.abs(v) < hw + kTentGap
+				Return True
+			EndIf
+			j += 1
+		EndWhile
+		i += 1
+	EndWhile
+	Return False
 EndFunction
 
 Float Function TentHalfWidth(Int size)
