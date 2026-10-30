@@ -273,7 +273,7 @@ Int Property kTub = 38 AutoReadOnly
 Int Property kSlotCount = 39 AutoReadOnly
 Int Property kMaxFollowerSeats = 5 AutoReadOnly    ; fire seats besides the player's
 
-Int Property kMaxFollowers = 3 AutoReadOnly
+Int Property kMaxFollowers = 5 AutoReadOnly
 Int Property kMaxTents = 3 AutoReadOnly
 Int Property kMaxBedrolls = 12 AutoReadOnly
 Int Property kRingBedrolls = 4 AutoReadOnly        ; without tents

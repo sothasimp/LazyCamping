@@ -220,7 +220,7 @@ The camp also uses these when it shares bedrolls out between the tents, so partn
 | 2 | the player is sleeping within `CampRadius` of the fire | sleep in their bedrolls |
 | 3 | the player is at camp, awake and not sitting | sandbox around the campfire (`CampCenter` alias) |
 
-**Making the follower packages (once, in the Creation Kit).** The builder doesn't make these: the Creation Kit couldn't load the packages it wrote. For each N from 1 to 3, make two packages, both with **Owner Quest** `LZC_CampFollowersQuest`:
+**Making the follower packages (once, in the Creation Kit).** The builder doesn't make these: the Creation Kit couldn't load the packages it wrote. For each N from 1 to 5, make two packages, both with **Owner Quest** `LZC_CampFollowersQuest`:
 
 | Package | Template | Data | Condition (run on subject) |
 |---|---|---|---|

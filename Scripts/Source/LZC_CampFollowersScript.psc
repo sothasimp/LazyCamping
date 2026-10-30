@@ -20,11 +20,11 @@ package simply doesn't run.}
 
 Actor Property PlayerRef Auto
 ReferenceAlias[] Property Followers Auto
-{Follower1-3, filled by alias conditions when the quest starts.}
+{Follower1-5, filled by alias conditions when the quest starts.}
 ReferenceAlias[] Property Bedrolls Auto
-{Bedroll1-3, filled when the player goes to sleep.}
+{Bedroll1-5, filled when the player goes to sleep.}
 ReferenceAlias[] Property Seats Auto
-{Seat1-3: fire seats, or bedroll seats when the player sits on a bedroll;
+{Seat1-5: fire seats, or bedroll seats when the player sits on a bedroll;
 filled when the player sits down.}
 GlobalVariable Property LZC_CampActivity Auto
 {0 = normal, 1 = player sitting at the fire, 2 = player sleeping at camp,
@@ -101,7 +101,7 @@ Function Shutdown()
 	UnregisterForUpdate()
 	LZC_CampActivity.SetValueInt(kNormal)
 
-	Actor[] actors = new Actor[3]
+	Actor[] actors = new Actor[5]
 	Int i = 0
 	While i < Followers.Length && i < actors.Length
 		actors[i] = Followers[i].GetActorRef()
@@ -165,7 +165,7 @@ EndFunction
 ; Each follower's tub seat (-1 for none): the first free seat, besides the
 ; player's, for one follower, a partner first.
 Int[] Function ChooseTubMate(Int playerTubSeat)
-	Int[] chosen = new Int[3]
+	Int[] chosen = new Int[5]
 	Int i = 0
 	While i < chosen.Length
 		chosen[i] = -1
@@ -287,7 +287,7 @@ Int[] Function ChooseSpots(ObjectReference[] spots, Int[] groups, Int[] orders, 
 		taken[playerBed] = True
 	EndIf
 
-	Int[] chosen = new Int[3]
+	Int[] chosen = new Int[5]
 	i = 0
 	While i < chosen.Length
 		chosen[i] = -1
@@ -461,7 +461,7 @@ EndFunction
 ; (relationship rank Lover with each other), or -1. The player's partners
 ; are paired with the player instead, and each follower with at most one.
 Int[] Function Mates()
-	Int[] mates = new Int[3]
+	Int[] mates = new Int[5]
 	Int i = 0
 	While i < mates.Length
 		mates[i] = -1

@@ -23,7 +23,7 @@ public sealed class Builder
     public static readonly FormKey XMarkerHeadingKey = new(SkyrimKey, 0x000034);
 
     public static readonly string[] Colours = ["Brown", "Blue", "Green", "Red", "White"];
-    const int MaxFollowers = 3;
+    const int MaxFollowers = 5;
     const short ScriptVersion = 5;
     const ushort ScriptObjectFormat = 2;
     const int PersistentFlag = 0x400;   // reference record flag: persistent
