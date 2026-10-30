@@ -290,6 +290,7 @@ Float Property kChoppingBlockBesideLargeTent = 170.0 AutoReadOnly ; further out 
 Float Property kChoppingBlockTurn = 25.0 AutoReadOnly ; degrees clockwise
 Int Property kFirewoodPerFire = 2 AutoReadOnly
 Float Property kTentGap = 15.0 AutoReadOnly         ; between a side tent and the large tent
+Float Property kSideTentShift = 250.0 AutoReadOnly   ; side tents beside the large tent, toward the player
 String Property kBedrollAltPlugin = "Bedroll Alternative - BOS Color Variance.esp" AutoReadOnly
 Float Property kChoppingBlockAside = 40.0 AutoReadOnly ; and round from the nearest bedroll
 Float Property kBedrollHalfLength = 100.0 AutoReadOnly ; head to foot, halved
@@ -573,6 +574,27 @@ Function SetUpCamp()
 		tentFwd[t] = FireForward() + tentDistance[t] * Math.Cos(bearing)
 		tentSide[t] = tentDistance[t] * Math.Sin(bearing)
 		tentTurn[t] = bearing + 180.0
+		If t > 0 && sizes[0] == kLarge
+			; Beside the large tent: slid kSideTentShift toward the player,
+			; then turned to face the fire, so the tents ring the fire with
+			; their entrances together.
+			Float shiftedFwd = tentFwd[t] - kSideTentShift
+			tentFwd[t] = shiftedFwd
+			Float dx = shiftedFwd - FireForward()
+			Float dy = tentSide[t]
+			Float facing = 90.0
+			If dy < 0.0
+				facing = -90.0
+			EndIf
+			If Math.abs(dx) > 0.001
+				facing = Math.atan(dy / dx)
+				If dx < 0.0
+					facing += 180.0
+				EndIf
+			EndIf
+			tentTurn[t] = facing + 180.0
+			tentDistance[t] = Math.Sqrt(dx * dx + dy * dy)
+		EndIf
 		t += 1
 	EndWhile
 
