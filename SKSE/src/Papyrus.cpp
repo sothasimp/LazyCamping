@@ -1,6 +1,7 @@
 #include "Papyrus.h"
 
 #include "BedrollSeats.h"
+#include "CampLayout.h"
 #include "FormNames.h"
 #include "GrassHider.h"
 #include "Placement.h"
@@ -17,7 +18,7 @@ namespace Papyrus
 	namespace
 	{
 		constexpr auto         kClass = "LZC_Native"sv;
-		constexpr std::int32_t kVersion = 11;
+		constexpr std::int32_t kVersion = 12;
 
 		constexpr RE::FormID kXMarkerHeading = 0x34;  // Skyrim.esm
 
@@ -25,16 +26,14 @@ namespace Papyrus
 		constexpr float kSearchUp = 256.0f;
 		constexpr float kSearchDown = 1024.0f;
 
-		// Result codes for CheckCampSite (mirrored in LZC_CampsiteQuestScript).
-		enum AreaResult : std::int32_t
-		{
-			kClear = 0,
-			kNoGround = 1,
-			kTooSteep = 2,
-			kUneven = 3,
-			kUnderwater = 4,
-			kBadArguments = 5
-		};
+		// Result codes for the ground check (mirrored in LZC_CampsiteQuestScript).
+		using AreaResult = Camp::Result;
+		using Camp::kBadArguments;
+		using Camp::kClear;
+		using Camp::kNoGround;
+		using Camp::kTooSteep;
+		using Camp::kUnderwater;
+		using Camp::kUneven;
 
 		constexpr float ToRadians(float a_deg) { return a_deg * std::numbers::pi_v<float> / 180.0f; }
 
@@ -109,30 +108,6 @@ namespace Papyrus
 			return kVersion;
 		}
 
-		// Checks the ground under the first `count` footprints (the fire and the
-		// tents). Returns the first problem found, or kClear.
-		std::int32_t CheckCampSite(RE::StaticFunctionTag*, RE::TESObjectREFR* a_origin, float a_headingDegrees,
-			std::int32_t a_count, std::vector<float> a_fwd, std::vector<float> a_side, std::vector<float> a_turn,
-			std::vector<float> a_halfWidth, std::vector<float> a_halfDepth, float a_maxStep, float a_maxSlopeDegrees)
-		{
-			const auto count = static_cast<std::size_t>(std::max(a_count, 0));
-			if (!a_origin || a_fwd.size() < count || a_side.size() < count || a_turn.size() < count ||
-				a_halfWidth.size() < count || a_halfDepth.size() < count) {
-				return kBadArguments;
-			}
-
-			const float heading = ToRadians(a_headingDegrees);
-			for (std::size_t i = 0; i < count; ++i) {
-				const auto centre = LocalToWorld(a_origin, heading, a_fwd[i], a_side[i]);
-				const auto result = CheckFootprint(a_origin, centre, heading + ToRadians(a_turn[i]),
-					a_halfWidth[i], a_halfDepth[i], a_maxStep, a_maxSlopeDegrees);
-				if (result != kClear) {
-					return result;
-				}
-			}
-			return kClear;
-		}
-
 		// Scales a reference the way Papyrus's SetScale does: the reference's
 		// own scale, flagged as changed so the save keeps it, and its 3D if
 		// that's already loaded (else it loads at the new scale).
@@ -178,7 +153,7 @@ namespace Papyrus
 		// asked, plus the clutter around each layout object.
 		//
 		// Clutter sets are Creation Kit references in a holding cell: each set
-		// has an anchor (the reference a_setAnchorIDs[s]) standing in for its camp object,
+		// has an anchor (a_setAnchors[s]) standing in for its camp object,
 		// and items (a_setItems[j], in set a_itemSet[j], 1-based; 0 = unused)
 		// arranged around it. A layout object with a_clutterSet[i] = s + 1 gets a
 		// copy of set s, with each item's offset and rotation relative to the
@@ -192,17 +167,29 @@ namespace Papyrus
 		// player's storage goes: a copy of it is placed and returned at index
 		// count (or None there), for the script to move the storage onto.
 		//
+		// Objects marked in `level` stand level even with alignToSlope.
+		//
 		// Returns the layout's references (None where the form is None), then
 		// the storage spot, then the clutter. The ground under every object is
 		// found before anything is placed, so nothing lands on a tent's roof.
 		// Returns an empty array if the arguments don't line up.
-		std::vector<RE::TESObjectREFR*> PlaceCamp(RE::StaticFunctionTag*, RE::TESObjectREFR* a_origin, float a_headingDegrees,
-			std::vector<RE::TESForm*> a_forms, std::vector<float> a_fwd, std::vector<float> a_side,
-			std::vector<float> a_lift, std::vector<float> a_turn, bool a_alignToSlope, float a_maxTiltDegrees,
-			std::vector<std::int32_t> a_clutterSet, std::vector<std::int32_t> a_setAnchorIDs,
-			std::vector<RE::TESObjectREFR*> a_setItems, std::vector<std::int32_t> a_itemSet,
-			std::vector<RE::TESObjectREFR*> a_storageMarkers)
+		std::vector<RE::TESObjectREFR*> PlaceImpl(const Camp::Layout& a_layout)
 		{
+			const auto&       a_forms = a_layout.forms;
+			const auto&       a_fwd = a_layout.fwd;
+			const auto&       a_side = a_layout.side;
+			const auto&       a_lift = a_layout.lift;
+			const auto&       a_turn = a_layout.turn;
+			const auto&       a_level = a_layout.level;
+			const auto&       a_clutterSet = a_layout.clutterSet;
+			const auto&       a_setAnchors = a_layout.setAnchors;
+			const auto&       a_setItems = a_layout.setItems;
+			const auto&       a_itemSet = a_layout.itemSet;
+			const auto&       a_storageMarkers = a_layout.storageMarkers;
+			auto*             a_origin = a_layout.origin;
+			const bool        a_alignToSlope = a_layout.alignToSlope;
+			const float       a_maxTiltDegrees = a_layout.maxTiltDegrees;
+			const float       a_headingDegrees = a_layout.headingDegrees;
 			const std::size_t count = a_forms.size();
 			auto*             dataHandler = RE::TESDataHandler::GetSingleton();
 			if (!a_origin || !dataHandler || a_fwd.size() < count || a_side.size() < count ||
@@ -230,8 +217,8 @@ namespace Papyrus
 				const std::int32_t set = a_clutterSet[i] - 1;
 				RE::TESObjectREFR* anchor = nullptr;
 				if (set >= 0) {
-					if (static_cast<std::size_t>(set) < a_setAnchorIDs.size() && a_setAnchorIDs[set] != 0) {
-						anchor = RE::TESForm::LookupByID<RE::TESObjectREFR>(static_cast<RE::FormID>(a_setAnchorIDs[set]));
+					if (static_cast<std::size_t>(set) < a_setAnchors.size()) {
+						anchor = a_setAnchors[set];
 					}
 					if (!anchor) {
 						logger::warn("PlaceCamp: object {} ({:08X}) has clutter set {}, but its anchor isn't set or isn't found", i,
@@ -243,7 +230,8 @@ namespace Papyrus
 				// (z = 0) raises it.
 				const float yaw = heading + ToRadians(a_turn[i]) + (anchor ? anchor->GetAngle().z : 0.0f);
 				const float lift = a_lift[i] + (anchor ? anchor->GetPosition().z : 0.0f);
-				GroundAndTilt(a_origin, ref, yaw, identity, lift, a_alignToSlope, a_maxTiltDegrees);
+				const bool level = i < a_level.size() && a_level[i];
+				GroundAndTilt(a_origin, ref, yaw, identity, lift, a_alignToSlope && !level, a_maxTiltDegrees);
 				if (!anchor) {
 					continue;
 				}
@@ -327,23 +315,9 @@ namespace Papyrus
 			return refs;
 		}
 
-		// Hides grass under the references (the camp), replacing any earlier
-		// camp's; see GrassHider.
-		void HideGrass(RE::StaticFunctionTag*, std::vector<RE::TESObjectREFR*> a_refs)
-		{
-			GrassHider::Hide(a_refs);
-		}
-
 		void ShowGrass(RE::StaticFunctionTag*)
 		{
 			GrassHider::Show();
-		}
-
-		// The camp's bedrolls and the seat on each, for sneak-activating a
-		// bedroll to sit on it; see BedrollSeats.
-		void SetBedrollSeats(RE::StaticFunctionTag*, std::vector<RE::TESObjectREFR*> a_beds, std::vector<RE::TESObjectREFR*> a_seats)
-		{
-			BedrollSeats::Set(a_beds, a_seats);
 		}
 
 		void ClearBedrollSeats(RE::StaticFunctionTag*)
@@ -359,16 +333,39 @@ namespace Papyrus
 		}
 	}
 
+	namespace Camp
+	{
+		std::int32_t CheckSite(RE::TESObjectREFR* a_origin, float a_headingDegrees, const std::vector<Footprint>& a_footprints,
+			float a_maxStep, float a_maxSlopeDegrees)
+		{
+			if (!a_origin) {
+				return kBadArguments;
+			}
+			const float heading = ToRadians(a_headingDegrees);
+			for (const auto& footprint : a_footprints) {
+				const auto centre = LocalToWorld(a_origin, heading, footprint.fwd, footprint.side);
+				const auto result = CheckFootprint(a_origin, centre, heading + ToRadians(footprint.turn),
+					footprint.halfWidth, footprint.halfDepth, a_maxStep, a_maxSlopeDegrees);
+				if (result != kClear) {
+					return result;
+				}
+			}
+			return kClear;
+		}
+
+		std::vector<RE::TESObjectREFR*> Place(const Layout& a_layout)
+		{
+			return PlaceImpl(a_layout);
+		}
+	}
+
 	bool Register(RE::BSScript::IVirtualMachine* a_vm)
 	{
 		a_vm->RegisterFunction("GetVersion"sv, kClass, GetVersion);
-		a_vm->RegisterFunction("CheckCampSite"sv, kClass, CheckCampSite);
-		a_vm->RegisterFunction("PlaceCamp"sv, kClass, PlaceCamp);
-		a_vm->RegisterFunction("HideGrass"sv, kClass, HideGrass);
 		a_vm->RegisterFunction("ShowGrass"sv, kClass, ShowGrass);
 		a_vm->RegisterFunction("RenameForm"sv, kClass, RenameForm);
-		a_vm->RegisterFunction("SetBedrollSeats"sv, kClass, SetBedrollSeats);
 		a_vm->RegisterFunction("ClearBedrollSeats"sv, kClass, ClearBedrollSeats);
+		CampLayout::Register(a_vm);
 		logger::info("Registered {} native functions", kClass);
 		return true;
 	}

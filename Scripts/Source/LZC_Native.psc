@@ -1,54 +1,43 @@
 Scriptname LZC_Native Hidden
 {Native functions provided by LazyCamping.dll (SKSE), which the mod requires.
-If the DLL is not loaded these are unbound and GetVersion() returns 0.
-
-Camp layouts are offsets from an origin (the player): fwd units in front
-along heading and side units to the right, with turn added to heading for
-each object's facing. Angles are in degrees.}
+If the DLL is not loaded these are unbound and GetVersion() returns 0.}
 
 ; Returns the plugin version, or 0 if LazyCamping.dll is not loaded.
 Int Function GetVersion() Global Native
 
-; Checks the ground under the first count footprints (rectangles with the
-; given half-sizes along their right and forward axes).
-; Returns 0 = clear, 1 = no ground, 2 = too steep, 3 = uneven or obstructed,
-; 4 = underwater, 5 = bad arguments.
-Int Function CheckCampSite(ObjectReference origin, Float heading, Int count, Float[] fwd, Float[] side, Float[] turn, Float[] halfWidth, Float[] halfDepth, Float maxStep, Float maxSlope) Global Native
-
-; Places every form in the layout on the ground (raised by lift), tilted to
-; the slope if alignToSlope (by at most maxTilt degrees), all in one frame.
+; Sets up a camp in front of the player, all in one go: works out which tents
+; and bedrolls go up and where everything stands from campQuest's
+; LZC_CampsiteQuestScript properties (partners and couples are the follower
+; counts, for sharing out the bedrolls), checks the ground, places it all with
+; its clutter, and moves the cook box, storage backpack and map marker to the
+; camp, sets up the bedroll seats and hides the grass.
 ;
-; Clutter: a layout object with clutterSet[i] = s + 1 also gets a copy of
-; clutter set s around it. Set s is the reference whose FormID is
-; setAnchorIDs[s] (standing in for the camp object; passed by FormID because
-; scripted references don't always reach the plugin) plus the setItems whose
-; itemSet entry is s + 1 (0 = unused); each item's offset and rotation
-; relative to the anchor carry over. The anchor's turn turns the object.
-; The holding cell floor is z = 0: the
-; object is raised by its anchor's height above it, and each item sits on the
-; ground at its own spot, raised by its own height above it. The first item found that is one of storageMarkers isn't copied
-; as clutter: a copy of it marks where the player's storage goes.
-;
-; Returns the layout's references (None where the form is None), then the
-; storage spot (or None), then the clutter; or an empty array if the arrays
-; don't line up.
-ObjectReference[] Function PlaceCamp(ObjectReference origin, Float heading, Form[] forms, Float[] fwd, Float[] side, Float[] lift, Float[] turn, Bool alignToSlope, Float maxTilt, Int[] clutterSet, Int[] setAnchorIDs, ObjectReference[] setItems, Int[] itemSet, ObjectReference[] storageMarkers) Global Native
+; Returns the placed references in the camp's slots (see the script's
+; placedRefs), then the clutter; or an empty array if the camp couldn't go up,
+; with GetBuildStatus saying why: 1 = no ground, 2 = too steep, 3 = uneven or
+; obstructed, 4 = underwater, 5 = something else.
+ObjectReference[] Function BuildCamp(Quest campQuest, Int partners, Int couples) Global Native
+Int Function GetBuildStatus() Global Native
 
-; Hides the grass in a circle just big enough to hold all the references (by
-; their object bounds), replacing any earlier camp's. Grass that
-; loads later around them (coming back to the camp, loading a save) is hidden
-; too, until ShowGrass. Works with No Grass In Objects' grass cache.
-Function HideGrass(ObjectReference[] refs) Global Native
+; What the last BuildCamp laid out, for the follower quest: the fire seats
+; (the player's first) and their places in the fan, the bedrolls and the seat
+; on each, each bedroll's group (its tent) and order in the row, the seats in
+; the tub, and the tents' sizes (0 small, 1 large) and count.
+ObjectReference[] Function GetFireSeats() Global Native
+Int[] Function GetFirePlaces() Global Native
+ObjectReference[] Function GetCampBeds() Global Native
+ObjectReference[] Function GetBedSeats() Global Native
+Int[] Function GetBedGroups() Global Native
+Int[] Function GetBedOrders() Global Native
+ObjectReference[] Function GetTubSeats() Global Native
+Int[] Function GetTentSizes() Global Native
+Int Function GetTentCount() Global Native
 
-; Brings back the grass hidden by HideGrass.
+; Brings back the grass hidden when the camp went up.
 Function ShowGrass() Global Native
 
-; The camp's bedrolls and the seat on each (same index; pairs with a None are
-; skipped). Sneaking and activating one of the bedrolls sits the player on its
-; seat instead of opening the sleep menu. Replaces any earlier camp's.
-Function SetBedrollSeats(ObjectReference[] beds, ObjectReference[] seats) Global Native
-
-; Forgets the bedrolls given to SetBedrollSeats.
+; Forgets the camp's bedroll seats (sneak-activating a camp bedroll sits the
+; player on its seat until then).
 Function ClearBedrollSeats() Global Native
 
 ; Renames a form (a spell, say), or gives it its own name back if name is
