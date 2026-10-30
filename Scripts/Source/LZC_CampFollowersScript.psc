@@ -12,8 +12,11 @@ followers when the quest starts. Each follower has two alias packages:
   sleep, skipping whichever camp bedroll the player is lying in. A spouse or
   lover gets the free bedroll next to the player's, and each follower couple
   two free bedrolls side by side.
-The rest of the time they follow the player as normal. A follower without a
-seat or bedroll has an empty alias, so that package simply doesn't run.}
+- sandbox around the camp (CampCenter) while LZC_CampActivity == 3: the
+  player is within CampRadius of the fire and not sitting or sleeping.
+The rest of the time (the player away from camp) they follow the player as
+normal. A follower without a seat or bedroll has an empty alias, so that
+package simply doesn't run.}
 
 Actor Property PlayerRef Auto
 ReferenceAlias[] Property Followers Auto
@@ -24,7 +27,11 @@ ReferenceAlias[] Property Seats Auto
 {Seat1-3: fire seats, or bedroll seats when the player sits on a bedroll;
 filled when the player sits down.}
 GlobalVariable Property LZC_CampActivity Auto
-{0 = normal, 1 = player sitting at the fire, 2 = player sleeping at camp.}
+{0 = normal, 1 = player sitting at the fire, 2 = player sleeping at camp,
+3 = player at camp (followers sandbox).}
+ReferenceAlias Property CampCenter Auto
+{Optional. Filled with the camp's campfire, for the followers' sandbox
+package to sandbox near.}
 Float Property CampRadius = 1024.0 Auto
 {Sleeping within this distance of the campfire counts as sleeping at camp.
 Seated followers get up and follow once the player is further away than
@@ -38,13 +45,14 @@ ObjectReference Property CampAnchor Auto Hidden
 ObjectReference Property PlayerSeat Auto Hidden
 
 Float Property kLeftCampCheckSeconds = 5.0 AutoReadOnly
-{How often to check, while followers are seated, whether the player has left.}
+{How often to check whether the player has come to or left the camp.}
 Float Property kInBedDistance = 128.0 AutoReadOnly
 {The player counts as lying in a camp bedroll within this distance of it.}
 
 Int Property kNormal = 0 AutoReadOnly
 Int Property kSitting = 1 AutoReadOnly
 Int Property kSleeping = 2 AutoReadOnly
+Int Property kAtCamp = 3 AutoReadOnly
 
 ; Every camp bedroll, with where it is: its group (the tent it's in, or 0
 ; without tents) and its place in the row (neighbours differ by 1). Partners and
@@ -65,6 +73,9 @@ Int[] spotOrder
 ; is); followers get theirs when the player sleeps or sits on a bedroll.
 Function Assign(ObjectReference akCampfire, ObjectReference[] akFireSeats, Int[] places, ObjectReference[] allBeds, ObjectReference[] bedSeats, Int[] groups, Int[] orders)
 	CampAnchor = akCampfire
+	If CampCenter
+		CampCenter.ForceRefTo(akCampfire)
+	EndIf
 	PlayerSeat = akFireSeats[0]
 	fireSeats = akFireSeats
 	firePlaces = places
@@ -76,7 +87,7 @@ Function Assign(ObjectReference akCampfire, ObjectReference[] akFireSeats, Int[]
 	ClearAll(Bedrolls)
 	ClearAll(Seats)
 	RegisterForSleep()
-	SetActivity(kNormal)
+	SetActivity(AwakeActivity())
 EndFunction
 
 ; Called by the camp script after Assign: the seats in the camp's tub.
@@ -111,12 +122,8 @@ EndFunction
 
 Function SetActivity(Int activity)
 	LZC_CampActivity.SetValueInt(activity)
-	; While followers are seated, keep checking whether the player has left.
-	If activity == kSitting
-		RegisterForSingleUpdate(kLeftCampCheckSeconds)
-	Else
-		UnregisterForUpdate()
-	EndIf
+	; Keep checking whether the player has come to or left the camp.
+	RegisterForSingleUpdate(kLeftCampCheckSeconds)
 	Int i = 0
 	While i < Followers.Length
 		Actor follower = Followers[i].GetActorRef()
@@ -205,13 +212,36 @@ Int Function IndexOf(ObjectReference[] refs, ObjectReference akRef)
 EndFunction
 
 Event OnUpdate()
-	If LZC_CampActivity.GetValueInt() != kSitting
+	Int activity = LZC_CampActivity.GetValueInt()
+	If activity == kSleeping
+		RegisterForSingleUpdate(kLeftCampCheckSeconds)
 		Return
 	EndIf
-	If PlayerHasLeftCamp()
-		SetActivity(kNormal)
+	; Seated followers stay seated until the player leaves; otherwise they
+	; sandbox while the player is at camp and follow when they're away.
+	Int wanted = AwakeActivity()
+	If activity == kSitting && wanted == kAtCamp
+		wanted = kSitting
+	EndIf
+	If wanted != activity
+		SetActivity(wanted)
 	Else
 		RegisterForSingleUpdate(kLeftCampCheckSeconds)
+	EndIf
+EndEvent
+
+; What followers do while the player is awake and not sitting: sandbox at
+; camp, or follow.
+Int Function AwakeActivity()
+	If PlayerHasLeftCamp()
+		Return kNormal
+	EndIf
+	Return kAtCamp
+EndFunction
+
+Event OnSleepStop(Bool abInterrupted)
+	If LZC_CampActivity.GetValueInt() == kSleeping
+		SetActivity(AwakeActivity())
 	EndIf
 EndEvent
 

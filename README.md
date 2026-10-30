@@ -215,9 +215,10 @@ The camp also uses these when it shares bedrolls out between the tents, so partn
 
 | `LZC_CampActivity` | When | Followers |
 |---|---|---|
-| 0 | the camp is up, before anyone has sat down; after the player wakes; after the player leaves camp | follow the player as normal |
+| 0 | the player is away from camp (further than `CampRadius` from the fire) | follow the player as normal |
 | 1 | the player has sat in a fire seat, or on a bedroll's seat | sit in the fire seats, or on the other bedrolls' seats (partners beside the player, couples side by side). They **stay seated after the player gets up**, until the player goes to bed (they go to their bedrolls), packs up the camp, or leaves it: more than `CampRadius` from the fire, or in another worldspace, checked every 5 seconds (they follow). Sitting somewhere else moves them to match. |
 | 2 | the player is sleeping within `CampRadius` of the fire | sleep in their bedrolls |
+| 3 | the player is at camp, awake and not sitting | sandbox around the campfire (`CampCenter` alias) |
 
 **Making the follower packages (once, in the Creation Kit).** The builder doesn't make these: the Creation Kit couldn't load the packages it wrote. For each N from 1 to 3, make two packages, both with **Owner Quest** `LZC_CampFollowersQuest`:
 
@@ -225,6 +226,7 @@ The camp also uses these when it shares bedrolls out between the tents, so partn
 |---|---|---|---|
 | `LZC_FollowerSleepN` | *Sleep* | Sleep Location: *Near Reference Alias* `BedrollN`, radius 64 | `GetGlobalValue LZC_CampActivity == 2` |
 | `LZC_FollowerSitN` | *Sit* | Sit Location: *Near Reference Alias* `SeatN`, radius 64; Search Criteria / target: alias `SeatN` | `GetGlobalValue LZC_CampActivity == 1` |
+| `LZC_FollowerSandbox` (one for all) | *Sandbox* | Location: *Near Reference Alias* `CampCenter`, radius about 600 | `GetGlobalValue LZC_CampActivity == 3` |
 
 Give `LZC_CampFollowersQuest` a high **Priority** on its *Quest Data* tab (the builder uses 90): alias packages compete by quest priority, and the vanilla follower quest's follow package would otherwise win, so followers would never sit or sleep. Then open `LZC_CampFollowersQuest`'s **Quest Aliases** tab, and in each `FollowerN` alias add `LZC_FollowerSleepN` and `LZC_FollowerSitN` to its *Alias Package Data*. Without them followers just follow the player as normal: they don't sit or sleep at camp.
 
