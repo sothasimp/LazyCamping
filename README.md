@@ -39,7 +39,7 @@ Every bedroll also has a **seat on it**, facing the fire. Followers sit at the f
 
 While a camp is up, the power is called **Pack Up Camp** (" Pack Up Camp"). It keeps its place in favourites and the voice slot. **Casting it** asks *Pack up your camp?* and packs it up if confirmed, from anywhere, so a camp left behind never stops the player making a new one.
 
-With **SKSE Menu Framework** installed (optional), its Mod Control Panel gets a *Lazy Camping* page for the firewood mechanic, how long a fire burns, the chopping block, the bathtub and whether it goes in the large tent, aligning the camp to the slope, the fire seats' colour, the bedrolls' style (with *Bedroll Alternative - BOS Color Variance*: its green, blue or red bedroll, or all three in turn, each touching pair in a tent matching; greyed out without it; the bedroll kit item takes the chosen colour too, green for mixed), clearing grass around the camp, and the campfire light marker (turn it off if a *Light Placer* config already lights the campfire). The settings are kept in the save. Without it, change them on the quest in the Creation Kit.
+With **SKSE Menu Framework** installed (optional), its Mod Control Panel gets a *Lazy Camping* page for the firewood mechanic, how long a fire burns, the chopping block, the bathtub and whether it goes in the large tent, aligning the camp to the slope, the fire seats' colour, the bedrolls' style (with *Bedroll Alternative - BOS Color Variance*: its green, blue or red bedroll, or all three in turn, each touching pair in a tent matching; greyed out without it; the bedroll kit item takes the chosen colour too, green for mixed), selling the kits at general goods merchants, clearing grass around the camp, and the campfire light marker (turn it off if a *Light Placer* config already lights the campfire). The settings are kept in the save. Without it, change them on the quest in the Creation Kit.
 
 All EditorIDs use the prefix `LZC_`.
 
@@ -237,6 +237,9 @@ The follower quest's `CampRadius` setting (default 1024, in the follower quest's
 The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `AlignToSlope`, `MaxSlope`, `MaxStep`, `HideGrassUnderCamp`, `PlaceCampfireLight`, the tent capacities, `FirewoodMechanic`, `FireBurnHours`, `PlaceChoppingBlock`, `PlaceTub`, `TubInLargeTent` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file. The camp's layout distances (seat ring, tent distances and sizes, bedroll spacing, where the tub stands and how it turns, the light's height) are fixed constants in `LZC_CampsiteQuestScript.psc`: change them there and recompile.
 
 ### 2d. How players get the kits
+
+**Merchants.** `LazyCamping.esp` has a leveled list of every kit, `LZC_LItemCampingKits` (one random kit, 50% chance none), and a form list, `LZC_VendorLists`, of merchant leveled lists to add it to: fill that in the Creation Kit with the general goods vendor lists (the leveled lists their merchant chests use). LazyCamping.dll adds the kit list to each of them while the game runs, so no vanilla list is overridden in the plugin and nothing conflicts with other mods that edit them. The SKSE menu's *Sell kits at general goods merchants* turns it off (`KitsAtMerchants`); merchants show the change at their next restock.
+
 
 The builder doesn't create these, but the committed `LazyCamping.esp` has a recipe for every kit (`LZC_Recipe…`), all at a tanning rack (`CraftingTanningRack`), every colour alike:
 

@@ -7,7 +7,8 @@ namespace Menu
 	// Call once every SKSE plugin has loaded (kPostLoad).
 	void Register();
 
-	// Gives the bedroll kit the look of the bedroll style chosen on the menu
-	// (see BedrollKit). Call after a save loads or a new game starts.
-	void ApplyBedrollKit();
+	// Applies the settings that change base forms: the bedroll kit's look (see
+	// BedrollKit) and the kits at merchants (see VendorKits). Call after a save
+	// loads or a new game starts.
+	void ApplyLoadedSettings();
 }

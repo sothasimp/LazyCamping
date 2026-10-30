@@ -47,6 +47,10 @@ Activator[] Property LZC_LargeTents Auto
 Furniture Property LZC_BedrollPlaced Auto
 {Furniture with a sleep marker, so the player can sleep / wait in it. Can be
 the vanilla bedroll: this script needs nothing on it.}
+Bool Property KitsAtMerchants = True Auto
+{General goods merchants can stock the kits (SKSE menu): LazyCamping.dll adds
+LZC_LItemCampingKits to every leveled list in LZC_VendorLists while the game
+runs.}
 Int Property BedrollStyle = 0 Auto
 {With Bedroll Alternative - BOS Color Variance installed (SKSE menu): 0 the
 vanilla bedroll (LZC_BedrollPlaced), 1 green, 2 blue, 3 red, 4 mixed: green,

@@ -1,6 +1,7 @@
 #include "Menu.h"
 
 #include "BedrollKit.h"
+#include "VendorKits.h"
 #include "ScriptObjects.h"
 
 #define WIN32_LEAN_AND_MEAN
@@ -30,6 +31,7 @@ namespace Menu
 			int          seatColor{ 0 };
 			int          bedrollStyle{ 0 };
 			bool         bedrollAltLoaded{ false };
+			bool         kitsAtMerchants{ true };
 		};
 
 		constexpr const char* kBedrollStyles[] = { "Vanilla", "Bedroll Alternative - Green", "Bedroll Alternative - Blue",
@@ -69,13 +71,15 @@ namespace Menu
 			auto*  slope = object ? AutoProperty(object.get(), "AlignToSlope") : nullptr;
 			auto*  seat = object ? AutoProperty(object.get(), "SeatColor") : nullptr;
 			auto*  bedroll = object ? AutoProperty(object.get(), "BedrollStyle") : nullptr;
-			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll;
+			auto*  merchants = object ? AutoProperty(object.get(), "KitsAtMerchants") : nullptr;
+			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll && merchants;
 			if (found) {
 				auto* dataHandler = RE::TESDataHandler::GetSingleton();
 				values = { firewood->GetBool(), burnHours->GetFloat(), block->GetBool(), grass->GetBool(), light->GetBool(), tub->GetBool(),
 					tubInTent->GetBool(), slope->GetBool(), seat->GetSInt(), bedroll->GetSInt(),
 					dataHandler && (dataHandler->LookupLoadedModByName(kBedrollAltPlugin) ||
-										dataHandler->LookupLoadedLightModByName(kBedrollAltPlugin)) };
+										dataHandler->LookupLoadedLightModByName(kBedrollAltPlugin)),
+					merchants->GetBool() };
 			}
 
 			std::scoped_lock guard(lock);
@@ -120,6 +124,10 @@ namespace Menu
 					bedroll->SetSInt(a_values.bedrollStyle);
 				}
 				BedrollKit::Apply(a_values.bedrollAltLoaded ? a_values.bedrollStyle : 0);
+				if (auto* merchants = AutoProperty(object.get(), "KitsAtMerchants")) {
+					merchants->SetBool(a_values.kitsAtMerchants);
+				}
+				VendorKits::Apply(a_values.kitsAtMerchants);
 			}
 			--pendingWrites;
 		}
@@ -167,6 +175,8 @@ namespace Menu
 			changed |= ImGuiMCP::Combo("Bedroll", &values.bedrollStyle, kBedrollStyles, static_cast<int>(std::size(kBedrollStyles)));
 			ImGuiMCP::SetItemTooltip("Needs Bedroll Alternative - BOS Color Variance. The camp's bedrolls: vanilla, one of its colours, or its colours in turn, pairs in a tent matching. Takes effect at the next camp.");
 			ImGuiMCP::EndDisabled();
+			changed |= ImGuiMCP::Checkbox("Sell kits at general goods merchants", &values.kitsAtMerchants);
+			ImGuiMCP::SetItemTooltip("Merchants can stock the bedroll and tent kits. Shows at their next restock.");
 			changed |= ImGuiMCP::Checkbox("Clear grass around the camp", &values.hideGrassUnderCamp);
 			ImGuiMCP::SetItemTooltip("Clear the grass in a circle around the camp while it's up. Takes effect at the next camp.");
 			changed |= ImGuiMCP::Checkbox("Campfire light marker", &values.placeCampfireLight);
@@ -189,9 +199,12 @@ namespace Menu
 		}
 	}
 
-	void ApplyBedrollKit()
+	void ApplyLoadedSettings()
 	{
 		auto  object = FindScript();
+		auto* merchants = object ? AutoProperty(object.get(), "KitsAtMerchants") : nullptr;
+		VendorKits::Apply(!merchants || merchants->GetBool());
+
 		auto* bedroll = object ? AutoProperty(object.get(), "BedrollStyle") : nullptr;
 		auto* dataHandler = RE::TESDataHandler::GetSingleton();
 		const bool loaded = dataHandler && (dataHandler->LookupLoadedModByName(kBedrollAltPlugin) ||
