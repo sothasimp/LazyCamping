@@ -29,7 +29,7 @@ namespace Menu
 			int          seatColor{ 0 };
 		};
 
-		constexpr const char* kSeatColors[] = { "Brown", "White", "Plaid green", "Plaid yellow" };
+		constexpr const char* kSeatColors[] = { "Brown", "White", "Plaid green", "Plaid yellow", "Plaid blue" };
 
 		std::mutex                            lock;
 		Values                                shown;

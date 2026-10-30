@@ -109,12 +109,13 @@ step into it take off their clothes, and put them back on when they step out.}
 Furniture Property LZC_SitMarkerPlayer Auto
 {Optional. Visible cross-legged seat by the fire that the player can use.}
 Furniture[] Property LZC_SeatColors Auto
-{Optional. The fire seat in each colour SeatColor can pick: 0 brown, 1 white,
-2 plaid green, 3 plaid yellow. Brown is LZC_SitMarkerPlayer itself (the mesh's
-own texture); the others are copies of it with the small tents' texture sets
-as alternate textures. Empty entries use LZC_SitMarkerPlayer.}
+{Optional. The fire seat in each colour but brown, in the order of the SKSE
+menu's seat colours after Brown: white, plaid green, plaid yellow, plaid
+blue. Copies of LZC_SitMarkerPlayer with the small tents' texture sets as
+alternate textures.}
 Int Property SeatColor = 0 Auto
-{Which of LZC_SeatColors the three player fire seats use (SKSE menu).}
+{The three player fire seats' colour (SKSE menu): 0 brown (LZC_SitMarkerPlayer
+itself), then LZC_SeatColors from 1.}
 Furniture Property LZC_BedrollSitMarker Auto
 {Optional. Cross-legged seat placed on every bedroll, facing the fire.
 Invisible but selectable: its model is a small collision box with no visible
@@ -1345,8 +1346,9 @@ EndFunction
 
 ; The player's fire seat in the colour chosen in the SKSE menu.
 Furniture Function PlayerSeatForm()
-	If LZC_SeatColors && SeatColor >= 0 && SeatColor < LZC_SeatColors.Length && LZC_SeatColors[SeatColor]
-		Return LZC_SeatColors[SeatColor]
+	Int i = SeatColor - 1
+	If LZC_SeatColors && i >= 0 && i < LZC_SeatColors.Length && LZC_SeatColors[i]
+		Return LZC_SeatColors[i]
 	EndIf
 	Return LZC_SitMarkerPlayer
 EndFunction
