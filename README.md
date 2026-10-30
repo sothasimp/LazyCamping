@@ -51,11 +51,12 @@ All EditorIDs use the prefix `LZC_`.
 Scripts/Source/
   LZC_CampsiteQuestScript.psc   main logic: checks, camp objects, pack-up, state
   LZC_CampFollowersScript.psc   followers' seats and bedrolls; sit/sleep with the player
+  LZC_TubTriggerScript.psc      on the tub's trigger box; passes followers stepping in and out to the quest
 SKSE/                           C++ plugin (LazyCamping.dll), required
   xmake.lua
   src/main.cpp                  plugin entry point, logging
   src/Papyrus.cpp               native functions (declared in LZC_CampsiteQuestScript); ground checks and placing
-  src/Events.cpp                casting the power, activating camp objects, sitting, followers in the tub
+  src/Events.cpp                casting the power, activating camp objects, sitting down
   src/CampLayout.cpp            setting up a camp: the layout and everything placed with it
   src/BedrollKit.cpp            the bedroll kit's colour
   src/VendorKits.cpp            the kits at general goods merchants
@@ -79,7 +80,7 @@ Setting up a camp is one call into `LazyCamping.dll`, **`BuildCamp`**, so it hap
 3. finds the ground under every object, tilts each one to the slope (up to `MaxSlope` degrees), and creates them all with their clutter at their final positions. It finds the ground for everything before placing anything, so a bedroll's ground check can't hit the tent standing over it;
 4. moves the cook box, storage backpack and map marker to the camp, sets up the bedroll seats, and clears the grass in a circle around the camp (see *Hiding grass* below).
 
-The script keeps the rest: what happens on the camp's events, the follower quest, which it hands the camp's seats and bedrolls, and the tub's trigger and water. The events themselves (casting the power, activating a camp object, sitting down) are caught by the DLL and passed to the scripts, so only the two quests carry scripts; once a second the DLL also checks for followers within 72 units of the tub trigger, and tells the script when one steps in or out. Packing up calls **`ShowGrass`**.
+The script keeps the rest: what happens on the camp's events, the follower quest, which it hands the camp's seats and bedrolls, and the tub's trigger and water. The events themselves (casting the power, activating a camp object, sitting down) are caught by the DLL and passed to the scripts, so only the two quests carry scripts, plus `LZC_TubTriggerScript` on the tub's trigger box, which tells the camp script when a follower steps into or out of the tub. Packing up calls **`ShowGrass`**.
 
 If the DLL isn't loaded, or is older than the scripts expect, casting the power tells the player that Lazy Camping needs SKSE, and nothing is placed.
 
@@ -238,13 +239,14 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 
 ## 4. Compile scripts and package
 
-1. In the CK, compile the two scripts, `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` (*Gameplay > Papyrus Script Manager*). The quest script's native functions compile without the DLL; they're only bound at runtime.
+1. In the CK, compile the three scripts, `LZC_CampsiteQuestScript`, `LZC_CampFollowersScript` and `LZC_TubTriggerScript` (*Gameplay > Papyrus Script Manager*). The quest script's native functions compile without the DLL; they're only bound at runtime.
 2. `LazyCamping.esp` adds only new records, so you can flag it as ESL with xEdit.
 3. Package these files:
    ```
    LazyCamping.esp
    Scripts/LZC_CampsiteQuestScript.pex
    Scripts/LZC_CampFollowersScript.pex
+   Scripts/LZC_TubTriggerScript.pex
    Meshes/LazyCamping/...          (tents, seats, backpack: section 2a)
    Textures/LazyCamping/...        (the tent recolours)
    SKSE/Plugins/LazyCamping.dll
@@ -268,7 +270,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 - **Bedroll fan**: neighbouring bedrolls in a tentless camp are 70° apart, about 218 units between centres at the default `BedrollRingRadius` (190). With the vanilla bedroll (128 long, assumed up to 64 wide) that leaves about 90 units between their ends; the limit is the seats in front, which are assumed to need 35 units behind the marker. If seated people have room to spare in game, `BedrollRingRadius` can go down to about 180.
 - **Sneak to sit**: `BedrollSeats.cpp` hooks furniture activation. When the player sneaks and activates a camp bedroll, it activates that bedroll's seat instead, so the bedroll stays the plain vanilla one and anyone else (followers) uses it as normal.
 - **Cooking**: the vanilla campfire can't be activated, so a **cook box** does it: make it once in the Creation Kit. In `LZC_HoldingCell`, click *Create Trigger* with nothing selected and choose `LZC_CookActivator`; on the box's *Primitive* tab tick **Player Activation** (so the crosshair picks it up) and make it about 60 × 60 × 40; tick *Persistent* and *Initially Disabled*, and fill `LZC_CookBox` on `LZC_CampsiteQuest` with it. While a camp's fire is lit, the box sits over it and shows *Cook*; activating it activates `LZC_CookingStation`, which has the cooking pot's crafting keyword and no furniture marker, so the Cook menu should open without moving the player. Check that in game.
-- **Tub trigger** (optional): in `LZC_HoldingCell`, click *Create Trigger* with nothing selected and choose `LZC_CookActivator` again; leave the box on the trigger layer (don't tick Player Activation). Place it over the water in the tub clutter set: the DLL counts a follower as in the tub within 72 units of it sideways (and 100 up or down), so its size doesn't matter. Tick *Initially Disabled* and fill `LZC_TubTrigger` on `LZC_CampsiteQuest` with it (that makes it persistent). The camp moves it onto each tub, keeping its offset and turn from the tub anchor; the offset is read the first time, while the trigger is still in the holding cell.
+- **Tub trigger** (optional): in `LZC_HoldingCell`, click *Create Trigger* with nothing selected and choose `LZC_CookActivator` again; leave the box on the trigger layer (don't tick Player Activation). Place and size it over the water in the tub clutter set, like any clutter item, so followers only step into it in the tub. Attach `LZC_TubTriggerScript` to the box (the reference itself, not its base, which the cook box shares) and fill its `CampQuest` with `LZC_CampsiteQuest`. Tick *Initially Disabled* and fill `LZC_TubTrigger` on `LZC_CampsiteQuest` with it (that makes it persistent). The camp moves it onto each tub, keeping its offset and turn from the tub anchor; the offset is read the first time, while the trigger is still in the holding cell.
 - **Base Object Swapper**: in testing, BOS didn't swap the references the camp places at runtime, so variance mods don't change the camp's bedrolls. The camp's scripts don't depend on the base object, so this only affects looks.
 - **Map marker**: moving a persistent map marker is how other camping mods do it. Still, check in game that the marker appears at the camp on the world map, moves with each new camp, and disappears when you pack up.
 - **Clutter**: each copy takes its scale from its clutter item in the holding cell, set the way Papyrus's `SetScale` does it, so it shows at that size straight away and the save keeps it. A camp with many cluttered tents can place well over 100 objects; that's fine for the game, but keep sets modest.

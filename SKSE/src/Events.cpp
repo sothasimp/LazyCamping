@@ -9,11 +9,6 @@ namespace Events
 		constexpr auto kPlugin = "LazyCamping.esp"sv;
 		constexpr auto kPluginPrefix = "LazyCamping."sv;
 
-		// A follower counts as in the tub within this far of the tub trigger,
-		// sideways and up or down.
-		constexpr float kTubReach = 72.0f;
-		constexpr float kTubHeight = 100.0f;
-
 		RE::BSTSmartPointer<RE::BSScript::Object> CampScript()
 		{
 			static RE::FormID quest = 0;
@@ -90,56 +85,6 @@ namespace Events
 				return RE::BSEventNotifyControl::kContinue;
 			}
 		};
-
-		// Followers in the tub: tells the camp script when one steps in or out.
-		std::set<RE::FormID> inTub;
-
-		void CheckTub()
-		{
-			auto  camp = CampScript();
-			auto* form = camp ? Property(camp, "LZC_TubTrigger") : nullptr;
-			auto* tub = form ? form->As<RE::TESObjectREFR>() : nullptr;  // the trigger, on the tub
-			auto* deployed = camp ? ScriptObjects::AutoProperty(camp.get(), "CampDeployed") : nullptr;
-			const bool active = tub && !tub->IsDisabled() && deployed && deployed->IsBool() && deployed->GetBool();
-
-			std::set<RE::FormID> now;
-			std::vector<RE::Actor*> entered;
-			if (active) {
-				if (auto* processes = RE::ProcessLists::GetSingleton()) {
-					const auto centre = tub->GetPosition();
-					for (auto& handle : processes->highActorHandles) {
-						auto  actorPtr = handle.get();
-						auto* actor = actorPtr.get();
-						if (!actor || actor->IsPlayerRef() || !actor->IsPlayerTeammate() || actor->IsDead()) {
-							continue;
-						}
-						const auto position = actor->GetPosition();
-						const float dx = position.x - centre.x;
-						const float dy = position.y - centre.y;
-						if (dx * dx + dy * dy <= kTubReach * kTubReach && std::abs(position.z - centre.z) <= kTubHeight) {
-							now.insert(actor->GetFormID());
-							if (!inTub.contains(actor->GetFormID())) {
-								entered.push_back(actor);
-							}
-						}
-					}
-				}
-			}
-			for (auto id : inTub) {
-				if (!now.contains(id)) {
-					if (auto* actor = RE::TESForm::LookupByID<RE::TESObjectREFR>(id)) {
-						RE::TESObjectREFR* triggerRef = tub;
-						ScriptObjects::Call(camp, "OnCampTrigger", std::move(triggerRef), std::move(actor), false);
-					}
-				}
-			}
-			for (auto* actor : entered) {
-				RE::TESObjectREFR* triggerRef = tub;
-				RE::TESObjectREFR* actorRef = actor;
-				ScriptObjects::Call(camp, "OnCampTrigger", std::move(triggerRef), std::move(actorRef), true);
-			}
-			inTub = std::move(now);
-		}
 	}
 
 	void Install()
@@ -155,15 +100,6 @@ namespace Events
 		events->AddEventSink<RE::TESSpellCastEvent>(&spellCast);
 		events->AddEventSink<RE::TESActivateEvent>(&activate);
 		events->AddEventSink<RE::TESFurnitureEvent>(&furniture);
-
-		std::thread([] {
-			for (;;) {
-				std::this_thread::sleep_for(1s);
-				if (auto* tasks = SKSE::GetTaskInterface()) {
-					tasks->AddTask(CheckTub);
-				}
-			}
-		}).detach();
 		logger::info("Listening for camp events");
 	}
 }
