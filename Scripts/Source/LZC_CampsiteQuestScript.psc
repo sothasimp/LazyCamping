@@ -47,6 +47,10 @@ Activator[] Property LZC_LargeTents Auto
 Furniture Property LZC_BedrollPlaced Auto
 {Furniture with a sleep marker, so the player can sleep / wait in it. Can be
 the vanilla bedroll: this script needs nothing on it.}
+Int Property BedrollStyle = 0 Auto
+{With Bedroll Alternative - BOS Color Variance installed (SKSE menu): 0 the
+vanilla bedroll (LZC_BedrollPlaced), 1 green, 2 blue, 3 red, 4 a random one of
+the three for each bedroll. Looked up at run time, so it isn't a master.}
 Form Property LZC_CampfirePlaced Auto
 {Static or Activator: the burning campfire. Can be the vanilla one.}
 Furniture Property LZC_CookingStation Auto
@@ -280,6 +284,7 @@ Float Property kChoppingBlockBesideSmallTent = 90.0 AutoReadOnly ; further out b
 Float Property kChoppingBlockBesideLargeTent = 170.0 AutoReadOnly ; further out beside the large tent
 Float Property kChoppingBlockTurn = 25.0 AutoReadOnly ; degrees clockwise
 Int Property kFirewoodPerFire = 2 AutoReadOnly
+String Property kBedrollAltPlugin = "Bedroll Alternative - BOS Color Variance.esp" AutoReadOnly
 Float Property kChoppingBlockAside = 40.0 AutoReadOnly ; and round from the nearest bedroll
 Float Property kBedrollHalfLength = 100.0 AutoReadOnly ; head to foot, halved
 Int Property kNativeVersion = 11 AutoReadOnly         ; LazyCamping.dll needed
@@ -1296,7 +1301,7 @@ Function SetTentBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, I
 	; tent faces the fire, so its right is the left as seen from the fire.
 	; The tent's forward axis, at tentTurn, points at the fire.
 	Float offset = RowPosition(rowLength - 1) / 2.0 - RowPosition(index) + left
-	forms[slot] = LZC_BedrollPlaced
+	forms[slot] = BedrollForm()
 	fwd[slot] = tentFwd + offset * Math.Cos(tentTurn + 90.0) - back * Math.Cos(tentTurn)
 	side[slot] = tentSide + offset * Math.Sin(tentTurn + 90.0) - back * Math.Sin(tentTurn)
 	turn[slot] = tentTurn
@@ -1314,7 +1319,7 @@ EndFunction
 Function SetRingBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] bedOrder, Int[] clutterSet, Float[] ringSeatTurn, Bool[] used, Int index, Int place, Bool pairHigh)
 	Int slot = kFirstBedroll + index
 	Float bearing = place * kRingStep
-	forms[slot] = LZC_BedrollPlaced
+	forms[slot] = BedrollForm()
 	fwd[slot] = FireForward() + BedrollRingRadius * Math.Cos(bearing)
 	side[slot] = BedrollRingRadius * Math.Sin(bearing)
 	turn[slot] = bearing + BedrollRingYaw
@@ -1342,6 +1347,29 @@ EndFunction
 ; takes a pair that touches.
 Int Function PairedOrder(Int index)
 	Return index + index / 2
+EndFunction
+
+; A camp bedroll in the style chosen in the SKSE menu: the vanilla one, or
+; one of Bedroll Alternative's colours if it's installed.
+Furniture Function BedrollForm()
+	Int style = BedrollStyle
+	If style < 1 || style > 4 || (Game.GetModByName(kBedrollAltPlugin) == 255 && Game.GetLightModByName(kBedrollAltPlugin) == 65535)
+		Return LZC_BedrollPlaced
+	EndIf
+	If style == 4
+		style = Utility.RandomInt(1, 3)
+	EndIf
+	Int id = 0xD62   ; green
+	If style == 2
+		id = 0xD70   ; blue
+	ElseIf style == 3
+		id = 0xD69   ; red
+	EndIf
+	Furniture bedroll = Game.GetFormFromFile(id, kBedrollAltPlugin) as Furniture
+	If !bedroll
+		Return LZC_BedrollPlaced
+	EndIf
+	Return bedroll
 EndFunction
 
 ; The player's fire seat in the colour chosen in the SKSE menu.
