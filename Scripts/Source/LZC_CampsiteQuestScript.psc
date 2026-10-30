@@ -26,13 +26,15 @@ MiscObject Property LZC_BedrollKit Auto
 {At least one is needed to make camp; the campfire always comes with it.}
 
 MiscObject Property Firewood01 Auto
-{Vanilla firewood: lighting the fire burns kFirewoodPerFire when FirewoodMechanic
+{Vanilla firewood: lighting the fire burns FirewoodPerFire when FirewoodMechanic
 is on.}
 Bool Property FirewoodMechanic = False Auto
 {The camp's fire starts out unlit. Activating the firepit with firewood in
-the inventory lights it, burning two; it burns for FireBurnHours, then goes
+the inventory lights it, burning FirewoodPerFire; it burns for FireBurnHours, then goes
 out. A chopping block stands by the tents. Off: the fire is always lit.}
 Float Property FireBurnHours = 6.0 Auto
+Int Property FirewoodPerFire = 2 Auto
+{How many firewood lighting the fire burns (SKSE menu: 1 to 6).}
 {How long a fire lit with firewood burns, in game hours.}
 Bool Property PlaceChoppingBlock = True Auto
 {With FirewoodMechanic, place LZC_ChoppingBlock beside the tents.}
@@ -228,7 +230,6 @@ Int Property kTub = 38 AutoReadOnly
 Int Property kSlotCount = 39 AutoReadOnly
 
 Int Property kLarge = 1 AutoReadOnly
-Int Property kFirewoodPerFire = 2 AutoReadOnly
 Int Property kNativeVersion = 13 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
@@ -462,13 +463,13 @@ Function Cook()
 EndFunction
 
 ; Activating the camp's unlit firepit lights the fire, burning
-; kFirewoodPerFire firewood, for FireBurnHours.
+; FirewoodPerFire firewood, for FireBurnHours.
 Function LightFire()
-	If !Firewood01 || PlayerRef.GetItemCount(Firewood01) < kFirewoodPerFire
-		Debug.Notification("You need 2 firewood to light the fire.")
+	If !Firewood01 || PlayerRef.GetItemCount(Firewood01) < FirewoodPerFire
+		Debug.Notification("You need " + FirewoodPerFire + " firewood to light the fire.")
 		Return
 	EndIf
-	PlayerRef.RemoveItem(Firewood01, kFirewoodPerFire)
+	PlayerRef.RemoveItem(Firewood01, FirewoodPerFire)
 	SetFireLit(True)
 	RegisterForSingleUpdateGameTime(FireBurnHours)
 EndFunction

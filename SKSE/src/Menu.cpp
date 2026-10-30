@@ -32,6 +32,7 @@ namespace Menu
 			int          bedrollStyle{ 0 };
 			bool         bedrollAltLoaded{ false };
 			bool         kitsAtMerchants{ true };
+			int          firewoodPerFire{ 2 };
 		};
 
 		constexpr const char* kBedrollStyles[] = { "Vanilla", "Bedroll Alternative - Green", "Bedroll Alternative - Blue",
@@ -72,14 +73,15 @@ namespace Menu
 			auto*  seat = object ? AutoProperty(object.get(), "SeatColor") : nullptr;
 			auto*  bedroll = object ? AutoProperty(object.get(), "BedrollStyle") : nullptr;
 			auto*  merchants = object ? AutoProperty(object.get(), "KitsAtMerchants") : nullptr;
-			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll && merchants;
+			auto*  perFire = object ? AutoProperty(object.get(), "FirewoodPerFire") : nullptr;
+			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll && merchants && perFire;
 			if (found) {
 				auto* dataHandler = RE::TESDataHandler::GetSingleton();
 				values = { firewood->GetBool(), burnHours->GetFloat(), block->GetBool(), grass->GetBool(), light->GetBool(), tub->GetBool(),
 					tubInTent->GetBool(), slope->GetBool(), seat->GetSInt(), bedroll->GetSInt(),
 					dataHandler && (dataHandler->LookupLoadedModByName(kBedrollAltPlugin) ||
 										dataHandler->LookupLoadedLightModByName(kBedrollAltPlugin)),
-					merchants->GetBool() };
+					merchants->GetBool(), perFire->GetSInt() };
 			}
 
 			std::scoped_lock guard(lock);
@@ -98,6 +100,9 @@ namespace Menu
 				}
 				if (auto* burnHours = AutoProperty(object.get(), "FireBurnHours")) {
 					burnHours->SetFloat(a_values.fireBurnHours);
+				}
+				if (auto* perFire = AutoProperty(object.get(), "FirewoodPerFire")) {
+					perFire->SetSInt(a_values.firewoodPerFire);
 				}
 				if (auto* block = AutoProperty(object.get(), "PlaceChoppingBlock")) {
 					block->SetBool(a_values.placeChoppingBlock);
@@ -164,6 +169,8 @@ namespace Menu
 			ImGuiMCP::BeginDisabled(!values.firewoodMechanic);
 			changed |= ImGuiMCP::SliderFloat("Fire burn time", &values.fireBurnHours, 1.0f, 24.0f, "%.0f hours");
 			ImGuiMCP::SetItemTooltip("How long a fire lit with firewood burns, in game hours. Takes effect the next time it's lit.");
+			changed |= ImGuiMCP::SliderInt("Firewood to light the fire", &values.firewoodPerFire, 1, 6);
+			ImGuiMCP::SetItemTooltip("How many firewood lighting the fire uses up.");
 			changed |= ImGuiMCP::Checkbox("Wood chopping block", &values.placeChoppingBlock);
 			ImGuiMCP::SetItemTooltip("Place a woodcutting block beside the tents, for chopping firewood. Takes effect at the next camp.");
 			ImGuiMCP::EndDisabled();
