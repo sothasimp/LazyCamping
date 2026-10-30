@@ -211,7 +211,7 @@ namespace CampLayout
 				_layout.level.assign(kSlotCount, false);
 				_layout.clutterSet.assign(kSlotCount, 0);
 				_layout.alignToSlope = a_props.Bool("AlignToSlope", true);
-				_layout.maxTiltDegrees = a_props.Float("MaxSlope", 25.0f);
+				_layout.maxTiltDegrees = a_props.Float("MaxTilt", 25.0f);
 				_bedGroup.assign(kMaxBedrolls, 0);
 				_bedOrder.assign(kMaxBedrolls, 0);
 				_ringSeatTurn.assign(kMaxBedrolls, 0.0f);
