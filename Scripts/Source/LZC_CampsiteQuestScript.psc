@@ -27,8 +27,8 @@ MiscObject Property LZC_BedrollKit Auto
 MiscObject Property Firewood01 Auto
 {Vanilla firewood: lighting the fire burns one when FirewoodMechanic is on.}
 Bool Property FirewoodMechanic = False Auto
-{The camp's fire starts out unlit. Sneak-activating the firepit with firewood
-in the inventory lights it, burning one; it burns for FireBurnHours, then goes
+{The camp's fire starts out unlit. Activating the firepit with firewood in
+the inventory lights it, burning one; it burns for FireBurnHours, then goes
 out. A chopping block stands by the tents. Off: the fire is always lit.}
 Float Property FireBurnHours = 6.0 Auto
 {How long a fire lit with firewood burns, in game hours.}
@@ -871,12 +871,9 @@ Function Cook()
 	EndIf
 EndFunction
 
-; Sneak-activating the camp's unlit firepit lights the fire, burning one
-; firewood, for FireBurnHours.
+; Activating the camp's unlit firepit lights the fire, burning one firewood,
+; for FireBurnHours.
 Function LightFire()
-	If !PlayerRef.IsSneaking()
-		Return
-	EndIf
 	If !Firewood01 || PlayerRef.GetItemCount(Firewood01) < 1
 		Debug.Notification("You need firewood to light the fire.")
 		Return

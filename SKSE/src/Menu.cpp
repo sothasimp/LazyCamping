@@ -130,7 +130,7 @@ namespace Menu
 
 			bool changed = false;
 			changed |= ImGuiMCP::Checkbox("Firewood mechanic", &values.firewoodMechanic);
-			ImGuiMCP::SetItemTooltip("The fire starts out unlit: sneak-activate it with firewood to light it. Takes effect at the next camp.");
+			ImGuiMCP::SetItemTooltip("The fire starts out unlit: activate it with firewood to light it. Takes effect at the next camp.");
 			ImGuiMCP::BeginDisabled(!values.firewoodMechanic);
 			changed |= ImGuiMCP::SliderFloat("Fire burn time", &values.fireBurnHours, 1.0f, 24.0f, "%.0f hours");
 			ImGuiMCP::SetItemTooltip("How long a fire lit with firewood burns, in game hours. Takes effect the next time it's lit.");
