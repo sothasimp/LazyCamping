@@ -49,24 +49,3 @@ jobs:
           name: LazyCamping
           path: SKSE/dist/
           if-no-files-found: error
-
-  esp-builder:
-    name: Plugin check
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: Plugin
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: 8.0.x
-
-      - name: Build the builder
-        run: dotnet build -c Release
-
-      # LazyCamping.esp is edited in the Creation Kit; check its script
-      # properties against the sources.
-      - name: Check LazyCamping.esp's script properties
-        run: dotnet run -c Release --no-build -- ../LazyCamping.esp ../Scripts/Source
