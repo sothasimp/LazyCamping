@@ -871,6 +871,7 @@ Function SetUpCamp()
 			i += 1
 		EndWhile
 		followers.Assign(placedRefs[kCampfire], fireSeats, firePlaces, beds, bedSeats, bedGroup, bedOrder)
+		followers.SetTubSeats(PlacedTubSeats())
 	EndIf
 
 	; The player's storage moves onto the spot the plugin marked, which then
@@ -963,6 +964,34 @@ Form[] Function WornItems(Actor akActor)
 		i += 1
 	EndWhile
 	Return items
+EndFunction
+
+; The seats placed with the tub clutter set: placed clutter whose base is
+; furniture from LZC_TubClutter.
+ObjectReference[] Function PlacedTubSeats()
+	ObjectReference[] seats = new ObjectReference[4]
+	Int count = 0
+	Int i = kSlotCount + 1
+	While i < placedRefs.Length && count < seats.Length
+		ObjectReference item = placedRefs[i]
+		If item && item.GetBaseObject() as Furniture && IsTubSeatBase(item.GetBaseObject())
+			seats[count] = item
+			count += 1
+		EndIf
+		i += 1
+	EndWhile
+	Return seats
+EndFunction
+
+Bool Function IsTubSeatBase(Form akBase)
+	Int i = 0
+	While LZC_TubClutter && i < LZC_TubClutter.Length
+		If LZC_TubClutter[i] && LZC_TubClutter[i].GetBaseObject() == akBase
+			Return True
+		EndIf
+		i += 1
+	EndWhile
+	Return False
 EndFunction
 
 ; Moves the tub's persistent pieces (the trigger, the water) onto the camp's

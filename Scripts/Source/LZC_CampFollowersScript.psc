@@ -56,6 +56,7 @@ Int[] bedOrder
 ObjectReference[] fireSeats      ; seats by the fire, the player's first
 Int[] fireGroups                 ; all 0: one ring
 Int[] firePlaces                 ; place in the fan (neighbours differ by 1)
+ObjectReference[] tubSeats       ; the seats in the tub
 Int[] spotGroup                  ; groups/orders for the spots being chosen
 Int[] spotOrder
 
@@ -76,6 +77,11 @@ Function Assign(ObjectReference akCampfire, ObjectReference[] akFireSeats, Int[]
 	ClearAll(Seats)
 	RegisterForSleep()
 	SetActivity(kNormal)
+EndFunction
+
+; Called by the camp script after Assign: the seats in the camp's tub.
+Function SetTubSeats(ObjectReference[] akTubSeats)
+	tubSeats = akTubSeats
 EndFunction
 
 ; Called by the camp script when the camp is packed up.
@@ -128,6 +134,14 @@ Function OnPlayerSat(ObjectReference akFurniture)
 	If !akFurniture || LZC_CampActivity.GetValueInt() == kSleeping
 		Return
 	EndIf
+	; Sitting in the tub brings one follower into the tub with the player: a
+	; partner if there is one, otherwise the first follower.
+	Int tubSeat = IndexOf(tubSeats, akFurniture)
+	If tubSeat >= 0
+		ForceChosen(Seats, tubSeats, ChooseTubMate(tubSeat))
+		SetActivity(kSitting)
+		Return
+	EndIf
 	Int fireSeat = IndexOf(fireSeats, akFurniture)
 	If fireSeat >= 0
 		ForceChosen(Seats, fireSeats, ChooseSpots(fireSeats, fireGroups, firePlaces, fireSeat))
@@ -139,6 +153,41 @@ Function OnPlayerSat(ObjectReference akFurniture)
 			SetActivity(kSitting)
 		EndIf
 	EndIf
+EndFunction
+
+; Each follower's tub seat (-1 for none): the first free seat, besides the
+; player's, for one follower, a partner first.
+Int[] Function ChooseTubMate(Int playerSeat)
+	Int[] chosen = new Int[3]
+	Int i = 0
+	While i < chosen.Length
+		chosen[i] = -1
+		i += 1
+	EndWhile
+	Int free = -1
+	i = 0
+	While free < 0 && i < tubSeats.Length
+		If i != playerSeat && tubSeats[i]
+			free = i
+		EndIf
+		i += 1
+	EndWhile
+	If free < 0
+		Return chosen
+	EndIf
+	Int mate = -1
+	i = 0
+	While i < Followers.Length && i < chosen.Length
+		Actor follower = Followers[i].GetActorRef()
+		If follower && (mate < 0 || (IsPartner(follower) && !IsPartner(Followers[mate].GetActorRef())))
+			mate = i
+		EndIf
+		i += 1
+	EndWhile
+	If mate >= 0
+		chosen[mate] = free
+	EndIf
+	Return chosen
 EndFunction
 
 Int Function IndexOf(ObjectReference[] refs, ObjectReference akRef)
