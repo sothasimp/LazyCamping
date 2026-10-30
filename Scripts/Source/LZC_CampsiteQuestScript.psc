@@ -95,12 +95,6 @@ stands when it's in the tent.}
 Float Property TubInTentTurn = 20.0 AutoReadOnly
 {Turns the tub and its clutter in the large tent, in degrees clockwise seen
 from above, on top of the tub anchor's own turn.}
-Float Property TubBesideSmallTentForward = 170.0 AutoReadOnly
-{How much nearer the fire than the small tent's centre the tub stands when
-it's beside a small tent (negative: further back).}
-Float Property TubBesideSmallTentSwing = 80.0 AutoReadOnly
-{Then how far the tub swings round the fire toward that small tent, measured
-along the circle (negative: away from it). It turns with the swing.}
 Activator Property LZC_ClothesBasket Auto
 {The clothes basket's base (in the tub clutter set). Activating one takes off
 everything the player is wearing; activating it again puts it back on.}
@@ -209,9 +203,6 @@ Float Property BedrollSpacing = 214.0 AutoReadOnly
 Float Property LargeTentBedrollBack = 60.0 AutoReadOnly
 {Moves the large tent's bedrolls this much further from the fire (negative:
 nearer), from the tent's centre.}
-Float Property LargeTentBedrollLeft = 0.0 AutoReadOnly
-{Moves the large tent's row of bedrolls this much to the left as seen from the
-fire (negative: right), from the centre of the tent.}
 
 Float Property BedrollRingRadius = 190.0 AutoReadOnly
 {Without tents: distance of the bedrolls from the centre of the fire, just
@@ -277,7 +268,6 @@ Int Property kTub = 38 AutoReadOnly
 Int Property kSlotCount = 39 AutoReadOnly
 Int Property kMaxFollowerSeats = 5 AutoReadOnly    ; fire seats besides the player's
 
-Int Property kMaxFollowers = 5 AutoReadOnly
 Int Property kMaxTents = 3 AutoReadOnly
 Int Property kMaxBedrolls = 12 AutoReadOnly
 Int Property kRingBedrolls = 4 AutoReadOnly        ; without tents
@@ -293,10 +283,19 @@ Float Property kChoppingBlockBesideSmallTent = 90.0 AutoReadOnly ; further out b
 Float Property kChoppingBlockBesideLargeTent = 170.0 AutoReadOnly ; further out beside the large tent
 Float Property kChoppingBlockTurn = 25.0 AutoReadOnly ; degrees clockwise
 Int Property kFirewoodPerFire = 2 AutoReadOnly
-Float Property kTentGap = 15.0 AutoReadOnly         ; between a side tent and the large tent
-Float Property kSideTentShift = 250.0 AutoReadOnly   ; side tents beside the large tent, toward the player
-Float Property kSideTentAngle = 60.0 AutoReadOnly    ; and turned from facing the fire
-Float Property kSideTentSpread = 40.0 AutoReadOnly   ; and moved out sideways, away from the large tent
+; Small tents beside the large tent: their centre kSideTentForward from the
+; fire's centre (negative: toward the player) and kSideTentSide to either
+; side, turned kSideTentTurn clockwise (the right one; the left mirrored) from
+; facing the player.
+Float Property kSideTentForward = -149.0 AutoReadOnly
+Float Property kSideTentSide = 317.0 AutoReadOnly
+Float Property kSideTentTurn = 55.0 AutoReadOnly
+; The tub beside a small tent, in the tent's own frame: kTubBesideSmallForward
+; ahead of its centre (toward its entrance), kTubBesideSmallRight to the side
+; away from the other tents, turned kTubBesideSmallTurn toward the tent.
+Float Property kTubBesideSmallForward = 98.0 AutoReadOnly
+Float Property kTubBesideSmallRight = 220.0 AutoReadOnly
+Float Property kTubBesideSmallTurn = 17.0 AutoReadOnly
 String Property kBedrollAltPlugin = "Bedroll Alternative - BOS Color Variance.esp" AutoReadOnly
 Float Property kChoppingBlockAside = 40.0 AutoReadOnly ; and round from the nearest bedroll
 Float Property kBedrollHalfLength = 100.0 AutoReadOnly ; head to foot, halved
@@ -566,52 +565,26 @@ Function SetUpCamp()
 	Float[] tentFwd = new Float[4]
 	Float[] tentSide = new Float[4]
 	Float[] tentTurn = new Float[4]
-	Float[] tentDistance = new Float[4]
 	t = 0
 	While t < tents
 		Float bearing = FanBearing(t)
-		tentDistance[t] = SmallTentDistance
+		Float distance = SmallTentDistance
 		If sizes[t] == kLarge
-			tentDistance[t] = LargeTentDistance
-		ElseIf t > 0 && sizes[0] == kLarge
-			; Beside the large tent: pushed out until it clears it.
-			tentDistance[t] = ClearOfLargeTent(sizes[t], bearing, SmallTentDistance)
+			distance = LargeTentDistance
 		EndIf
-		tentFwd[t] = FireForward() + tentDistance[t] * Math.Cos(bearing)
-		tentSide[t] = tentDistance[t] * Math.Sin(bearing)
+		tentFwd[t] = FireForward() + distance * Math.Cos(bearing)
+		tentSide[t] = distance * Math.Sin(bearing)
 		tentTurn[t] = bearing + 180.0
 		If t > 0 && sizes[0] == kLarge
-			; Beside the large tent: slid kSideTentShift toward the player,
-			; then turned to face the fire, so the tents ring the fire with
-			; their entrances together.
-			Float shiftedFwd = tentFwd[t] - kSideTentShift
-			tentFwd[t] = shiftedFwd
-			; And kSideTentSpread further out to its side, away from the large tent.
-			Float shiftedSide = tentSide[t] + kSideTentSpread
-			If tentSide[t] < 0.0
-				shiftedSide = tentSide[t] - kSideTentSpread
+			; Beside the large tent: a fixed spot on the player's side of the
+			; fire, angled so the entrances come together (mirrored on the left).
+			Float sideSign = 1.0
+			If bearing < 0.0
+				sideSign = -1.0
 			EndIf
-			tentSide[t] = shiftedSide
-			Float dx = shiftedFwd - FireForward()
-			Float dy = tentSide[t]
-			Float facing = 90.0
-			If dy < 0.0
-				facing = -90.0
-			EndIf
-			If Math.abs(dx) > 0.001
-				facing = Math.atan(dy / dx)
-				If dx < 0.0
-					facing += 180.0
-				EndIf
-			EndIf
-			; Then angled kSideTentAngle: the right tent (seen by the player)
-			; anticlockwise, the left clockwise.
-			Float angle = kSideTentAngle
-			If dy > 0.0
-				angle = -kSideTentAngle
-			EndIf
-			tentTurn[t] = facing + 180.0 + angle
-			tentDistance[t] = Math.Sqrt(dx * dx + dy * dy)
+			tentFwd[t] = FireForward() + kSideTentForward
+			tentSide[t] = sideSign * kSideTentSide
+			tentTurn[t] = 180.0 + sideSign * kSideTentTurn
 		EndIf
 		t += 1
 	EndWhile
@@ -1297,7 +1270,7 @@ Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clu
 	If TubInLargeTent && tents > 0 && sizes[0] == kLarge
 		; TubInTentRight to the right of the tent's centre, as seen from the
 		; fire (see SetTentBedroll), as far back as the bedrolls.
-		Float offset = LargeTentBedrollLeft - TubInTentRight
+		Float offset = -TubInTentRight
 		fwd[kTub] = tentFwd[0] + offset * Math.Cos(tentTurn[0] + 90.0) - LargeTentBedrollBack * Math.Cos(tentTurn[0])
 		side[kTub] = tentSide[0] + offset * Math.Sin(tentTurn[0] + 90.0) - LargeTentBedrollBack * Math.Sin(tentTurn[0])
 		turn[kTub] = tentTurn[0] + TubInTentTurn
@@ -1313,30 +1286,11 @@ Function SetTub(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int[] clu
 		; Straight out from the tent's side, with room for the tub's clutter.
 		SetBesideTent(fwd, side, turn, kTub, tentFwd[beside], tentSide[beside], tentTurn[beside], outward, TentHalfWidth(sizes[beside]) + kChoppingBlockGap + TubHalfWidth)
 		If sizes[beside] == kSmall
-			; Toward the fire, along the way the tent faces.
-			fwd[kTub] = fwd[kTub] + TubBesideSmallTentForward * Math.Cos(tentTurn[beside])
-			side[kTub] = side[kTub] + TubBesideSmallTentForward * Math.Sin(tentTurn[beside])
-			; Then round the fire toward the tent, turning with it.
-			Float dx = fwd[kTub] - FireForward()
-			Float dy = side[kTub]
-			Float radius = Math.Sqrt(dx * dx + dy * dy)
-			If radius > 1.0
-				Float swing = -outward * TubBesideSmallTentSwing / radius * 57.29578
-				Float tubBearing = 90.0
-				If dy < 0.0
-					tubBearing = -90.0
-				EndIf
-				If Math.abs(dx) > 0.001
-					tubBearing = Math.atan(dy / dx)
-					If dx < 0.0
-						tubBearing += 180.0
-					EndIf
-				EndIf
-				tubBearing += swing
-				fwd[kTub] = FireForward() + radius * Math.Cos(tubBearing)
-				side[kTub] = radius * Math.Sin(tubBearing)
-				turn[kTub] = turn[kTub] + swing
-			EndIf
+			Float right = -outward * kTubBesideSmallRight
+			Float facing = tentTurn[beside]
+			fwd[kTub] = tentFwd[beside] + kTubBesideSmallForward * Math.Cos(facing) + right * Math.Cos(facing + 90.0)
+			side[kTub] = tentSide[beside] + kTubBesideSmallForward * Math.Sin(facing) + right * Math.Sin(facing + 90.0)
+			turn[kTub] = facing - outward * kTubBesideSmallTurn
 		EndIf
 		Return
 	EndIf
@@ -1386,16 +1340,14 @@ EndFunction
 Function SetTentBedroll(Form[] forms, Float[] fwd, Float[] side, Float[] turn, Int slot, Float tentFwd, Float tentSide, Float tentTurn, Int index, Int count, Int size, Int colorSeq)
 	Int rowLength = count
 	Float back = 0.0
-	Float left = 0.0
 	If size == kLarge
 		rowLength = LargeTentCapacity
 		back = LargeTentBedrollBack
-		left = LargeTentBedrollLeft
 	EndIf
 	; Offset along the tent's right axis, which points at tentTurn + 90. The
 	; tent faces the fire, so its right is the left as seen from the fire.
 	; The tent's forward axis, at tentTurn, points at the fire.
-	Float offset = RowPosition(rowLength - 1) / 2.0 - RowPosition(index) + left
+	Float offset = RowPosition(rowLength - 1) / 2.0 - RowPosition(index)
 	forms[slot] = BedrollForm(colorSeq)
 	fwd[slot] = tentFwd + offset * Math.Cos(tentTurn + 90.0) - back * Math.Cos(tentTurn)
 	side[slot] = tentSide + offset * Math.Sin(tentTurn + 90.0) - back * Math.Sin(tentTurn)
@@ -1559,54 +1511,6 @@ Int Function TentCapacity(Int size)
 		Return 4
 	EndIf
 	Return capacity
-EndFunction
-
-; How far from the fire a tent of this size at `bearing` (degrees) must stand,
-; from `distance` outward in steps of 5, for its footprint to clear the large
-; tent's in the middle by kTentGap. Distances are from the fire's centre.
-Float Function ClearOfLargeTent(Int size, Float bearing, Float distance)
-	While distance < 1000.0 && OverlapsLargeTent(size, bearing, distance)
-		distance += 5.0
-	EndWhile
-	Return distance
-EndFunction
-
-; Whether a tent of this size at `bearing` and `distance`, facing the fire,
-; comes within kTentGap of the large tent in the middle. Both footprints are
-; rectangles; each one's corners and edge midpoints are tested against the
-; other, which catches any overlap between rectangles of these sizes.
-Bool Function OverlapsLargeTent(Int size, Float bearing, Float distance)
-	; In the large tent's frame: x out from the fire, y to the side.
-	Float largeX = LargeTentDistance
-	Float hd = TentHalfDepth(size)
-	Float hw = TentHalfWidth(size)
-	Float c = Math.Cos(bearing)
-	Float sn = Math.Sin(bearing)
-	Float cx = distance * c
-	Float cy = distance * sn
-	Int i = -1
-	While i <= 1
-		Int j = -1
-		While j <= 1
-			; A point of this tent: along its depth (radial) and width.
-			Float px = cx + i * hd * c + j * hw * sn
-			Float py = cy + i * hd * sn - j * hw * c
-			If Math.abs(px - largeX) < LargeTentHalfDepth + kTentGap && Math.abs(py) < LargeTentHalfWidth + kTentGap
-				Return True
-			EndIf
-			; A point of the large tent, in this tent's frame.
-			Float qx = largeX + i * LargeTentHalfDepth - cx
-			Float qy = j * LargeTentHalfWidth - cy
-			Float u = qx * c + qy * sn
-			Float v = qx * sn - qy * c
-			If Math.abs(u) < hd + kTentGap && Math.abs(v) < hw + kTentGap
-				Return True
-			EndIf
-			j += 1
-		EndWhile
-		i += 1
-	EndWhile
-	Return False
 EndFunction
 
 Float Function TentHalfWidth(Int size)
