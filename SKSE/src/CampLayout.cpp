@@ -17,6 +17,7 @@ namespace CampLayout
 	{
 		constexpr auto kClass = "LZC_CampsiteQuestScript"sv;
 		constexpr auto kScript = "LZC_CampsiteQuestScript";
+		constexpr auto kPluginPrefix = "Wayfarer's Rest - A Convenient Camping Mod."sv;
 		constexpr auto kBedrollAltPlugin = "Bedroll Alternative - BOS Color Variance.esp"sv;
 
 		// Slots in the layout (and in the script's placedRefs).
@@ -84,6 +85,7 @@ namespace CampLayout
 		constexpr float kMaxTilt = 10.0f;   // most an object tilts with the ground
 		constexpr float kMaxStep = 48.0f;   // most the ground under a tent may vary
 		constexpr float kTubMaxTilt = 6.0f;  // the tub tilts less than the rest
+		constexpr float kRolledDrop = 10.0f;  // a rolled-up bedroll starts this far above its bedroll
 
 		inline float Cos(float a_degrees) { return std::cos(a_degrees * std::numbers::pi_v<float> / 180.0f); }
 		inline float Sin(float a_degrees) { return std::sin(a_degrees * std::numbers::pi_v<float> / 180.0f); }
@@ -101,6 +103,8 @@ namespace CampLayout
 			std::vector<std::int32_t>       tentSizes;
 			std::int32_t                    tentCount{ 0 };
 			std::vector<RE::TESObjectREFR*> tubSeats;
+			std::vector<RE::TESObjectREFR*> rolledKits;  // by bedroll, None once unrolled (or never rolled)
+			std::vector<std::int32_t>       owners;      // by returned reference: the layout slot it belongs to
 		};
 		Built built;
 
@@ -294,12 +298,15 @@ namespace CampLayout
 				LayOutBedrollSeats();
 				CollectClutter();
 
-				auto refs = Papyrus::Camp::Place(_layout);
+				std::vector<std::int32_t> owners;
+				auto                      refs = Papyrus::Camp::Place(_layout, &owners);
 				if (refs.size() <= kSlotCount) {
 					built.status = Papyrus::Camp::kBadArguments;
 					return {};
 				}
 				Settle(refs);
+				RollUp(refs, owners);
+				built.owners = owners;
 				Report(refs);
 				return refs;
 			}
@@ -781,6 +788,43 @@ namespace CampLayout
 				}
 			}
 
+			// With BedrollsStartRolled, each bedroll is placed as usual, with its
+			// seat and clutter, but disabled, and a rolled-up bedroll dropped where
+			// it lies. Activating that (or a follower going to bed in it) unrolls
+			// the bedroll where it was laid out, however far the rolled one has
+			// been knocked: see Unroll. The rolled ones are added to a_refs, so
+			// packing up takes them.
+			void RollUp(std::vector<RE::TESObjectREFR*>& a_refs, std::vector<std::int32_t>& a_owners) const
+			{
+				built.rolledKits.assign(kMaxBedrolls, nullptr);
+				auto* rolled = _props.Form<RE::TESBoundObject>("LZC_BedrollRolled");
+				if (!rolled || !_props.Bool("BedrollsStartRolled", false)) {
+					return;
+				}
+				for (std::int32_t b = 0; b < kMaxBedrolls; ++b) {
+					auto* bed = a_refs[kFirstBedroll + b];
+					if (!bed) {
+						continue;
+					}
+					const auto slot = static_cast<std::int32_t>(kFirstBedroll) + b;
+					for (std::size_t k = 0; k < a_refs.size(); ++k) {
+						const bool owned = k > kSlotCount && k < a_owners.size() && a_owners[k] == slot;
+						if (a_refs[k] && (static_cast<std::int32_t>(k) == slot || k == kFirstBedrollSeat + b || owned)) {
+							a_refs[k]->Disable();
+						}
+					}
+					const auto kit = bed->PlaceObjectAtMe(rolled, false);
+					if (!kit) {
+						continue;
+					}
+					kit->data.angle = { 0.0f, 0.0f, bed->GetAngleZ() };
+					kit->SetPosition(bed->GetPosition() + RE::NiPoint3{ 0.0f, 0.0f, kRolledDrop });
+					a_refs.push_back(kit.get());
+					a_owners.push_back(-1);
+					built.rolledKits[b] = kit.get();
+				}
+			}
+
 			// What the script reads back for the follower quest and its state.
 			void Report(const std::vector<RE::TESObjectREFR*>& a_refs) const
 			{
@@ -854,7 +898,73 @@ namespace CampLayout
 			return Builder(props, player, a_partners, a_couples).Run();
 		}
 
+		// Unrolls camp bedroll a_bed (0 to kMaxBedrolls - 1) if it's still
+		// rolled up: enables the bedroll, its seat and its clutter, where they
+		// were laid out, and deletes the rolled-up one. Reads and updates the
+		// camp script's placedRefs, PlacedOwners and RolledKits.
+		void Unroll(RE::BSScript::Object* a_camp, std::size_t a_bed)
+		{
+			const auto* rolledValue = ScriptObjects::AutoProperty(a_camp, "RolledKits");
+			const auto  rolled = rolledValue && rolledValue->IsArray() ? rolledValue->GetArray() : nullptr;
+			auto*       kitForm = rolled && a_bed < rolled->size() ? FormValue(&(*rolled)[a_bed]) : nullptr;
+			auto*       kit = kitForm ? kitForm->As<RE::TESObjectREFR>() : nullptr;
+			if (!kit) {
+				return;
+			}
+			const auto* placedValue = a_camp->GetVariable("placedRefs");
+			const auto  placed = placedValue && placedValue->IsArray() ? placedValue->GetArray() : nullptr;
+			const auto* ownersValue = ScriptObjects::AutoProperty(a_camp, "PlacedOwners");
+			const auto  owners = ownersValue && ownersValue->IsArray() ? ownersValue->GetArray() : nullptr;
+			const auto  slot = static_cast<std::int32_t>(kFirstBedroll + a_bed);
+			for (std::size_t k = 0; placed && k < placed->size(); ++k) {
+				auto* form = FormValue(&(*placed)[k]);
+				auto* ref = form ? form->As<RE::TESObjectREFR>() : nullptr;
+				if (!ref) {
+					continue;
+				}
+				if (ref == kit) {
+					(*placed)[k].SetNone();
+					continue;
+				}
+				const bool owned = k > kSlotCount && owners && k < owners->size() && (*owners)[k].IsInt() && (*owners)[k].GetSInt() == slot;
+				if (static_cast<std::int32_t>(k) == slot || k == kFirstBedrollSeat + a_bed || owned) {
+					ref->Enable(false);
+				}
+			}
+			kit->Disable();
+			kit->SetDelete(true);
+			(*rolled)[a_bed].SetNone();
+		}
+
+		RE::BSTSmartPointer<RE::BSScript::Object> CampScript()
+		{
+			static RE::FormID quest = 0;
+			return ScriptObjects::FindQuestScript(kPluginPrefix, kScript, quest);
+		}
+
+		// Unrolls the camp bedrolls among a_beds that are still rolled up (for
+		// followers going to bed).
+		void UnrollBeds(RE::StaticFunctionTag*, std::vector<RE::TESObjectREFR*> a_beds)
+		{
+			auto        camp = CampScript();
+			const auto* placedValue = camp ? camp->GetVariable("placedRefs") : nullptr;
+			const auto  placed = placedValue && placedValue->IsArray() ? placedValue->GetArray() : nullptr;
+			if (!placed) {
+				return;
+			}
+			for (std::int32_t b = 0; b < kMaxBedrolls; ++b) {
+				const auto index = kFirstBedroll + b;
+				auto*      form = index < placed->size() ? FormValue(&(*placed)[index]) : nullptr;
+				auto*      bed = form ? form->As<RE::TESObjectREFR>() : nullptr;
+				if (bed && std::ranges::find(a_beds, bed) != a_beds.end()) {
+					Unroll(camp.get(), static_cast<std::size_t>(b));
+				}
+			}
+		}
+
 		std::int32_t GetBuildStatus(RE::StaticFunctionTag*) { return built.status; }
+		std::vector<RE::TESObjectREFR*> GetRolledKits(RE::StaticFunctionTag*) { return built.rolledKits; }
+		std::vector<std::int32_t>       GetPlacedOwners(RE::StaticFunctionTag*) { return built.owners; }
 		std::vector<RE::TESObjectREFR*> GetFireSeats(RE::StaticFunctionTag*) { return built.fireSeats; }
 		std::vector<std::int32_t>       GetFirePlaces(RE::StaticFunctionTag*) { return built.firePlaces; }
 		std::vector<RE::TESObjectREFR*> GetCampBeds(RE::StaticFunctionTag*) { return built.beds; }
@@ -864,6 +974,20 @@ namespace CampLayout
 		std::vector<std::int32_t>       GetTentSizes(RE::StaticFunctionTag*) { return built.tentSizes; }
 		std::int32_t                    GetTentCount(RE::StaticFunctionTag*) { return built.tentCount; }
 		std::vector<RE::TESObjectREFR*> GetTubSeats(RE::StaticFunctionTag*) { return built.tubSeats; }
+	}
+
+	bool UnrollKit(RE::TESObjectREFR* a_kit)
+	{
+		auto        camp = a_kit ? CampScript() : nullptr;
+		const auto* rolledValue = camp ? ScriptObjects::AutoProperty(camp.get(), "RolledKits") : nullptr;
+		const auto  rolled = rolledValue && rolledValue->IsArray() ? rolledValue->GetArray() : nullptr;
+		for (std::size_t b = 0; rolled && b < rolled->size(); ++b) {
+			if (FormValue(&(*rolled)[b]) == a_kit) {
+				Unroll(camp.get(), b);
+				return true;
+			}
+		}
+		return false;
 	}
 
 	void Register(RE::BSScript::IVirtualMachine* a_vm)
@@ -879,5 +1003,8 @@ namespace CampLayout
 		a_vm->RegisterFunction("GetTentSizes"sv, kClass, GetTentSizes);
 		a_vm->RegisterFunction("GetTentCount"sv, kClass, GetTentCount);
 		a_vm->RegisterFunction("GetTubSeats"sv, kClass, GetTubSeats);
+		a_vm->RegisterFunction("GetRolledKits"sv, kClass, GetRolledKits);
+		a_vm->RegisterFunction("GetPlacedOwners"sv, kClass, GetPlacedOwners);
+		a_vm->RegisterFunction("UnrollBeds"sv, kClass, UnrollBeds);
 	}
 }

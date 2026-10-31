@@ -11,10 +11,44 @@ namespace BedrollKit
 
 		using AlternateTexture = RE::TESModelTextureSwap::AlternateTexture;
 
-		AlternateTexture* swap{ nullptr };      // ours, allocated once
-		AlternateTexture* original{ nullptr };  // the kit's own, from the plugin
-		std::uint32_t     originalCount{ 0 };
-		bool              saved{ false };
+		// A form whose "cloth" shape follows the style: the kit, and the
+		// rolled-up bedroll dropped at camp.
+		struct Swappable
+		{
+			AlternateTexture* swap{ nullptr };      // ours, allocated once
+			AlternateTexture* original{ nullptr };  // the form's own, from the plugin
+			std::uint32_t     originalCount{ 0 };
+			bool              saved{ false };
+
+			void Apply(RE::TESModelTextureSwap* a_model, RE::BGSTextureSet* a_textureSet)
+			{
+				if (!a_model) {
+					return;
+				}
+				if (!saved) {
+					original = a_model->alternateTextures;
+					originalCount = a_model->numAlternateTextures;
+					saved = true;
+				}
+				if (!a_textureSet) {
+					a_model->alternateTextures = original;
+					a_model->numAlternateTextures = originalCount;
+					return;
+				}
+				if (!swap) {
+					// From the game's heap, like the plugin's own alternate textures.
+					swap = RE::calloc<AlternateTexture>(1);
+				}
+				swap->textureSet = a_textureSet;
+				swap->index3D = kShapeIndex;
+				swap->name3D = kShape;
+				a_model->alternateTextures = swap;
+				a_model->numAlternateTextures = 1;
+			}
+		};
+
+		Swappable kit;
+		Swappable rolled;
 
 		template <class T>
 		T* Property(RE::BSScript::Object* a_script, std::string_view a_name)
@@ -26,16 +60,6 @@ namespace BedrollKit
 
 	void Apply(RE::BSScript::Object* a_script, std::int32_t a_style)
 	{
-		auto* kit = Property<RE::TESObjectMISC>(a_script, "LZC_BedrollKit");
-		if (!kit) {
-			return;
-		}
-		if (!saved) {
-			original = kit->alternateTextures;
-			originalCount = kit->numAlternateTextures;
-			saved = true;
-		}
-
 		const char* set = nullptr;
 		switch (a_style) {
 		case 1:
@@ -52,20 +76,7 @@ namespace BedrollKit
 			break;
 		}
 		auto* textureSet = set ? Property<RE::BGSTextureSet>(a_script, set) : nullptr;
-		if (!textureSet) {
-			kit->alternateTextures = original;
-			kit->numAlternateTextures = originalCount;
-			return;
-		}
-
-		if (!swap) {
-			// From the game's heap, like the plugin's own alternate textures.
-			swap = RE::calloc<AlternateTexture>(1);
-		}
-		swap->textureSet = textureSet;
-		swap->index3D = kShapeIndex;
-		swap->name3D = kShape;
-		kit->alternateTextures = swap;
-		kit->numAlternateTextures = 1;
+		kit.Apply(Property<RE::TESObjectMISC>(a_script, "LZC_BedrollKit"), textureSet);
+		rolled.Apply(Property<RE::TESObjectACTI>(a_script, "LZC_BedrollRolled"), textureSet);
 	}
 }

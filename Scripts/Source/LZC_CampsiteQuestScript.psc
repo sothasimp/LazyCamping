@@ -53,6 +53,13 @@ Bool Property KitsAtMerchants = True Auto
 {General goods merchants can stock the kits (SKSE menu): LazyCamping.dll adds
 LZC_LItemCampingKits to every leveled list in LZC_VendorLists while the game
 runs.}
+Bool Property BedrollsStartRolled = False Auto
+{Each bedroll starts rolled up (LZC_BedrollRolled) where it will lie;
+activating it unrolls it in its place, and followers unroll their own at
+bedtime (SKSE menu).}
+Activator Property LZC_BedrollRolled Auto
+{The rolled-up bedroll dropped in place of each bedroll with
+BedrollsStartRolled: an Activator with the kit's model.}
 Int Property BedrollStyle = 0 Auto
 {With Bedroll Alternative - BOS Color Variance installed (SKSE menu): 0 the
 vanilla bedroll (LZC_BedrollPlaced), 1 green, 2 blue, 3 red, 4 mixed: green,
@@ -232,9 +239,14 @@ Int Property kTub = 38 AutoReadOnly
 Int Property kSlotCount = 39 AutoReadOnly
 
 Int Property kLarge = 1 AutoReadOnly
-Int Property kNativeVersion = 14 AutoReadOnly         ; LazyCamping.dll needed
+Int Property kNativeVersion = 15 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
+; With BedrollsStartRolled: each bedroll's rolled-up bedroll (None once
+; unrolled), and the slot each of placedRefs belongs to (clutter: the object it
+; came with). Read and updated by LazyCamping.dll as bedrolls unroll.
+ObjectReference[] Property RolledKits Auto Hidden
+Int[] Property PlacedOwners Auto Hidden
 Form[] clothesTaken   ; what a clothes basket took off, until it's put back on
 Bool undressed = False
 Int Property kTubClothes = 16 AutoReadOnly   ; per follower in the tub
@@ -272,6 +284,10 @@ ObjectReference[] Function GetBedSeats() Global Native
 Int[] Function GetBedGroups() Global Native
 Int[] Function GetBedOrders() Global Native
 ObjectReference[] Function GetTubSeats() Global Native
+ObjectReference[] Function GetRolledKits() Global Native
+Int[] Function GetPlacedOwners() Global Native
+; Unrolls the camp bedrolls among akBeds that are still rolled up.
+Function UnrollBeds(ObjectReference[] akBeds) Global Native
 Int[] Function GetTentSizes() Global Native
 Int Function GetTentCount() Global Native
 
@@ -453,6 +469,8 @@ Function SetUpCamp()
 		EndIf
 		Return
 	EndIf
+	RolledKits = GetRolledKits()
+	PlacedOwners = GetPlacedOwners()
 	; The cloth sound plays as the camp appears.
 	If LZC_UnpackSound
 		LZC_UnpackSound.Play(PlayerRef)
@@ -682,6 +700,8 @@ Function PackUpCamp()
 		storageHome = LZC_CampStorageMarkers[0]
 	EndIf
 	PackUpRefs(placedRefs, persistent, LZC_CampStorage, storageHome)
+	RolledKits = None
+	PlacedOwners = None
 	Int i = 0
 	While i < placedRefs.Length
 		placedRefs[i] = None

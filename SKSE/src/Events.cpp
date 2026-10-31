@@ -1,5 +1,6 @@
 #include "Events.h"
 
+#include "CampLayout.h"
 #include "ScriptObjects.h"
 
 namespace Events
@@ -62,6 +63,10 @@ namespace Events
 				if (a_event && a_event->objectActivated && a_event->actionRef && a_event->actionRef->IsPlayerRef() &&
 					FromPlugin(a_event->objectActivated->GetBaseObject())) {
 					RE::TESObjectREFR* target = a_event->objectActivated.get();
+					// A rolled-up bedroll unrolls where its bedroll was laid out.
+					if (CampLayout::UnrollKit(target)) {
+						return RE::BSEventNotifyControl::kContinue;
+					}
 					RE::TESObjectREFR* actor = a_event->actionRef.get();
 					ScriptObjects::Call(CampScript(), "OnCampObjectActivated", std::move(target), std::move(actor));
 				}

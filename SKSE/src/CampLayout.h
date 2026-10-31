@@ -9,4 +9,9 @@
 namespace CampLayout
 {
 	void Register(RE::BSScript::IVirtualMachine* a_vm);
+
+	// Unrolls the camp bedroll a_kit stands for, if it's one of the camp's
+	// rolled-up bedrolls (see the BedrollsStartRolled setting). Returns
+	// whether it was. Main thread only.
+	bool UnrollKit(RE::TESObjectREFR* a_kit);
 }

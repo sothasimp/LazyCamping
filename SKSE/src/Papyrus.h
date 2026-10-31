@@ -56,6 +56,9 @@ namespace Papyrus
 		// Places the layout and its clutter in one frame. Returns the layout's
 		// references (nullptr where there's no form), then the storage spot
 		// (or nullptr), then the clutter; empty if the layout doesn't line up.
-		std::vector<RE::TESObjectREFR*> Place(const Layout& a_layout);
+		// a_owners, if given, gets the layout index each returned reference
+		// belongs to: its own for the layout, the object it came with for
+		// clutter, -1 for the storage spot.
+		std::vector<RE::TESObjectREFR*> Place(const Layout& a_layout, std::vector<std::int32_t>* a_owners = nullptr);
 	}
 }

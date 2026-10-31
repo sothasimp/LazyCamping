@@ -18,7 +18,7 @@ namespace Papyrus
 	namespace
 	{
 		constexpr auto         kClass = "LZC_CampsiteQuestScript"sv;
-		constexpr std::int32_t kVersion = 14;
+		constexpr std::int32_t kVersion = 15;
 
 		constexpr RE::FormID kXMarkerHeading = 0x34;  // Skyrim.esm
 
@@ -128,6 +128,7 @@ namespace Papyrus
 			RE::NiPoint3        position;
 			RE::NiPoint3        angles;
 			std::uint16_t       scale{ 100 };
+			std::int32_t        owner{ -1 };  // the layout index it belongs to
 		};
 
 		// The least the ground is sampled out from an object's centre when
@@ -221,7 +222,7 @@ namespace Papyrus
 		// the storage spot, then the clutter. The ground under every object is
 		// found before anything is placed, so nothing lands on a tent's roof.
 		// Returns an empty array if the arguments don't line up.
-		std::vector<RE::TESObjectREFR*> PlaceImpl(const Camp::Layout& a_layout)
+		std::vector<RE::TESObjectREFR*> PlaceImpl(const Camp::Layout& a_layout, std::vector<std::int32_t>* a_owners)
 		{
 			const auto&       a_forms = a_layout.forms;
 			const auto&       a_fwd = a_layout.fwd;
@@ -261,6 +262,7 @@ namespace Papyrus
 				}
 				auto& ref = pending[i];
 				ref.base = base;
+				ref.owner = static_cast<std::int32_t>(i);
 				ref.position = LocalToWorld(a_origin, heading, a_fwd[i], a_side[i]);
 
 				const std::int32_t set = a_clutterSet[i] - 1;
@@ -316,6 +318,7 @@ namespace Papyrus
 					PendingRef clutter;
 					clutter.base = itemBase;
 					clutter.scale = item->GetReferenceRuntimeData().refScale;
+					clutter.owner = static_cast<std::int32_t>(i);
 					clutter.position = ref.position + frame * local;
 					clutter.angles = Placement::AnglesFromMatrix(frame * relative);
 					if (isStorage) {
@@ -360,6 +363,14 @@ namespace Papyrus
 					logger::warn("PlaceCamp: couldn't create {:08X} (index {})", ref.base->GetFormID(), i);
 				}
 				refs[i] = created;
+			}
+			if (a_owners) {
+				a_owners->assign(pending.size(), -1);
+				for (std::size_t i = 0; i < pending.size(); ++i) {
+					if (i != count) {
+						(*a_owners)[i] = pending[i].owner;
+					}
+				}
 			}
 			return refs;
 		}
@@ -418,9 +429,9 @@ namespace Papyrus
 			return kClear;
 		}
 
-		std::vector<RE::TESObjectREFR*> Place(const Layout& a_layout)
+		std::vector<RE::TESObjectREFR*> Place(const Layout& a_layout, std::vector<std::int32_t>* a_owners)
 		{
-			return PlaceImpl(a_layout);
+			return PlaceImpl(a_layout, a_owners);
 		}
 	}
 

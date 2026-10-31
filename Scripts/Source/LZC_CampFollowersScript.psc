@@ -156,7 +156,9 @@ Function OnPlayerSat(ObjectReference akFurniture)
 	Else
 		Int bedSeat = IndexOf(campBedSeats, akFurniture)
 		If bedSeat >= 0
-			ForceChosen(Seats, campBedSeats, ChooseSpots(campBedSeats, bedGroup, bedOrder, bedSeat))
+			; Bedrolls still rolled up have no seat yet.
+			ObjectReference[] open = UnrolledOnly(campBedSeats)
+			ForceChosen(Seats, open, ChooseSpots(open, bedGroup, bedOrder, bedSeat))
 			SetActivity(kSitting)
 		EndIf
 	EndIf
@@ -261,9 +263,34 @@ Event OnSleepStart(Float afSleepStartTime, Float afDesiredSleepEndTime)
 	EndIf
 EndEvent
 
-; Gives each follower a camp bedroll the player isn't lying in.
+; Gives each follower a camp bedroll the player isn't lying in, unrolling
+; it if it's still rolled up.
 Function AssignBedrolls()
-	ForceChosen(Bedrolls, campBedrolls, ChooseSpots(campBedrolls, bedGroup, bedOrder, BedrollUnderPlayer()))
+	Int[] chosen = ChooseSpots(campBedrolls, bedGroup, bedOrder, BedrollUnderPlayer())
+	ForceChosen(Bedrolls, campBedrolls, chosen)
+	ObjectReference[] beds = new ObjectReference[5]
+	Int i = 0
+	While i < chosen.Length && i < beds.Length
+		If chosen[i] >= 0
+			beds[i] = campBedrolls[chosen[i]]
+		EndIf
+		i += 1
+	EndWhile
+	LZC_CampsiteQuestScript.UnrollBeds(beds)
+EndFunction
+
+; A copy of refs with None in place of any that are disabled (the seats on
+; bedrolls still rolled up).
+ObjectReference[] Function UnrolledOnly(ObjectReference[] refs)
+	ObjectReference[] open = new ObjectReference[12]
+	Int i = 0
+	While refs && i < refs.Length && i < open.Length
+		If refs[i] && !refs[i].IsDisabled()
+			open[i] = refs[i]
+		EndIf
+		i += 1
+	EndWhile
+	Return open
 EndFunction
 
 ; Picks a spot for each follower among `spots` (the camp bedrolls, the seats

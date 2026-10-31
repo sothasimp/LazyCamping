@@ -34,6 +34,7 @@ namespace Menu
 			bool         kitsAtMerchants{ true };
 			int          firewoodPerFire{ 2 };
 			bool         placeMapMarker{ true };
+			bool         bedrollsStartRolled{ false };
 		};
 
 		constexpr const char* kBedrollStyles[] = { "Vanilla", "Bedroll Alternative - Green", "Bedroll Alternative - Blue",
@@ -76,14 +77,15 @@ namespace Menu
 			auto*  merchants = object ? AutoProperty(object.get(), "KitsAtMerchants") : nullptr;
 			auto*  perFire = object ? AutoProperty(object.get(), "FirewoodPerFire") : nullptr;
 			auto*  mapMarker = object ? AutoProperty(object.get(), "PlaceMapMarker") : nullptr;
-			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll && merchants && perFire && mapMarker;
+			auto*  rolled = object ? AutoProperty(object.get(), "BedrollsStartRolled") : nullptr;
+			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll && merchants && perFire && mapMarker && rolled;
 			if (found) {
 				auto* dataHandler = RE::TESDataHandler::GetSingleton();
 				values = { firewood->GetBool(), burnHours->GetFloat(), block->GetBool(), grass->GetBool(), light->GetBool(), tub->GetBool(),
 					tubInTent->GetBool(), slope->GetBool(), seat->GetSInt(), bedroll->GetSInt(),
 					dataHandler && (dataHandler->LookupLoadedModByName(kBedrollAltPlugin) ||
 										dataHandler->LookupLoadedLightModByName(kBedrollAltPlugin)),
-					merchants->GetBool(), perFire->GetSInt(), mapMarker->GetBool() };
+					merchants->GetBool(), perFire->GetSInt(), mapMarker->GetBool(), rolled->GetBool() };
 			}
 
 			std::scoped_lock guard(lock);
@@ -114,6 +116,9 @@ namespace Menu
 				}
 				if (auto* light = AutoProperty(object.get(), "PlaceCampfireLight")) {
 					light->SetBool(a_values.placeCampfireLight);
+				}
+				if (auto* rolled = AutoProperty(object.get(), "BedrollsStartRolled")) {
+					rolled->SetBool(a_values.bedrollsStartRolled);
 				}
 				if (auto* mapMarker = AutoProperty(object.get(), "PlaceMapMarker")) {
 					mapMarker->SetBool(a_values.placeMapMarker);
@@ -187,6 +192,8 @@ namespace Menu
 			changed |= ImGuiMCP::Combo("Bedroll", &values.bedrollStyle, kBedrollStyles, static_cast<int>(std::size(kBedrollStyles)));
 			ImGuiMCP::SetItemTooltip("Needs Bedroll Alternative - BOS Color Variance. The camp's bedrolls: vanilla, one of its colours, or its colours in turn, pairs in a tent matching. Takes effect at the next camp.");
 			ImGuiMCP::EndDisabled();
+			changed |= ImGuiMCP::Checkbox("Bedrolls start rolled up", &values.bedrollsStartRolled);
+			ImGuiMCP::SetItemTooltip("Each bedroll starts as a rolled-up bedroll on the ground: activate it to unroll it in its place. Followers unroll their own at bedtime. Takes effect at the next camp.");
 			changed |= ImGuiMCP::Checkbox("Sell kits at general goods merchants", &values.kitsAtMerchants);
 			ImGuiMCP::SetItemTooltip("Merchants can stock the bedroll and tent kits. Shows at their next restock.");
 			changed |= ImGuiMCP::Checkbox("Clear grass around the camp", &values.hideGrassUnderCamp);
