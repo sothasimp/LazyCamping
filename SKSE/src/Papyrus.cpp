@@ -212,8 +212,7 @@ namespace Papyrus
 		// player's storage goes: a copy of it is placed and returned at index
 		// count (or None there), for the script to move the storage onto.
 		//
-		// An object with a `maxTilt` of 0 or more tilts at most that much (0:
-		// stands level even with alignToSlope); the rest use maxTiltDegrees.
+		// Objects marked in `level` stand level even with alignToSlope.
 		//
 		// Returns the layout's references (None where the form is None), then
 		// the storage spot, then the clutter. The ground under every object is
@@ -226,7 +225,7 @@ namespace Papyrus
 			const auto&       a_side = a_layout.side;
 			const auto&       a_lift = a_layout.lift;
 			const auto&       a_turn = a_layout.turn;
-			const auto&       a_maxTilt = a_layout.maxTilt;
+			const auto&       a_level = a_layout.level;
 			const auto&       a_clutterSet = a_layout.clutterSet;
 			const auto&       a_setAnchors = a_layout.setAnchors;
 			const auto&       a_setItems = a_layout.setItems;
@@ -276,8 +275,8 @@ namespace Papyrus
 				// (z = 0) raises it.
 				const float yaw = heading + ToRadians(a_turn[i]) + (anchor ? anchor->GetAngle().z : 0.0f);
 				const float lift = a_lift[i] + (anchor ? anchor->GetPosition().z : 0.0f);
-				const float maxTilt = i < a_maxTilt.size() && a_maxTilt[i] >= 0.0f ? a_maxTilt[i] : a_maxTiltDegrees;
-				GroundAndTilt(a_origin, ref, yaw, identity, lift, a_alignToSlope && maxTilt > 0.0f, maxTilt);
+				const bool level = i < a_level.size() && a_level[i];
+				GroundAndTilt(a_origin, ref, yaw, identity, lift, a_alignToSlope && !level, a_maxTiltDegrees);
 				if (!anchor) {
 					continue;
 				}

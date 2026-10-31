@@ -83,7 +83,6 @@ namespace CampLayout
 		constexpr float kMaxSlope = 30.0f;  // refuse to camp on steeper ground
 		constexpr float kMaxTilt = 10.0f;   // most an object tilts with the ground
 		constexpr float kMaxStep = 48.0f;   // most the ground under a tent may vary
-		constexpr float kTubMaxTilt = 6.0f;  // the tub tilts less than the rest
 
 		inline float Cos(float a_degrees) { return std::cos(a_degrees * std::numbers::pi_v<float> / 180.0f); }
 		inline float Sin(float a_degrees) { return std::sin(a_degrees * std::numbers::pi_v<float> / 180.0f); }
@@ -214,7 +213,7 @@ namespace CampLayout
 				_layout.side.assign(kSlotCount, 0.0f);
 				_layout.lift.assign(kSlotCount, 0.0f);
 				_layout.turn.assign(kSlotCount, 0.0f);
-				_layout.maxTilt.assign(kSlotCount, -1.0f);
+				_layout.level.assign(kSlotCount, false);
 				_layout.clutterSet.assign(kSlotCount, 0);
 				_layout.alignToSlope = a_props.Bool("AlignToSlope", true);
 				_layout.maxTiltDegrees = kMaxTilt;
@@ -455,7 +454,6 @@ namespace CampLayout
 			{
 				_layout.forms[kTub] = _props.Form<RE::TESForm>("LZC_Tub");
 				_layout.clutterSet[kTub] = 5;
-				_layout.maxTilt[kTub] = kTubMaxTilt;
 				if (_props.Bool("TubInLargeTent", false) && !_tents.empty() && _tents[0].size == kLarge) {
 					const auto& tent = _tents[0];
 					const float offset = -kTubInTentRight;
@@ -486,7 +484,7 @@ namespace CampLayout
 			void LayOutChoppingBlock()
 			{
 				_layout.forms[kChoppingBlock] = _props.Form<RE::TESForm>("LZC_ChoppingBlock");
-				_layout.maxTilt[kChoppingBlock] = 0.0f;
+				_layout.level[kChoppingBlock] = true;
 				if (!_tents.empty()) {
 					const auto  outer = static_cast<std::int32_t>(_tents.size()) - 1;
 					const auto& tent = _tents[outer];
