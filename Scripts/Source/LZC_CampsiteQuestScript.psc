@@ -187,14 +187,9 @@ to it, unless fast travel is disabled globally.}
 ; ---------------------------------------------------------------------------
 ; Tents. The layout itself (distances, spacing, where the tub and chopping
 ; block go) is worked out in LazyCamping.dll; see SKSE/src/CampLayout.cpp.
-; The footprints here are for telling whether the player is inside a tent.
 ; ---------------------------------------------------------------------------
-Float Property SmallTentHalfWidth = 85.0 AutoReadOnly
-Float Property SmallTentHalfDepth = 85.0 AutoReadOnly
 Int Property SmallTentCapacity = 2 Auto
 {Most bedrolls a small tent holds (1-4).}
-Float Property LargeTentHalfWidth = 150.0 AutoReadOnly
-Float Property LargeTentHalfDepth = 100.0 AutoReadOnly
 Int Property LargeTentCapacity = 4 Auto
 {Most bedrolls a large tent holds (1-4).}
 
@@ -231,7 +226,6 @@ Keyword Property LocTypeTown Auto
 ; State
 ; ---------------------------------------------------------------------------
 Bool Property CampDeployed = False Auto Hidden
-Int Property TentCount = 0 Auto Hidden
 
 ; Slots in placedRefs.
 Int Property kCampfire = 0 AutoReadOnly
@@ -242,7 +236,6 @@ Int Property kCookingStation = 37 AutoReadOnly     ; hidden, at the fire
 Int Property kTub = 38 AutoReadOnly
 Int Property kSlotCount = 39 AutoReadOnly
 
-Int Property kLarge = 1 AutoReadOnly
 Int Property kNativeVersion = 15 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
@@ -258,7 +251,6 @@ Actor[] tubActors     ; followers undressed by the tub trigger
 Form[] tubClothes     ; what each took off: kTubClothes per tubActors slot
 Float[] tubTriggerOffset   ; the trigger's right, forward, up and turn from the tub anchor
 Float[] tubWaterOffset     ; and the water's
-Int[] tentSizesUsed
 Bool busy = False
 
 ; ---------------------------------------------------------------------------
@@ -292,8 +284,6 @@ ObjectReference[] Function GetRolledKits() Global Native
 Int[] Function GetPlacedOwners() Global Native
 ; Unrolls the camp bedrolls among akBeds that are still rolled up.
 Function UnrollBeds(ObjectReference[] akBeds) Global Native
-Int[] Function GetTentSizes() Global Native
-Int Function GetTentCount() Global Native
 
 ; Packs up the camp in the same frame: brings the grass back, forgets the
 ; bedroll seats, deletes akDelete, disables akDisable and moves akStorage to
@@ -338,9 +328,10 @@ Function HandlePowerCast()
 	busy = False
 EndFunction
 
-; Called by LazyCamping.dll when the player activates a camp object:
-; the tents, the unlit firepit, the cook box over the fire and the clothes
-; basket. Works out which one it is and reacts.
+; Called by LazyCamping.dll when the player activates a camp object: the
+; unlit firepit, the cook box over the fire and the clothes basket. Works out
+; which one it is and reacts; anything else (the tents) does nothing. Only
+; casting the power again packs up the camp.
 Function OnCampObjectActivated(ObjectReference akRef, ObjectReference akActionRef)
 	If akActionRef != PlayerRef || !CampDeployed || !akRef
 		Return
@@ -353,32 +344,7 @@ Function OnCampObjectActivated(ObjectReference akRef, ObjectReference akActionRe
 		LightFire()
 	ElseIf LZC_ClothesBasket && akRef.GetBaseObject() == LZC_ClothesBasket
 		ChangeClothes()
-	Else
-		OnTentActivated(akRef)
 	EndIf
-EndFunction
-
-; Sneaking and activating any of the camp's tents from outside offers to pack
-; up the camp. Anything else does nothing; in particular the player can't pack
-; up by accident from inside a tent.
-Function OnTentActivated(ObjectReference akTent)
-	If busy || !PlayerRef.IsSneaking()
-		Return
-	EndIf
-
-	Int t = 0
-	While t < TentCount
-		If placedRefs[kFirstTent + t] == akTent
-			If IsInsideTent(PlayerRef, akTent, tentSizesUsed[t])
-				Return
-			EndIf
-			busy = True
-			ConfirmPackUp()
-			busy = False
-			Return
-		EndIf
-		t += 1
-	EndWhile
 EndFunction
 
 Bool Function CanCampHere()
@@ -488,8 +454,6 @@ Function SetUpCamp()
 		followers.SetTubSeats(GetTubSeats())
 	EndIf
 
-	tentSizesUsed = GetTentSizes()
-	TentCount = GetTentCount()
 	CampDeployed = True
 	; The leading space sorts the power to the top of the magic menu.
 	RenameForm(LZC_SetUpCampPower, " Pack Up Camp")
@@ -712,34 +676,8 @@ Function PackUpCamp()
 		i += 1
 	EndWhile
 
-	TentCount = 0
 	CampDeployed = False
 	RenameForm(LZC_SetUpCampPower, "")
-EndFunction
-
-Float Function TentHalfWidth(Int size)
-	If size == kLarge
-		Return LargeTentHalfWidth
-	EndIf
-	Return SmallTentHalfWidth
-EndFunction
-
-Float Function TentHalfDepth(Int size)
-	If size == kLarge
-		Return LargeTentHalfDepth
-	EndIf
-	Return SmallTentHalfDepth
-EndFunction
-
-; True if akActor stands within the footprint of a tent of the given size.
-Bool Function IsInsideTent(ObjectReference akActor, ObjectReference akTent, Int size)
-	; Express the actor's position in the tent's own right/forward axes.
-	Float a = akTent.GetAngleZ()
-	Float dx = akActor.GetPositionX() - akTent.GetPositionX()
-	Float dy = akActor.GetPositionY() - akTent.GetPositionY()
-	Float localRight = dx * Math.Cos(a) - dy * Math.Sin(a)
-	Float localForward = dx * Math.Sin(a) + dy * Math.Cos(a)
-	Return Math.Abs(localRight) < TentHalfWidth(size) && Math.Abs(localForward) < TentHalfDepth(size)
 EndFunction
 
 Function NotifySiteProblem(Int result)

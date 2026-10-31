@@ -37,11 +37,9 @@ Every bedroll also has a **seat on it**, facing the fire. Followers sit at the f
 
 With **Bedrolls start rolled up** on (SKSE menu, on by default), every bedroll, in the tents or not, starts as a rolled-up bedroll (`LZC_BedrollRolled`, an Activator with the kit's model) dropped where it will lie. Activating one unrolls the bedroll in its place, with its seat and, for the player's bedroll, its clutter. The bedroll's spot is recorded when the camp goes up, so a rolled-up bedroll knocked away (its model can have Havok) still unrolls in the right place. Followers unroll their own at bedtime if the player hasn't, and don't sit on bedrolls still rolled up. Packing up removes them, rolled or not.
 
-**Sneaking and activating any of the tents from outside** asks *Pack up your camp?*; on *Yes*, everything the camp placed is removed. Activating a tent without sneaking, or from inside, does nothing. So the player can't pack up by accident while getting into bed.
-
 **Sneaking and activating any of the camp's bedrolls** sits the player cross-legged on it (on its seat), with or without tents. Activating a bedroll without sneaking opens the usual Sleep/Wait menu.
 
-While a camp is up, the power is called **Pack Up Camp** (" Pack Up Camp"). It keeps its place in favourites and the voice slot. **Casting it** asks *Pack up your camp?* and packs it up if confirmed, from anywhere, so a camp left behind never stops the player making a new one.
+While a camp is up, the power is called **Pack Up Camp** (" Pack Up Camp"). It keeps its place in favourites and the voice slot. **Casting it** asks *Pack up your camp?* and packs it up if confirmed, from anywhere. It's the only way to pack up: activating the tents does nothing, so a camp left behind never stops the player making a new one.
 
 With **SKSE Menu Framework** installed (optional), its Mod Control Panel gets a *Convenient Camping (Wayfarer's Rest)* page for the firewood mechanic, how long a fire burns, how many firewood lighting it takes, the chopping block, the map marker, starting the bedrolls rolled up, the bathtub and whether it goes in the large tent, aligning the camp to the slope, the fire seats' colour, the bedrolls' style (with *Bedroll Alternative - BOS Color Variance*: its green, blue or red bedroll, or all three in turn, each touching pair in a tent matching; greyed out without it; the bedroll kit item takes the chosen colour too, green for mixed), selling the kits at general goods merchants, clearing grass around the camp, and the campfire light marker (turn it off if a *Light Placer* config already lights the campfire). The settings are kept in the save. Without it, change them on the quest in the Creation Kit.
 
@@ -280,7 +278,6 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 - **Base Object Swapper**: in testing, BOS didn't swap the references the camp places at runtime, so variance mods don't change the camp's bedrolls. The camp's scripts don't depend on the base object, so this only affects looks.
 - **Map marker**: moving a persistent map marker is how other camping mods do it. Still, check in game that the marker appears at the camp on the world map, moves with each new camp, and disappears when you pack up.
 - **Clutter**: each copy takes its scale from its clutter item in the holding cell, set the way Papyrus's `SetScale` does it, so it shows at that size straight away and the save keeps it. A camp with many cluttered tents can place well over 100 objects; that's fine for the game, but keep sets modest.
-- **Tent inside check**: "inside" means within the tent's `HalfWidth` × `HalfDepth` footprint. If activating the tent from just outside its entrance does nothing, shrink those values a little.
 - **Follower count**: followers are counted when the camp goes up, up to 3, because the follower quest has 3 follower aliases. With more than 3 follower seats, the extra seats stay empty. Someone who joins or leaves afterwards keeps their old status until the next camp.
 - **Expansion ideas**:
   - a "Well Rested" style bonus for sleeping in your own tent (check `OnSleepStop` with a player alias)

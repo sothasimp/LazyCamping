@@ -100,8 +100,6 @@ namespace CampLayout
 			std::vector<RE::TESObjectREFR*> bedSeats;
 			std::vector<std::int32_t>       bedGroups;
 			std::vector<std::int32_t>       bedOrders;
-			std::vector<std::int32_t>       tentSizes;
-			std::int32_t                    tentCount{ 0 };
 			std::vector<RE::TESObjectREFR*> tubSeats;
 			std::vector<RE::TESObjectREFR*> rolledKits;  // by bedroll, None once unrolled (or never rolled)
 			std::vector<std::int32_t>       owners;      // by returned reference: the layout slot it belongs to
@@ -851,11 +849,6 @@ namespace CampLayout
 				built.bedSeats.assign(a_refs.begin() + kFirstBedrollSeat, a_refs.begin() + kFirstBedrollSeat + kMaxBedrolls);
 				built.bedGroups = _bedGroup;
 				built.bedOrders = _bedOrder;
-				built.tentSizes.assign(4, 0);
-				for (std::size_t t = 0; t < _tents.size(); ++t) {
-					built.tentSizes[t] = _tents[t].size;
-				}
-				built.tentCount = static_cast<std::int32_t>(_tents.size());
 
 				// The seats among the tub clutter: placed furniture whose base is in
 				// LZC_TubClutter.
@@ -984,8 +977,6 @@ namespace CampLayout
 		std::vector<RE::TESObjectREFR*> GetBedSeats(RE::StaticFunctionTag*) { return built.bedSeats; }
 		std::vector<std::int32_t>       GetBedGroups(RE::StaticFunctionTag*) { return built.bedGroups; }
 		std::vector<std::int32_t>       GetBedOrders(RE::StaticFunctionTag*) { return built.bedOrders; }
-		std::vector<std::int32_t>       GetTentSizes(RE::StaticFunctionTag*) { return built.tentSizes; }
-		std::int32_t                    GetTentCount(RE::StaticFunctionTag*) { return built.tentCount; }
 		std::vector<RE::TESObjectREFR*> GetTubSeats(RE::StaticFunctionTag*) { return built.tubSeats; }
 	}
 
@@ -1013,8 +1004,6 @@ namespace CampLayout
 		a_vm->RegisterFunction("GetBedSeats"sv, kClass, GetBedSeats);
 		a_vm->RegisterFunction("GetBedGroups"sv, kClass, GetBedGroups);
 		a_vm->RegisterFunction("GetBedOrders"sv, kClass, GetBedOrders);
-		a_vm->RegisterFunction("GetTentSizes"sv, kClass, GetTentSizes);
-		a_vm->RegisterFunction("GetTentCount"sv, kClass, GetTentCount);
 		a_vm->RegisterFunction("GetTubSeats"sv, kClass, GetTubSeats);
 		a_vm->RegisterFunction("GetRolledKits"sv, kClass, GetRolledKits);
 		a_vm->RegisterFunction("GetPlacedOwners"sv, kClass, GetPlacedOwners);
