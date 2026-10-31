@@ -732,7 +732,7 @@ namespace CampLayout
 				}
 
 				auto* marker = _props.Form<RE::TESObjectREFR>("LZC_CampMapMarker");
-				if (marker && campfire) {
+				if (marker && campfire && _props.Bool("PlaceMapMarker", true)) {
 					marker->MoveTo(campfire);
 					marker->Enable(false);
 					if (auto* extra = marker->extraList.GetByType<RE::ExtraMapMarker>(); extra && extra->mapData) {

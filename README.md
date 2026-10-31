@@ -1,4 +1,4 @@
-# Lazy Camping: a mod for Skyrim Special Edition
+# Convenient Camping: a mod for Skyrim Special Edition
 
 The mod adds a **Set Up Camp** Lesser Power, named " Set Up Camp" with a leading space so it sorts to the top of the magic menu. When the player has at least one **Bedroll** in their inventory, casting the power builds a camp in front of the player, always with a campfire. Tent kits are optional. The kits are **reusable**: setting up camp doesn't take them from the inventory. The mod requires **SKSE**, **Address Library for SKSE Plugins**, and its own `LazyCamping.dll`. The camp includes:
 
@@ -29,7 +29,7 @@ A **bathtub** (`LZC_Tub`, a static with your tub mesh) stands beside the outermo
 
 While a camp is up, **the grass is cleared** in a circle around it, just big enough to hold the tents, bedrolls, fire, seats, clutter and storage, so nothing pokes through them. It comes back when the camp is packed up. This works with or without *No Grass In Objects* and its grass cache.
 
-While a camp is up, a **map marker** shows where it is, and the player can fast travel to it, unless fast travel is disabled globally (for example in Survival Mode). Packing up removes the marker.
+While a camp is up, a **map marker** shows where it is, and the player can fast travel to it, unless fast travel is disabled globally (for example in Survival Mode). Packing up removes the marker. It can be turned off on the SKSE menu page (`PlaceMapMarker`).
 
 Every bedroll also has a **seat on it**, facing the fire. Followers sit at the fire when the player sits in any of the three fire seats they can use, and on the other bedrolls when the player sits on a bedroll, matched the same way as at bedtime. Once seated, they stay seated after the player gets up, until the player goes to bed, packs up the camp, or leaves it. When the player sits in one of the tub's seats (furniture in the tub clutter set), one follower, a spouse or lover first, sits in another. When the player sleeps at camp, in any of the camp's bedrolls, followers sleep in the bedrolls the player isn't using. A spouse or lover gets the bedroll next to the player's: the one beside them in the same tent, or the neighbouring one in a camp without tents. Two followers who are a couple get two free bedrolls side by side, normally in their own tent.
 
@@ -39,7 +39,7 @@ Every bedroll also has a **seat on it**, facing the fire. Followers sit at the f
 
 While a camp is up, the power is called **Pack Up Camp** (" Pack Up Camp"). It keeps its place in favourites and the voice slot. **Casting it** asks *Pack up your camp?* and packs it up if confirmed, from anywhere, so a camp left behind never stops the player making a new one.
 
-With **SKSE Menu Framework** installed (optional), its Mod Control Panel gets a *Lazy Camping* page for the firewood mechanic, how long a fire burns, how many firewood lighting it takes, the chopping block, the bathtub and whether it goes in the large tent, aligning the camp to the slope, the fire seats' colour, the bedrolls' style (with *Bedroll Alternative - BOS Color Variance*: its green, blue or red bedroll, or all three in turn, each touching pair in a tent matching; greyed out without it; the bedroll kit item takes the chosen colour too, green for mixed), selling the kits at general goods merchants, clearing grass around the camp, and the campfire light marker (turn it off if a *Light Placer* config already lights the campfire). The settings are kept in the save. Without it, change them on the quest in the Creation Kit.
+With **SKSE Menu Framework** installed (optional), its Mod Control Panel gets a *Convenient Camping* page for the firewood mechanic, how long a fire burns, how many firewood lighting it takes, the chopping block, the map marker, the bathtub and whether it goes in the large tent, aligning the camp to the slope, the fire seats' colour, the bedrolls' style (with *Bedroll Alternative - BOS Color Variance*: its green, blue or red bedroll, or all three in turn, each touching pair in a tent matching; greyed out without it; the bedroll kit item takes the chosen colour too, green for mixed), selling the kits at general goods merchants, clearing grass around the camp, and the campfire light marker (turn it off if a *Light Placer* config already lights the campfire). The settings are kept in the save. Without it, change them on the quest in the Creation Kit.
 
 All EditorIDs use the prefix `LZC_`.
 
@@ -68,7 +68,7 @@ SKSE/                           C++ plugin (LazyCamping.dll), required
   src/Menu.cpp                  the optional SKSE Menu Framework page
   src/ScriptObjects.cpp         reading and writing other scripts' properties
   extern/SKSEMenuFramework/     SKSE Menu Framework 3's API header (LGPL-2.1)
-LazyCamping.esp                 the plugin, edited in the Creation Kit
+Convenient Camping.esp          the plugin, edited in the Creation Kit
 ```
 
 ### How the scripts and the plugin split the work
@@ -82,17 +82,17 @@ Setting up a camp is one call into `LazyCamping.dll`, **`BuildCamp`**, so it hap
 
 The script keeps the rest: what happens on the camp's events, the follower quest, which it hands the camp's seats and bedrolls, and the tub's trigger and water. The events themselves (casting the power, activating a camp object, sitting down) are caught by the DLL and passed to the scripts, so only the two quests carry scripts, plus `LZC_TubTriggerScript` on the tub's trigger box, which tells the camp script when a follower steps into or out of the tub. Packing up calls **`ShowGrass`**.
 
-If the DLL isn't loaded, or is older than the scripts expect, casting the power tells the player that Lazy Camping needs SKSE, and nothing is placed.
+If the DLL isn't loaded, or is older than the scripts expect, casting the power tells the player that Convenient Camping needs SKSE, and nothing is placed.
 
 Compiled `.pex` files go in `Data/Scripts/`.
 
 ---
 
-## 2. The plugin (`LazyCamping.esp`)
+## 2. The plugin (`Convenient Camping.esp`)
 
-`LazyCamping.esp` is edited in the Creation Kit and committed to the repository like any other file.
+`Convenient Camping.esp` is edited in the Creation Kit and committed to the repository like any other file.
 
-**Before editing it in the Creation Kit,** take the latest `LazyCamping.esp` from the repository: some records (the recipes, the merchant list) are sometimes added to it directly, and saving over an older copy loses them. After saving, check that the quest's object properties are still filled.
+**Before editing it in the Creation Kit,** take the latest `Convenient Camping.esp` from the repository: some records (the recipes, the merchant list) are sometimes added to it directly, and saving over an older copy loses them. After saving, check that the quest's object properties are still filled.
 
 ### What's in it
 
@@ -185,14 +185,14 @@ The follower quest's `CampRadius` setting (default 1024, in the follower quest's
 
 ### 2c. Settings on the quest scripts
 
-The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `AlignToSlope`, `HideGrassUnderCamp`, `PlaceCampfireLight`, the tent capacities, `FirewoodMechanic`, `FireBurnHours`, `PlaceChoppingBlock`, `PlaceTub`, `TubInLargeTent` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file. The camp's layout distances (seat ring, tent distances and sizes, bedroll spacing, where the tub stands and how it turns, the light's height) and the ground limits (steepest ground allowed, 30°; most an object tilts, 10°, or 6° for the tub; how uneven a tent's footprint may be, 48) are fixed constants in `SKSE/src/CampLayout.cpp`: change them there and rebuild the DLL.
+The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `AlignToSlope`, `HideGrassUnderCamp`, `PlaceCampfireLight`, `PlaceMapMarker`, the tent capacities, `FirewoodMechanic`, `FireBurnHours`, `PlaceChoppingBlock`, `PlaceTub`, `TubInLargeTent` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file. The camp's layout distances (seat ring, tent distances and sizes, bedroll spacing, where the tub stands and how it turns, the light's height) and the ground limits (steepest ground allowed, 30°; most an object tilts, 10°, or 6° for the tub; how uneven a tent's footprint may be, 48) are fixed constants in `SKSE/src/CampLayout.cpp`: change them there and rebuild the DLL.
 
 ### 2d. How players get the kits
 
-**Merchants.** `LazyCamping.esp` has a leveled list of every kit, `LZC_LItemCampingKits` (one random kit, 50% chance none), and a form list, `LZC_VendorLists`, of merchant leveled lists to add it to: fill that in the Creation Kit with the general goods vendor lists (the leveled lists their merchant chests use). LazyCamping.dll adds the kit list to each of them while the game runs, so no vanilla list is overridden in the plugin and nothing conflicts with other mods that edit them. The SKSE menu's *Sell kits at general goods merchants* turns it off (`KitsAtMerchants`); merchants show the change at their next restock.
+**Merchants.** `Convenient Camping.esp` has a leveled list of every kit, `LZC_LItemCampingKits` (one random kit, 50% chance none), and a form list, `LZC_VendorLists`, of merchant leveled lists to add it to: fill that in the Creation Kit with the general goods vendor lists (the leveled lists their merchant chests use). LazyCamping.dll adds the kit list to each of them while the game runs, so no vanilla list is overridden in the plugin and nothing conflicts with other mods that edit them. The SKSE menu's *Sell kits at general goods merchants* turns it off (`KitsAtMerchants`); merchants show the change at their next restock.
 
 
-The committed `LazyCamping.esp` has a recipe for every kit (`LZC_Recipe…`), all at a tanning rack (`CraftingTanningRack`), every colour alike:
+The committed `Convenient Camping.esp` has a recipe for every kit (`LZC_Recipe…`), all at a tanning rack (`CraftingTanningRack`), every colour alike:
 
 - Bedroll = 2× Linen Wrap + 2× `LeatherStrips`
 - Small tent kit = 3× Linen Wrap + 3× `LeatherStrips` + 2× `Firewood01`
@@ -240,10 +240,10 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 ## 4. Compile scripts and package
 
 1. In the CK, compile the three scripts, `LZC_CampsiteQuestScript`, `LZC_CampFollowersScript` and `LZC_TubTriggerScript` (*Gameplay > Papyrus Script Manager*). The quest script's native functions compile without the DLL; they're only bound at runtime.
-2. `LazyCamping.esp` adds only new records, so you can flag it as ESL with xEdit.
+2. `Convenient Camping.esp` adds only new records, so you can flag it as ESL with xEdit.
 3. Package these files:
    ```
-   LazyCamping.esp
+   Convenient Camping.esp
    Scripts/LZC_CampsiteQuestScript.pex
    Scripts/LZC_CampFollowersScript.pex
    Scripts/LZC_TubTriggerScript.pex

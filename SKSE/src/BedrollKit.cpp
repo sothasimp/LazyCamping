@@ -4,7 +4,7 @@ namespace BedrollKit
 {
 	namespace
 	{
-		constexpr auto       kPlugin = "LazyCamping.esp"sv;
+		constexpr auto       kPlugin = "Convenient Camping.esp"sv;
 		constexpr auto       kShape = "cloth"sv;
 		constexpr std::uint32_t kShapeIndex = 5;  // the cloth shape's index in the kit's mesh
 		constexpr RE::FormID kKit = 0x803;     // LZC_BedrollKit

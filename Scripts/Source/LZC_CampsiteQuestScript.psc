@@ -74,6 +74,8 @@ Light Property LZC_CampfireLight Auto
 Bool Property PlaceCampfireLight = True Auto
 {Place LZC_CampfireLight. Turn off if a Light Placer config already gives the
 campfire its own light.}
+Bool Property PlaceMapMarker = True Auto
+{Show the camp on the world map with LZC_CampMapMarker while it's up.}
 Activator Property LZC_Firepit Auto
 {The unlit firepit placed when FirewoodMechanic is on: an Activator. The fire
 and its light are placed hidden in its spot.}
@@ -293,10 +295,10 @@ Function HandlePowerCast()
 	; Library).
 	Int nativeVersion = GetVersion()
 	If nativeVersion == 0
-		Debug.Notification("Lazy Camping: LazyCamping.dll isn't loaded (check SKSE and Address Library).")
+		Debug.Notification("Convenient Camping: LazyCamping.dll isn't loaded (check SKSE and Address Library).")
 		Return
 	ElseIf nativeVersion < kNativeVersion
-		Debug.Notification("Lazy Camping: LazyCamping.dll is out of date.")
+		Debug.Notification("Convenient Camping: LazyCamping.dll is out of date.")
 		Return
 	EndIf
 

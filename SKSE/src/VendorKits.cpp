@@ -4,7 +4,7 @@ namespace VendorKits
 {
 	namespace
 	{
-		constexpr auto          kPlugin = "LazyCamping.esp"sv;
+		constexpr auto          kPlugin = "Convenient Camping.esp"sv;
 		constexpr std::uint16_t kLevel = 1;
 
 		// The plugin's only form of this type (LZC_LItemCampingKits, LZC_VendorLists),

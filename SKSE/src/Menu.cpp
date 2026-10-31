@@ -33,6 +33,7 @@ namespace Menu
 			bool         bedrollAltLoaded{ false };
 			bool         kitsAtMerchants{ true };
 			int          firewoodPerFire{ 2 };
+			bool         placeMapMarker{ true };
 		};
 
 		constexpr const char* kBedrollStyles[] = { "Vanilla", "Bedroll Alternative - Green", "Bedroll Alternative - Blue",
@@ -52,7 +53,7 @@ namespace Menu
 		RE::BSTSmartPointer<RE::BSScript::Object> FindScript()
 		{
 			static RE::FormID quest = 0;
-			return ScriptObjects::FindQuestScript("LazyCamping."sv, kScript, quest);
+			return ScriptObjects::FindQuestScript("Convenient Camping."sv, kScript, quest);
 		}
 
 		using ScriptObjects::AutoProperty;
@@ -74,14 +75,15 @@ namespace Menu
 			auto*  bedroll = object ? AutoProperty(object.get(), "BedrollStyle") : nullptr;
 			auto*  merchants = object ? AutoProperty(object.get(), "KitsAtMerchants") : nullptr;
 			auto*  perFire = object ? AutoProperty(object.get(), "FirewoodPerFire") : nullptr;
-			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll && merchants && perFire;
+			auto*  mapMarker = object ? AutoProperty(object.get(), "PlaceMapMarker") : nullptr;
+			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll && merchants && perFire && mapMarker;
 			if (found) {
 				auto* dataHandler = RE::TESDataHandler::GetSingleton();
 				values = { firewood->GetBool(), burnHours->GetFloat(), block->GetBool(), grass->GetBool(), light->GetBool(), tub->GetBool(),
 					tubInTent->GetBool(), slope->GetBool(), seat->GetSInt(), bedroll->GetSInt(),
 					dataHandler && (dataHandler->LookupLoadedModByName(kBedrollAltPlugin) ||
 										dataHandler->LookupLoadedLightModByName(kBedrollAltPlugin)),
-					merchants->GetBool(), perFire->GetSInt() };
+					merchants->GetBool(), perFire->GetSInt(), mapMarker->GetBool() };
 			}
 
 			std::scoped_lock guard(lock);
@@ -112,6 +114,9 @@ namespace Menu
 				}
 				if (auto* light = AutoProperty(object.get(), "PlaceCampfireLight")) {
 					light->SetBool(a_values.placeCampfireLight);
+				}
+				if (auto* mapMarker = AutoProperty(object.get(), "PlaceMapMarker")) {
+					mapMarker->SetBool(a_values.placeMapMarker);
 				}
 				if (auto* tub = AutoProperty(object.get(), "PlaceTub")) {
 					tub->SetBool(a_values.placeTub);
@@ -188,6 +193,8 @@ namespace Menu
 			ImGuiMCP::SetItemTooltip("Clear the grass in a circle around the camp while it's up. Takes effect at the next camp.");
 			changed |= ImGuiMCP::Checkbox("Campfire light marker", &values.placeCampfireLight);
 			ImGuiMCP::SetItemTooltip("Place a light with the campfire. Turn off if a Light Placer config already lights it. Takes effect at the next camp.");
+			changed |= ImGuiMCP::Checkbox("Map marker", &values.placeMapMarker);
+			ImGuiMCP::SetItemTooltip("Show the camp on the world map while it's up, for fast travel. Takes effect at the next camp.");
 			changed |= ImGuiMCP::Checkbox("Bathtub", &values.placeTub);
 			ImGuiMCP::SetItemTooltip("Place a bathtub of water beside the tents. Takes effect at the next camp.");
 			ImGuiMCP::BeginDisabled(!values.placeTub);
@@ -224,7 +231,7 @@ namespace Menu
 		if (!SKSEMenuFramework::IsInstalled()) {
 			return;
 		}
-		SKSEMenuFramework::SetSection("Lazy Camping");
+		SKSEMenuFramework::SetSection("Convenient Camping");
 		SKSEMenuFramework::AddSectionItem("Settings", Render);
 		logger::info("Added the SKSE Menu Framework page");
 	}

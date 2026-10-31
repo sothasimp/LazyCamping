@@ -53,6 +53,6 @@ SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
 		}
 	});
 
-	logger::info("LazyCamping loaded");
+	logger::info("Convenient Camping loaded");
 	return true;
 }

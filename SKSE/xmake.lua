@@ -1,4 +1,4 @@
--- LazyCamping SKSE plugin
+-- Convenient Camping SKSE plugin (LazyCamping.dll)
 -- Build: xmake config -m release && xmake
 set_xmakever("2.8.2")
 
@@ -18,8 +18,8 @@ target("LazyCamping")
 
     add_rules("commonlibsse-ng.plugin", {
         name = "LazyCamping",
-        author = "LazyCamping",
-        description = "Native ground placement for the Lazy Camping power"
+        author = "Convenient Camping",
+        description = "Native ground placement for the Convenient Camping power"
     })
 
     add_files("src/**.cpp")
