@@ -177,8 +177,8 @@ namespace Papyrus
 		// with rotation `a_relative` in a frame facing `a_yaw` (tilted to the
 		// slope under its footprint if asked). Fills in the position's z
 		// (ground + lift, or origin height + lift if no ground was found) and
-		// the angles.
-		void GroundAndTilt(RE::TESObjectREFR* a_origin, PendingRef& a_ref, float a_yaw, const RE::NiMatrix3& a_relative,
+		// the angles. Returns the frame it stands in: facing `a_yaw`, tilted.
+		RE::NiMatrix3 GroundAndTilt(RE::TESObjectREFR* a_origin, PendingRef& a_ref, float a_yaw, const RE::NiMatrix3& a_relative,
 			float a_lift, bool a_alignToSlope, float a_maxTiltDegrees)
 		{
 			RE::NiMatrix3 frame = Placement::MatrixFromAngles({ 0.0f, 0.0f, a_yaw });
@@ -192,6 +192,7 @@ namespace Papyrus
 			}
 			a_ref.position.z += a_lift;
 			a_ref.angles = Placement::AnglesFromMatrix(frame * a_relative);
+			return frame;
 		}
 
 		// Places every form in the layout on the ground, tilted to the slope if
@@ -207,6 +208,7 @@ namespace Papyrus
 		// anchor's height above it. The clutter is fixed rigidly to the object,
 		// level: from the object's own spot, each item as high above it as it is
 		// above the holding cell floor, turned with it, whatever the ground does.
+		// An object marked in `tiltClutter` tilts its clutter with it instead.
 		//
 		// The first item found that is one of a_storageMarkers marks where the
 		// player's storage goes: a copy of it is placed and returned at index
@@ -228,6 +230,7 @@ namespace Papyrus
 			const auto&       a_turn = a_layout.turn;
 			const auto&       a_maxTilt = a_layout.maxTilt;
 			const auto&       a_clutterSet = a_layout.clutterSet;
+			const auto&       a_tiltClutter = a_layout.tiltClutter;
 			const auto&       a_setAnchors = a_layout.setAnchors;
 			const auto&       a_setItems = a_layout.setItems;
 			const auto&       a_itemSet = a_layout.itemSet;
@@ -277,18 +280,19 @@ namespace Papyrus
 				const float yaw = heading + ToRadians(a_turn[i]) + (anchor ? anchor->GetAngle().z : 0.0f);
 				const float lift = a_lift[i] + (anchor ? anchor->GetPosition().z : 0.0f);
 				const float maxTilt = i < a_maxTilt.size() && a_maxTilt[i] >= 0.0f ? a_maxTilt[i] : a_maxTiltDegrees;
-				GroundAndTilt(a_origin, ref, yaw, identity, lift, a_alignToSlope && maxTilt > 0.0f, maxTilt);
+				const RE::NiMatrix3 tiltFrame = GroundAndTilt(a_origin, ref, yaw, identity, lift, a_alignToSlope && maxTilt > 0.0f, maxTilt);
 				if (!anchor) {
 					continue;
 				}
 				const RE::NiMatrix3 anchorRotation = Placement::MatrixFromAngles(anchor->GetAngle());
 				const RE::NiMatrix3 toAnchor = anchorRotation.Transpose();
 				// The clutter is fixed rigidly to the object: placed from the
-				// object's own spot and turned with it, level, exactly as around
-				// the anchor in the holding cell. The ground and any slope tilt
-				// don't come into it.
-				const RE::NiPoint3  objectGround{ ref.position.x, ref.position.y, ref.position.z - lift };
-				const RE::NiMatrix3 levelFrame = Placement::MatrixFromAngles({ 0.0f, 0.0f, yaw });
+				// object's own spot and turned with it, exactly as around the
+				// anchor in the holding cell. It stands level, whatever the
+				// ground does, unless marked in `tiltClutter`: then it tilts with
+				// the object.
+				const bool          tilt = i < a_tiltClutter.size() && a_tiltClutter[i];
+				const RE::NiMatrix3 frame = tilt ? tiltFrame : Placement::MatrixFromAngles({ 0.0f, 0.0f, yaw });
 
 				for (std::size_t j = 0; j < a_setItems.size(); ++j) {
 					auto* item = a_setItems[j];
@@ -307,13 +311,12 @@ namespace Papyrus
 					// Its height is its own above the holding cell floor (z = 0), so
 					// moving the anchor up or down doesn't carry the clutter with it.
 					const bool          isStorage = std::ranges::find(a_storageMarkers, item) != a_storageMarkers.end();
-					const RE::NiMatrix3 frame = levelFrame;
-					const RE::NiPoint3  local{ offset.x, offset.y, item->GetPosition().z };
+					const RE::NiPoint3  local{ offset.x, offset.y, item->GetPosition().z - lift };
 
 					PendingRef clutter;
 					clutter.base = itemBase;
 					clutter.scale = item->GetReferenceRuntimeData().refScale;
-					clutter.position = objectGround + frame * local;
+					clutter.position = ref.position + frame * local;
 					clutter.angles = Placement::AnglesFromMatrix(frame * relative);
 					if (isStorage) {
 						if (!storageFound) {

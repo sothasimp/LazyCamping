@@ -215,6 +215,7 @@ namespace CampLayout
 				_layout.lift.assign(kSlotCount, 0.0f);
 				_layout.turn.assign(kSlotCount, 0.0f);
 				_layout.maxTilt.assign(kSlotCount, -1.0f);
+				_layout.tiltClutter.assign(kSlotCount, false);
 				_layout.clutterSet.assign(kSlotCount, 0);
 				_layout.alignToSlope = a_props.Bool("AlignToSlope", true);
 				_layout.maxTiltDegrees = kMaxTilt;
@@ -456,6 +457,7 @@ namespace CampLayout
 				_layout.forms[kTub] = _props.Form<RE::TESForm>("LZC_Tub");
 				_layout.clutterSet[kTub] = 5;
 				_layout.maxTilt[kTub] = kTubMaxTilt;
+				_layout.tiltClutter[kTub] = true;
 				if (_props.Bool("TubInLargeTent", false) && !_tents.empty() && _tents[0].size == kLarge) {
 					const auto& tent = _tents[0];
 					const float offset = -kTubInTentRight;
