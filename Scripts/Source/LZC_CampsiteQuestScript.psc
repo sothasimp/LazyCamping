@@ -275,12 +275,10 @@ ObjectReference[] Function GetTubSeats() Global Native
 Int[] Function GetTentSizes() Global Native
 Int Function GetTentCount() Global Native
 
-; Brings back the grass hidden when the camp went up.
-Function ShowGrass() Global Native
-; Forgets the camp's bedroll seats.
-Function ClearBedrollSeats() Global Native
-; Disables and deletes every reference given, all in the same frame.
-Function RemoveRefs(ObjectReference[] akRefs) Global Native
+; Packs up the camp in the same frame: brings the grass back, forgets the
+; bedroll seats, deletes akDelete, disables akDisable and moves akStorage to
+; akStorageHome.
+Function PackUpRefs(ObjectReference[] akDelete, ObjectReference[] akDisable, ObjectReference akStorage, ObjectReference akStorageHome) Global Native
 ; Renames a form, or gives it its own name back if name is empty; kept in the save.
 Function RenameForm(Form akForm, String name) Global Native
 
@@ -423,9 +421,28 @@ Function SetUpCamp()
 		couples = followers.CoupleCount()
 	EndIf
 
+	; Where the tub's trigger box and water stand around the tub anchor in the
+	; holding cell, worked out once, before they first leave it.
+	If LZC_TubTrigger && !tubTriggerOffset
+		tubTriggerOffset = OffsetFromTubAnchor(LZC_TubTrigger)
+	EndIf
+	If LZC_TubWater && !tubWaterOffset
+		tubWaterOffset = OffsetFromTubAnchor(LZC_TubWater)
+	EndIf
+	; Disabled before they move and enabled at the tub, so they load afresh
+	; there: the game only treats placeable water as water when its
+	; reference loads. (Packing up leaves them disabled.)
+	If LZC_TubTrigger && LZC_TubTrigger.IsEnabled()
+		LZC_TubTrigger.Disable()
+	EndIf
+	If LZC_TubWater && LZC_TubWater.IsEnabled()
+		LZC_TubWater.Disable()
+	EndIf
+
 	; LazyCamping.dll works out the whole layout from this script's
 	; properties, checks the ground, places everything in one frame and moves
-	; the cook box, backpack and map marker to the camp.
+	; the cook box, backpack, map marker and the tub's trigger box and water
+	; to the camp.
 	placedRefs = BuildCamp(Self, partners, couples)
 	Int status = GetBuildStatus()
 	If status != 0 || placedRefs.Length <= kSlotCount
@@ -440,7 +457,6 @@ Function SetUpCamp()
 	If LZC_UnpackSound
 		LZC_UnpackSound.Play(PlayerRef)
 	EndIf
-	PlaceOnTub()
 
 	If followers
 		; Every camp bedroll goes to the follower quest, which hands them out
@@ -518,26 +534,6 @@ Form[] Function WornItems(Actor akActor)
 	Return items
 EndFunction
 
-; Moves the tub's persistent pieces (the trigger, the water) onto the camp's
-; tub, each where it sits relative to the tub anchor in the holding cell.
-Function PlaceOnTub()
-	If !placedRefs[kTub]
-		Return
-	EndIf
-	If LZC_TubTrigger
-		If !tubTriggerOffset
-			tubTriggerOffset = OffsetFromTubAnchor(LZC_TubTrigger)
-		EndIf
-		MoveOntoTub(LZC_TubTrigger, tubTriggerOffset)
-	EndIf
-	If LZC_TubWater
-		If !tubWaterOffset
-			tubWaterOffset = OffsetFromTubAnchor(LZC_TubWater)
-		EndIf
-		MoveOntoTub(LZC_TubWater, tubWaterOffset)
-	EndIf
-EndFunction
-
 ; akRef's right, forward, up and turn from the tub anchor. Read while akRef
 ; is still in the holding cell (the first camp); zero if it isn't.
 Float[] Function OffsetFromTubAnchor(ObjectReference akRef)
@@ -553,19 +549,6 @@ Float[] Function OffsetFromTubAnchor(ObjectReference akRef)
 		offset[3] = akRef.GetAngleZ() - h
 	EndIf
 	Return offset
-EndFunction
-
-; Disabled first and enabled after, so akRef loads afresh at the tub: the
-; game only treats placeable water as water when its reference loads.
-Function MoveOntoTub(ObjectReference akRef, Float[] offset)
-	ObjectReference tub = placedRefs[kTub]
-	Float t = tub.GetAngleZ()
-	Float wx = offset[0] * Math.Cos(t) + offset[1] * Math.Sin(t)
-	Float wy = offset[1] * Math.Cos(t) - offset[0] * Math.Sin(t)
-	akRef.Disable()
-	akRef.MoveTo(tub, wx, wy, offset[2], False)
-	akRef.SetAngle(0.0, 0.0, t + offset[3])
-	akRef.Enable()
 EndFunction
 
 ; From LazyCamping.dll: a follower stepped into (or out of) the tub
@@ -680,32 +663,25 @@ Function PackUpCamp()
 		LZC_UnpackSound.Play(PlayerRef)
 	EndIf
 	UnregisterForUpdateGameTime()
-	ShowGrass()
-	If LZC_CookBox
-		LZC_CookBox.Disable()
-	EndIf
 	If LZC_TubTrigger
 		LZC_TubTrigger.Disable()
-	EndIf
-	If LZC_TubWater
-		LZC_TubWater.Disable()
 	EndIf
 	RedressAllFromTub()
 
 	If LZC_CampFollowersQuest && LZC_CampFollowersQuest.IsRunning()
 		(LZC_CampFollowersQuest as LZC_CampFollowersScript).Shutdown()
 	EndIf
-	If LZC_CampMapMarker
-		LZC_CampMapMarker.Disable()
-	EndIf
-	If LZC_CampStorage && LZC_CampStorageMarkers && LZC_CampStorageMarkers[0]
-		LZC_CampStorage.MoveTo(LZC_CampStorageMarkers[0])
-	EndIf
 
-	ClearBedrollSeats()
-
-	; All at once, in the same frame.
-	RemoveRefs(placedRefs)
+	; Everything visible goes at once, in the same frame.
+	ObjectReference[] persistent = new ObjectReference[3]
+	persistent[0] = LZC_CookBox
+	persistent[1] = LZC_TubWater
+	persistent[2] = LZC_CampMapMarker
+	ObjectReference storageHome = None
+	If LZC_CampStorageMarkers && LZC_CampStorageMarkers.Length > 0
+		storageHome = LZC_CampStorageMarkers[0]
+	EndIf
+	PackUpRefs(placedRefs, persistent, LZC_CampStorage, storageHome)
 	Int i = 0
 	While i < placedRefs.Length
 		placedRefs[i] = None

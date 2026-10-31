@@ -155,6 +155,20 @@ namespace CampLayout
 				return value && value->IsFloat() ? value->GetFloat() : a_default;
 			}
 
+			// A plain script variable's float array (not a property).
+			std::vector<float> Floats(std::string_view a_variable) const
+			{
+				std::vector<float> floats;
+				const auto*        value = _object ? _object->GetVariable(RE::BSFixedString(a_variable)) : nullptr;
+				const auto         array = value && value->IsArray() ? value->GetArray() : nullptr;
+				if (array) {
+					for (const auto& element : *array) {
+						floats.push_back(element.IsFloat() ? element.GetFloat() : 0.0f);
+					}
+				}
+				return floats;
+			}
+
 		private:
 			const RE::BSScript::Variable* Value(std::string_view a_name) const
 			{
@@ -163,6 +177,26 @@ namespace CampLayout
 
 			RE::BSScript::Object* _object;
 		};
+
+		// Moves a_ref (the tub's trigger box or water) onto the tub, as it stood
+		// around the tub anchor in the holding cell: a_offset is its right,
+		// forward and up from the anchor and its turn (degrees), worked out by
+		// the script. The script disables it first, so it loads afresh at the
+		// tub when enabled here: the game only treats placeable water as water
+		// when its reference loads.
+		void MoveOntoTub(RE::TESObjectREFR* a_tub, RE::TESObjectREFR* a_ref, const std::vector<float>& a_offset)
+		{
+			if (!a_ref || a_offset.size() < 4) {
+				return;
+			}
+			const float        t = a_tub->GetAngleZ();
+			const RE::NiPoint3 position = a_tub->GetPosition() + RE::NiPoint3{ a_offset[0] * std::cos(t) + a_offset[1] * std::sin(t),
+																	 a_offset[1] * std::cos(t) - a_offset[0] * std::sin(t), a_offset[2] };
+			a_ref->MoveTo(a_tub);
+			a_ref->data.angle = { 0.0f, 0.0f, t + a_offset[3] * std::numbers::pi_v<float> / 180.0f };
+			a_ref->SetPosition(position);
+			a_ref->Enable(false);
+		}
 
 		// --- Layout helpers ----------------------------------------------------
 
@@ -729,6 +763,11 @@ namespace CampLayout
 					auto refs = a_refs;
 					refs[kSlotCount] = storage;
 					GrassHider::Hide(refs);
+				}
+
+				if (auto* tub = a_refs[kTub]) {
+					MoveOntoTub(tub, _props.Form<RE::TESObjectREFR>("LZC_TubTrigger"), _props.Floats("tubTriggerOffset"));
+					MoveOntoTub(tub, _props.Form<RE::TESObjectREFR>("LZC_TubWater"), _props.Floats("tubWaterOffset"));
 				}
 
 				auto* marker = _props.Form<RE::TESObjectREFR>("LZC_CampMapMarker");

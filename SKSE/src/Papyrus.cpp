@@ -364,25 +364,29 @@ namespace Papyrus
 			return refs;
 		}
 
-		void ShowGrass(RE::StaticFunctionTag*)
+		// Packs up the camp in one go, so it all goes in the same frame
+		// (Papyrus's Disable waits a frame each): brings the grass back, forgets
+		// the bedroll seats, deletes a_delete (the placed objects), disables
+		// a_disable (the persistent ones that move to each camp) and sends the
+		// storage home.
+		void PackUpRefs(RE::StaticFunctionTag*, std::vector<RE::TESObjectREFR*> a_delete, std::vector<RE::TESObjectREFR*> a_disable,
+			RE::TESObjectREFR* a_storage, RE::TESObjectREFR* a_storageHome)
 		{
 			GrassHider::Show();
-		}
-
-		void ClearBedrollSeats(RE::StaticFunctionTag*)
-		{
 			BedrollSeats::Clear();
-		}
-
-		// Disables and deletes every reference in one go, so the whole camp
-		// goes in the same frame (Papyrus's Disable waits a frame each).
-		void RemoveRefs(RE::StaticFunctionTag*, std::vector<RE::TESObjectREFR*> a_refs)
-		{
-			for (auto* ref : a_refs) {
+			for (auto* ref : a_disable) {
+				if (ref) {
+					ref->Disable();
+				}
+			}
+			for (auto* ref : a_delete) {
 				if (ref) {
 					ref->Disable();
 					ref->SetDelete(true);
 				}
+			}
+			if (a_storage && a_storageHome) {
+				a_storage->MoveTo(a_storageHome);
 			}
 		}
 
@@ -423,10 +427,8 @@ namespace Papyrus
 	bool Register(RE::BSScript::IVirtualMachine* a_vm)
 	{
 		a_vm->RegisterFunction("GetVersion"sv, kClass, GetVersion);
-		a_vm->RegisterFunction("ShowGrass"sv, kClass, ShowGrass);
 		a_vm->RegisterFunction("RenameForm"sv, kClass, RenameForm);
-		a_vm->RegisterFunction("ClearBedrollSeats"sv, kClass, ClearBedrollSeats);
-		a_vm->RegisterFunction("RemoveRefs"sv, kClass, RemoveRefs);
+		a_vm->RegisterFunction("PackUpRefs"sv, kClass, PackUpRefs);
 		CampLayout::Register(a_vm);
 		logger::info("Registered {} native functions", kClass);
 		return true;
