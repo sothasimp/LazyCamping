@@ -828,7 +828,8 @@ namespace CampLayout
 					if (!kit) {
 						continue;
 					}
-					kit->data.angle = { 0.0f, 0.0f, bed->GetAngleZ() };
+					// Tilted like its bedroll (to the slope, with AlignToSlope).
+					kit->data.angle = bed->data.angle;
 					kit->SetPosition(bed->GetPosition() + RE::NiPoint3{ 0.0f, 0.0f, kRolledDrop });
 					a_refs.push_back(kit.get());
 					a_owners.push_back(-1);
