@@ -7,7 +7,7 @@ namespace BedrollKit
 	namespace
 	{
 		constexpr auto          kShape = "cloth"sv;
-		constexpr std::uint32_t kShapeIndex = 5;  // the cloth shape's index in the kit's mesh
+		constexpr std::uint32_t kShapeIndex = 0;  // the cloth shape's index in the kit's mesh, as the Creation Kit counts
 
 		using AlternateTexture = RE::TESModelTextureSwap::AlternateTexture;
 
