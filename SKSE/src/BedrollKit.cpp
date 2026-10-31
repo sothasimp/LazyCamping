@@ -11,8 +11,7 @@ namespace BedrollKit
 
 		using AlternateTexture = RE::TESModelTextureSwap::AlternateTexture;
 
-		// A form whose "cloth" shape follows the style: the kit, and the
-		// rolled-up bedroll dropped at camp.
+		// A form whose "cloth" shape follows the style.
 		struct Swappable
 		{
 			AlternateTexture* swap{ nullptr };      // ours, allocated once
@@ -48,7 +47,6 @@ namespace BedrollKit
 		};
 
 		Swappable kit;
-		Swappable rolled;
 
 		template <class T>
 		T* Property(RE::BSScript::Object* a_script, std::string_view a_name)
@@ -77,6 +75,5 @@ namespace BedrollKit
 		}
 		auto* textureSet = set ? Property<RE::BGSTextureSet>(a_script, set) : nullptr;
 		kit.Apply(Property<RE::TESObjectMISC>(a_script, "LZC_BedrollKit"), textureSet);
-		rolled.Apply(Property<RE::TESObjectACTI>(a_script, "LZC_BedrollRolled"), textureSet);
 	}
 }

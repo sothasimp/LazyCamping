@@ -60,6 +60,10 @@ bedtime (SKSE menu).}
 Activator Property LZC_BedrollRolled Auto
 {The rolled-up bedroll dropped in place of each bedroll with
 BedrollsStartRolled: an Activator with the kit's model.}
+Activator[] Property LZC_BedrollRolledColors Auto
+{The rolled-up bedrolls for Bedroll Alternative's green, blue and red
+bedrolls, in that order: copies of LZC_BedrollRolled with the cloth (shape
+index 0) taking LZC_BedrollTextureGreen, Blue or Red.}
 Int Property BedrollStyle = 0 Auto
 {With Bedroll Alternative - BOS Color Variance installed (SKSE menu): 0 the
 vanilla bedroll (LZC_BedrollPlaced), 1 green, 2 blue, 3 red, 4 mixed: green,

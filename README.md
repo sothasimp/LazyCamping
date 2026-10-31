@@ -104,7 +104,7 @@ Compiled `.pex` files go in `Data/Scripts/`.
 | Records | EditorIDs | Notes |
 |---|---|---|
 | Kits | `LZC_BedrollKit`, `LZC_TentKitSmallBrown` … `LZC_TentKitLargePlaidBlue` | MiscItems: the bedroll and a small and large tent in each colour (brown, blue, green, red, white, plaid green, plaid yellow, plaid blue) |
-| Rolled-up bedroll | `LZC_BedrollRolled` | Activator with the bedroll kit's model and *Unroll* as its activation text, dropped in place of each bedroll with `BedrollsStartRolled`; give its model Havok for it to roll about |
+| Rolled-up bedroll | `LZC_BedrollRolled`, `LZC_BedrollRolledGreen`, `LZC_BedrollRolledBlue`, `LZC_BedrollRolledRed` | Activator with the bedroll kit's model (the coloured copies, in `LZC_BedrollRolledColors`, match Bedroll Alternative's bedrolls: their cloth, shape index 0, takes `LZC_BedrollTextureGreen`, `Blue` or `Red`) and *Unroll* as its activation text, dropped in place of each bedroll with `BedrollsStartRolled`; give its model Havok for it to roll about |
 | Recipes | `LZC_RecipeBedrollKit`, `LZC_RecipeTentKit…` | one per kit, at a tanning rack (see 2d) |
 | Merchants | `LZC_LItemCampingKits`, `LZC_VendorLists` | a leveled list of the kits, and the merchant lists it's added to (see 2d) |
 | Tents | `LZC_TentSmallBrown` … `LZC_TentLargePlaidBlue` | Activators; colours are texture sets swapped onto the canvas |

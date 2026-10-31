@@ -797,10 +797,23 @@ namespace CampLayout
 			void RollUp(std::vector<RE::TESObjectREFR*>& a_refs, std::vector<std::int32_t>& a_owners) const
 			{
 				built.rolledKits.assign(kMaxBedrolls, nullptr);
-				auto* rolled = _props.Form<RE::TESBoundObject>("LZC_BedrollRolled");
-				if (!rolled || !_props.Bool("BedrollsStartRolled", true)) {
+				auto* plain = _props.Form<RE::TESBoundObject>("LZC_BedrollRolled");
+				if (!plain || !_props.Bool("BedrollsStartRolled", true)) {
 					return;
 				}
+				// Each Bedroll Alternative colour has its own rolled-up bedroll.
+				const auto colors = _props.Forms<RE::TESBoundObject>("LZC_BedrollRolledColors");  // green, blue, red
+				auto*      dataHandler = RE::TESDataHandler::GetSingleton();
+				const auto rolledFor = [&](const RE::TESObjectREFR* a_bed) -> RE::TESBoundObject* {
+					const auto*          base = a_bed->GetBaseObject();
+					constexpr RE::FormID ids[] = { 0xD62, 0xD70, 0xD69 };  // green, blue, red
+					for (std::size_t c = 0; dataHandler && base && c < std::size(ids) && c < colors.size(); ++c) {
+						if (colors[c] && base == dataHandler->LookupForm(ids[c], kBedrollAltPlugin)) {
+							return colors[c];
+						}
+					}
+					return plain;
+				};
 				for (std::int32_t b = 0; b < kMaxBedrolls; ++b) {
 					auto* bed = a_refs[kFirstBedroll + b];
 					if (!bed) {
@@ -813,7 +826,7 @@ namespace CampLayout
 							a_refs[k]->Disable();
 						}
 					}
-					const auto kit = bed->PlaceObjectAtMe(rolled, false);
+					const auto kit = bed->PlaceObjectAtMe(rolledFor(bed), false);
 					if (!kit) {
 						continue;
 					}

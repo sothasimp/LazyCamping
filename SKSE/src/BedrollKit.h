@@ -1,8 +1,8 @@
 #pragma once
 
 // The bedroll kit's look follows the camp's bedroll style (see the SKSE menu):
-// its "cloth" shape, and the rolled-up bedroll's (LZC_BedrollRolled), take one
-// of the mod's bedroll texture sets.
+// its "cloth" shape takes one of the mod's bedroll texture sets. (The rolled-up
+// bedrolls at camp have a copy per colour instead: LZC_BedrollRolledColors.)
 namespace BedrollKit
 {
 	// 0 vanilla, 1 green, 2 blue, 3 red, 4 mixed colours (shown green). The
