@@ -3,6 +3,7 @@
 #include "BedrollSeats.h"
 #include "GrassHider.h"
 #include "Papyrus.h"
+#include "Placement.h"
 #include "ScriptObjects.h"
 
 #include <random>
@@ -186,14 +187,32 @@ namespace CampLayout
 		// the script. The script disables it first, so it loads afresh at the
 		// tub when enabled here: the game only treats placeable water as water
 		// when its reference loads.
-		void MoveOntoTub(RE::TESObjectREFR* a_tub, RE::TESObjectREFR* a_ref, const std::vector<float>& a_offset)
+		// How far the tub's rim drops on its low side when the tub tilts with
+		// the slope: the water, which stays level, is lowered by this much so it
+		// doesn't show through the rim there.
+		float TubRimDrop(const RE::TESObjectREFR* a_tub)
+		{
+			const auto* base = a_tub->GetBaseObject();
+			if (!base) {
+				return 0.0f;
+			}
+			const auto&         bounds = base->boundData;
+			const float         halfX = (bounds.boundMax.x - bounds.boundMin.x) * 0.5f;
+			const float         halfY = (bounds.boundMax.y - bounds.boundMin.y) * 0.5f;
+			const RE::NiMatrix3 rotation = Placement::MatrixFromAngles(a_tub->data.angle);
+			// The world height of the tub's right and forward axes: how much
+			// each corner rises or falls.
+			return halfX * std::abs(rotation.entry[2][0]) + halfY * std::abs(rotation.entry[2][1]);
+		}
+
+		void MoveOntoTub(RE::TESObjectREFR* a_tub, RE::TESObjectREFR* a_ref, const std::vector<float>& a_offset, float a_lower = 0.0f)
 		{
 			if (!a_ref || a_offset.size() < 4) {
 				return;
 			}
 			const float        t = a_tub->GetAngleZ();
 			const RE::NiPoint3 position = a_tub->GetPosition() + RE::NiPoint3{ a_offset[0] * std::cos(t) + a_offset[1] * std::sin(t),
-																	 a_offset[1] * std::cos(t) - a_offset[0] * std::sin(t), a_offset[2] };
+																	 a_offset[1] * std::cos(t) - a_offset[0] * std::sin(t), a_offset[2] - a_lower };
 			a_ref->MoveTo(a_tub);
 			a_ref->data.angle = { 0.0f, 0.0f, t + a_offset[3] * std::numbers::pi_v<float> / 180.0f };
 			a_ref->SetPosition(position);
@@ -772,7 +791,7 @@ namespace CampLayout
 
 				if (auto* tub = a_refs[kTub]) {
 					MoveOntoTub(tub, _props.Form<RE::TESObjectREFR>("LZC_TubTrigger"), _props.Floats("tubTriggerOffset"));
-					MoveOntoTub(tub, _props.Form<RE::TESObjectREFR>("LZC_TubWater"), _props.Floats("tubWaterOffset"));
+					MoveOntoTub(tub, _props.Form<RE::TESObjectREFR>("LZC_TubWater"), _props.Floats("tubWaterOffset"), TubRimDrop(tub));
 				}
 
 				auto* marker = _props.Form<RE::TESObjectREFR>("LZC_CampMapMarker");
