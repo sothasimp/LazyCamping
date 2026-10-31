@@ -702,19 +702,38 @@ Function PackUpCamp()
 
 	ClearBedrollSeats()
 
-	Int i = 0
+	; The clutter first, then the bedrolls, seats and fire, and the tub and
+	; tents last, so the big pieces are the last to go.
+	Int i = kSlotCount
 	While i < placedRefs.Length
-		If placedRefs[i]
-			placedRefs[i].Disable()
-			placedRefs[i].Delete()
-			placedRefs[i] = None
+		RemovePlaced(i)
+		i += 1
+	EndWhile
+	i = 0
+	While i < kSlotCount
+		If i != kTub && (i < kFirstTent || i >= kFirstTent + 3)
+			RemovePlaced(i)
 		EndIf
+		i += 1
+	EndWhile
+	RemovePlaced(kTub)
+	i = kFirstTent
+	While i < kFirstTent + 3
+		RemovePlaced(i)
 		i += 1
 	EndWhile
 
 	TentCount = 0
 	CampDeployed = False
 	RenameForm(LZC_SetUpCampPower, "")
+EndFunction
+
+Function RemovePlaced(Int index)
+	If index < placedRefs.Length && placedRefs[index]
+		placedRefs[index].Disable()
+		placedRefs[index].Delete()
+		placedRefs[index] = None
+	EndIf
 EndFunction
 
 Float Function TentHalfWidth(Int size)
