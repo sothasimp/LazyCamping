@@ -42,7 +42,7 @@ namespace Papyrus
 			std::vector<float>              side;
 			std::vector<float>              lift;
 			std::vector<float>              turn;
-			std::vector<bool>               level;       // stands level even with alignToSlope
+			std::vector<float>              maxTilt;     // per object, degrees; below 0 for maxTiltDegrees, 0 stands level
 			std::vector<std::int32_t>       clutterSet;  // 1-based clutter set per object, 0 for none
 			std::vector<RE::TESObjectREFR*> setAnchors;
 			std::vector<RE::TESObjectREFR*> setItems;
