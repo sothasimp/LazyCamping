@@ -232,7 +232,7 @@ Int Property kTub = 38 AutoReadOnly
 Int Property kSlotCount = 39 AutoReadOnly
 
 Int Property kLarge = 1 AutoReadOnly
-Int Property kNativeVersion = 13 AutoReadOnly         ; LazyCamping.dll needed
+Int Property kNativeVersion = 14 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
 Form[] clothesTaken   ; what a clothes basket took off, until it's put back on
@@ -279,6 +279,8 @@ Int Function GetTentCount() Global Native
 Function ShowGrass() Global Native
 ; Forgets the camp's bedroll seats.
 Function ClearBedrollSeats() Global Native
+; Disables and deletes every reference given, all in the same frame.
+Function RemoveRefs(ObjectReference[] akRefs) Global Native
 ; Renames a form, or gives it its own name back if name is empty; kept in the save.
 Function RenameForm(Form akForm, String name) Global Native
 
@@ -702,38 +704,17 @@ Function PackUpCamp()
 
 	ClearBedrollSeats()
 
-	; The clutter first, then the bedrolls, seats and fire, and the tub and
-	; tents last, so the big pieces are the last to go.
-	Int i = kSlotCount
+	; All at once, in the same frame.
+	RemoveRefs(placedRefs)
+	Int i = 0
 	While i < placedRefs.Length
-		RemovePlaced(i)
-		i += 1
-	EndWhile
-	i = 0
-	While i < kSlotCount
-		If i != kTub && (i < kFirstTent || i >= kFirstTent + 3)
-			RemovePlaced(i)
-		EndIf
-		i += 1
-	EndWhile
-	RemovePlaced(kTub)
-	i = kFirstTent
-	While i < kFirstTent + 3
-		RemovePlaced(i)
+		placedRefs[i] = None
 		i += 1
 	EndWhile
 
 	TentCount = 0
 	CampDeployed = False
 	RenameForm(LZC_SetUpCampPower, "")
-EndFunction
-
-Function RemovePlaced(Int index)
-	If index < placedRefs.Length && placedRefs[index]
-		placedRefs[index].Disable()
-		placedRefs[index].Delete()
-		placedRefs[index] = None
-	EndIf
 EndFunction
 
 Float Function TentHalfWidth(Int size)

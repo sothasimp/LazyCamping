@@ -18,7 +18,7 @@ namespace Papyrus
 	namespace
 	{
 		constexpr auto         kClass = "LZC_CampsiteQuestScript"sv;
-		constexpr std::int32_t kVersion = 13;
+		constexpr std::int32_t kVersion = 14;
 
 		constexpr RE::FormID kXMarkerHeading = 0x34;  // Skyrim.esm
 
@@ -374,6 +374,18 @@ namespace Papyrus
 			BedrollSeats::Clear();
 		}
 
+		// Disables and deletes every reference in one go, so the whole camp
+		// goes in the same frame (Papyrus's Disable waits a frame each).
+		void RemoveRefs(RE::StaticFunctionTag*, std::vector<RE::TESObjectREFR*> a_refs)
+		{
+			for (auto* ref : a_refs) {
+				if (ref) {
+					ref->Disable();
+					ref->SetDelete(true);
+				}
+			}
+		}
+
 		// Renames a form, or gives it its own name back if a_name is empty.
 		// The name is kept in the save; see FormNames.
 		void RenameForm(RE::StaticFunctionTag*, RE::TESForm* a_form, RE::BSFixedString a_name)
@@ -414,6 +426,7 @@ namespace Papyrus
 		a_vm->RegisterFunction("ShowGrass"sv, kClass, ShowGrass);
 		a_vm->RegisterFunction("RenameForm"sv, kClass, RenameForm);
 		a_vm->RegisterFunction("ClearBedrollSeats"sv, kClass, ClearBedrollSeats);
+		a_vm->RegisterFunction("RemoveRefs"sv, kClass, RemoveRefs);
 		CampLayout::Register(a_vm);
 		logger::info("Registered {} native functions", kClass);
 		return true;
