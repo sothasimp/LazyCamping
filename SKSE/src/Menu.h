@@ -1,6 +1,6 @@
 #pragma once
 
-// The "Wayfarer's Rest - A Convenient Camping Mod" page in SKSE Menu Framework's Mod Control Panel, if
+// The "Convenient Camping (Wayfarer's Rest)" page in SKSE Menu Framework's Mod Control Panel, if
 // that's installed.
 namespace Menu
 {

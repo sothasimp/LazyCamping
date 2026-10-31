@@ -231,7 +231,7 @@ namespace Menu
 		if (!SKSEMenuFramework::IsInstalled()) {
 			return;
 		}
-		SKSEMenuFramework::SetSection("Wayfarer's Rest - A Convenient Camping Mod");
+		SKSEMenuFramework::SetSection("Convenient Camping (Wayfarer's Rest)");
 		SKSEMenuFramework::AddSectionItem("Settings", Render);
 		logger::info("Added the SKSE Menu Framework page");
 	}
