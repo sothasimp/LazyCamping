@@ -58,6 +58,12 @@ Int Property BedrollStyle = 0 Auto
 vanilla bedroll (LZC_BedrollPlaced), 1 green, 2 blue, 3 red, 4 mixed: green,
 blue and red in turn round the camp, the two of a pair in a tent matching.
 Looked up at run time, so it isn't a master.}
+TextureSet Property LZC_BedrollTextureGreen Auto
+{The bedroll kit's cloth with BedrollStyle 1 (green) or 4 (mixed).}
+TextureSet Property LZC_BedrollTextureBlue Auto
+{The bedroll kit's cloth with BedrollStyle 2 (blue).}
+TextureSet Property LZC_BedrollTextureRed Auto
+{The bedroll kit's cloth with BedrollStyle 3 (red).}
 Form Property LZC_CampfirePlaced Auto
 {Static or Activator: the burning campfire. Can be the vanilla one.}
 Furniture Property LZC_CookingStation Auto

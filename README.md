@@ -240,7 +240,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 ## 4. Compile scripts and package
 
 1. In the CK, compile the three scripts, `LZC_CampsiteQuestScript`, `LZC_CampFollowersScript` and `LZC_TubTriggerScript` (*Gameplay > Papyrus Script Manager*). The quest script's native functions compile without the DLL; they're only bound at runtime.
-2. `Convenient Camping.esp` adds only new records, so you can flag it as ESL with xEdit.
+2. `Convenient Camping.esp` adds only new records, so it can be flagged as ESL, but first its FormIDs must be compacted into the light plugin range (up to `0xFFF`): in xEdit, right-click it, *Compact FormIDs for ESL*, then set the ESL flag (or *File > Compact Active File Form IDs* in the Creation Kit). Compacting renumbers its records, which breaks saves made with it. The DLL finds every form through the quest scripts' properties (the bedroll kit's texture sets are `LZC_BedrollTextureGreen`, `LZC_BedrollTextureBlue` and `LZC_BedrollTextureRed`), so nothing in it needs changing.
 3. Package these files:
    ```
    Convenient Camping.esp

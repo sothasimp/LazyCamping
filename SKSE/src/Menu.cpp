@@ -133,7 +133,7 @@ namespace Menu
 				if (auto* bedroll = AutoProperty(object.get(), "BedrollStyle")) {
 					bedroll->SetSInt(a_values.bedrollStyle);
 				}
-				BedrollKit::Apply(a_values.bedrollAltLoaded ? a_values.bedrollStyle : 0);
+				BedrollKit::Apply(object.get(), a_values.bedrollAltLoaded ? a_values.bedrollStyle : 0);
 				if (auto* merchants = AutoProperty(object.get(), "KitsAtMerchants")) {
 					merchants->SetBool(a_values.kitsAtMerchants);
 				}
@@ -223,7 +223,7 @@ namespace Menu
 		auto* dataHandler = RE::TESDataHandler::GetSingleton();
 		const bool loaded = dataHandler && (dataHandler->LookupLoadedModByName(kBedrollAltPlugin) ||
 											   dataHandler->LookupLoadedLightModByName(kBedrollAltPlugin));
-		BedrollKit::Apply(bedroll && loaded ? bedroll->GetSInt() : 0);
+		BedrollKit::Apply(object.get(), bedroll && loaded ? bedroll->GetSInt() : 0);
 	}
 
 	void Register()

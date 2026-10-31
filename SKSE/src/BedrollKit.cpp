@@ -1,16 +1,13 @@
 #include "BedrollKit.h"
 
+#include "ScriptObjects.h"
+
 namespace BedrollKit
 {
 	namespace
 	{
-		constexpr auto       kPlugin = "Convenient Camping.esp"sv;
-		constexpr auto       kShape = "cloth"sv;
+		constexpr auto          kShape = "cloth"sv;
 		constexpr std::uint32_t kShapeIndex = 5;  // the cloth shape's index in the kit's mesh
-		constexpr RE::FormID kKit = 0x803;     // LZC_BedrollKit
-		constexpr RE::FormID kGreen = 0x5403;  // LZC_BedrollTextureGreen
-		constexpr RE::FormID kBlue = 0x5404;   // LZC_BedrollTextureBlue
-		constexpr RE::FormID kRed = 0x5405;    // LZC_BedrollTextureRed
 
 		using AlternateTexture = RE::TESModelTextureSwap::AlternateTexture;
 
@@ -18,12 +15,18 @@ namespace BedrollKit
 		AlternateTexture* original{ nullptr };  // the kit's own, from the plugin
 		std::uint32_t     originalCount{ 0 };
 		bool              saved{ false };
+
+		template <class T>
+		T* Property(RE::BSScript::Object* a_script, std::string_view a_name)
+		{
+			auto* form = a_script ? ScriptObjects::FormValue(ScriptObjects::AutoProperty(a_script, a_name)) : nullptr;
+			return form ? form->As<T>() : nullptr;
+		}
 	}
 
-	void Apply(std::int32_t a_style)
+	void Apply(RE::BSScript::Object* a_script, std::int32_t a_style)
 	{
-		auto* dataHandler = RE::TESDataHandler::GetSingleton();
-		auto* kit = dataHandler ? dataHandler->LookupForm<RE::TESObjectMISC>(kKit, kPlugin) : nullptr;
+		auto* kit = Property<RE::TESObjectMISC>(a_script, "LZC_BedrollKit");
 		if (!kit) {
 			return;
 		}
@@ -33,22 +36,22 @@ namespace BedrollKit
 			saved = true;
 		}
 
-		RE::FormID set = 0;
+		const char* set = nullptr;
 		switch (a_style) {
 		case 1:
 		case 4:
-			set = kGreen;
+			set = "LZC_BedrollTextureGreen";
 			break;
 		case 2:
-			set = kBlue;
+			set = "LZC_BedrollTextureBlue";
 			break;
 		case 3:
-			set = kRed;
+			set = "LZC_BedrollTextureRed";
 			break;
 		default:
 			break;
 		}
-		auto* textureSet = set ? dataHandler->LookupForm<RE::BGSTextureSet>(set, kPlugin) : nullptr;
+		auto* textureSet = set ? Property<RE::BGSTextureSet>(a_script, set) : nullptr;
 		if (!textureSet) {
 			kit->alternateTextures = original;
 			kit->numAlternateTextures = originalCount;
