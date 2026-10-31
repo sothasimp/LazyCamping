@@ -53,7 +53,7 @@ namespace Menu
 		RE::BSTSmartPointer<RE::BSScript::Object> FindScript()
 		{
 			static RE::FormID quest = 0;
-			return ScriptObjects::FindQuestScript("Convenient Camping."sv, kScript, quest);
+			return ScriptObjects::FindQuestScript("Wayfarer's Rest - A Convenient Camping Mod."sv, kScript, quest);
 		}
 
 		using ScriptObjects::AutoProperty;
@@ -231,7 +231,7 @@ namespace Menu
 		if (!SKSEMenuFramework::IsInstalled()) {
 			return;
 		}
-		SKSEMenuFramework::SetSection("Convenient Camping");
+		SKSEMenuFramework::SetSection("Wayfarer's Rest - A Convenient Camping Mod");
 		SKSEMenuFramework::AddSectionItem("Settings", Render);
 		logger::info("Added the SKSE Menu Framework page");
 	}

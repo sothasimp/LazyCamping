@@ -1,7 +1,7 @@
 #pragma once
 
 // The bedroll kit's look follows the camp's bedroll style (see the SKSE menu):
-// its "cloth" shape takes one of Convenient Camping's bedroll texture sets.
+// its "cloth" shape takes one of Wayfarer's Rest - A Convenient Camping Mod's bedroll texture sets.
 namespace BedrollKit
 {
 	// 0 vanilla, 1 green, 2 blue, 3 red, 4 mixed colours (shown green). The

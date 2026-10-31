@@ -6,8 +6,8 @@ namespace Events
 {
 	namespace
 	{
-		constexpr auto kPlugin = "Convenient Camping.esp"sv;
-		constexpr auto kPluginPrefix = "Convenient Camping."sv;
+		constexpr auto kPlugin = "Wayfarer's Rest - A Convenient Camping Mod.esp"sv;
+		constexpr auto kPluginPrefix = "Wayfarer's Rest - A Convenient Camping Mod."sv;
 
 		RE::BSTSmartPointer<RE::BSScript::Object> CampScript()
 		{
@@ -53,7 +53,7 @@ namespace Events
 		};
 
 		// The player activating one of the camp's objects: anything whose base
-		// is from Convenient Camping (tents, firepit, cook box, clothes basket).
+		// is from Wayfarer's Rest - A Convenient Camping Mod (tents, firepit, cook box, clothes basket).
 		class Activate : public RE::BSTEventSink<RE::TESActivateEvent>
 		{
 		public:
