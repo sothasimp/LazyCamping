@@ -798,7 +798,7 @@ namespace CampLayout
 			{
 				built.rolledKits.assign(kMaxBedrolls, nullptr);
 				auto* rolled = _props.Form<RE::TESBoundObject>("LZC_BedrollRolled");
-				if (!rolled || !_props.Bool("BedrollsStartRolled", false)) {
+				if (!rolled || !_props.Bool("BedrollsStartRolled", true)) {
 					return;
 				}
 				for (std::int32_t b = 0; b < kMaxBedrolls; ++b) {

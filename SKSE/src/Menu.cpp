@@ -34,7 +34,7 @@ namespace Menu
 			bool         kitsAtMerchants{ true };
 			int          firewoodPerFire{ 2 };
 			bool         placeMapMarker{ true };
-			bool         bedrollsStartRolled{ false };
+			bool         bedrollsStartRolled{ true };
 		};
 
 		constexpr const char* kBedrollStyles[] = { "Vanilla", "Bedroll Alternative - Green", "Bedroll Alternative - Blue",

@@ -53,7 +53,7 @@ Bool Property KitsAtMerchants = True Auto
 {General goods merchants can stock the kits (SKSE menu): LazyCamping.dll adds
 LZC_LItemCampingKits to every leveled list in LZC_VendorLists while the game
 runs.}
-Bool Property BedrollsStartRolled = False Auto
+Bool Property BedrollsStartRolled = True Auto
 {Each bedroll starts rolled up (LZC_BedrollRolled) where it will lie;
 activating it unrolls it in its place, and followers unroll their own at
 bedtime (SKSE menu).}
