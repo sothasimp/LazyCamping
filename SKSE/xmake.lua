@@ -13,6 +13,10 @@ set_warnings("allextra")
 
 add_rules("mode.debug", "mode.release")
 
+-- The C++ runtime is built into the DLL, so it doesn't depend on the player's
+-- Visual C++ Redistributable being at least as new as the compiler.
+set_runtimes(is_mode("debug") and "MTd" or "MT")
+
 target("LazyCamping")
     add_deps("commonlibsse-ng")
 
