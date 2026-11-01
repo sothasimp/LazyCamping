@@ -37,7 +37,8 @@ namespace CampLayout
 
 		constexpr std::int32_t kMaxTents = 3;
 		constexpr std::int32_t kMaxBedrolls = 12;
-		constexpr std::int32_t kRingBedrolls = 4;
+		constexpr std::int32_t kRingBedrolls = 6;
+		constexpr std::int32_t kFullRing = 5;  // from this many tentless bedrolls, a full ring round the fire
 		constexpr std::int32_t kMaxFollowerSeats = 5;
 		constexpr std::int32_t kSmall = 0;
 		constexpr std::int32_t kLarge = 1;
@@ -500,6 +501,20 @@ namespace CampLayout
 			// Puts `slot` `distance` from the centre of a tent, straight out from its
 			// side and facing the way it does: toward higher fan bearings if
 			// `outward` is 1, lower if -1.
+			// Degrees between neighbouring places without tents: a close arc of
+			// kRingStep for a few bedrolls, spread evenly all round the fire for
+			// kFullRing or more.
+			float RingStep() const
+			{
+				return _bedrolls >= kFullRing ? 360.0f / static_cast<float>(_bedrolls) : kRingStep;
+			}
+
+			// Outside a full ring of bedrolls, at `bearing`, facing the fire.
+			void SetOutsideRing(std::size_t a_slot, float a_bearing, float a_radius)
+			{
+				Set(a_slot, _layout.forms[a_slot], kSeatRadius + a_radius * Cos(a_bearing), a_radius * Sin(a_bearing), a_bearing + 180.0f);
+			}
+
 			void SetBesideTent(std::size_t a_slot, float a_fwd, float a_side, float a_turn, float a_outward, float a_distance)
 			{
 				_layout.fwd[a_slot] = a_fwd - a_outward * a_distance * Cos(a_turn + 90.0f);
@@ -538,11 +553,18 @@ namespace CampLayout
 					}
 					return;
 				}
+				if (_bedrolls >= kFullRing) {
+					// Outside the ring, between the player's bedroll and the next on
+					// the left.
+					SetOutsideRing(kTub, -RingStep() / 2.0f, kBedrollRingRadius + kChoppingBlockGap + kTubHalfWidth);
+					return;
+				}
 				SetBesideTent(kTub, kSeatRadius + kBedrollRingRadius, 0.0f, 180.0f, -1.0f, kBedrollHalfLength + kChoppingBlockGap + kTubHalfWidth);
 			}
 
 			// Beside the outermost tent, on its far side from the middle one;
-			// without tents, past the end of the bedroll arc. Always level.
+			// without tents, past the end of the bedroll arc (or outside a full ring).
+			// Always level.
 			void LayOutChoppingBlock()
 			{
 				_layout.forms[kChoppingBlock] = _props.Form<RE::TESForm>("LZC_ChoppingBlock");
@@ -554,6 +576,11 @@ namespace CampLayout
 					const float distance = TentHalfWidth(tent.size) + kChoppingBlockGap +
 					                       (tent.size == kSmall ? kChoppingBlockBesideSmallTent : kChoppingBlockBesideLargeTent);
 					SetBesideTent(kChoppingBlock, tent.fwd, tent.side, tent.turn, outward, distance);
+				} else if (_bedrolls >= kFullRing) {
+					// Outside the ring, in the gap between two bedrolls on the
+					// player's side of the fire.
+					const float bearing = 180.0f - (_bedrolls % 2 == 0 ? RingStep() / 2.0f : 0.0f);
+					SetOutsideRing(kChoppingBlock, bearing, kBedrollRingRadius + kChoppingBlockOut);
 				} else {
 					const std::int32_t place = FanPlace(_bedrolls);
 					const float        radius = kBedrollRingRadius + kChoppingBlockOut;
@@ -667,7 +694,7 @@ namespace CampLayout
 			void SetRingBedroll(std::int32_t a_index, std::int32_t a_place, bool a_pairHigh)
 			{
 				const std::size_t slot = kFirstBedroll + static_cast<std::size_t>(a_index);
-				const float       bearing = static_cast<float>(a_place) * kRingStep;
+				const float       bearing = static_cast<float>(a_place) * RingStep();
 				_bedOrder[a_index] = a_pairHigh ? a_place * 2 - 1 : a_place * 2;
 				Set(slot, BedrollForm(_bedOrder[a_index] + 10), kSeatRadius + kBedrollRingRadius * Cos(bearing), kBedrollRingRadius * Sin(bearing),
 					bearing + kBedrollRingYaw + (a_pairHigh ? 180.0f : 0.0f));
@@ -675,7 +702,7 @@ namespace CampLayout
 					_layout.clutterSet[slot] = 4;  // only the player's bedroll
 				}
 				_ringSeatTurn[a_index] = bearing + 180.0f;
-				_used[static_cast<std::size_t>(a_place + 2)] = true;
+				_used[static_cast<std::size_t>(a_place + 3)] = true;
 			}
 
 			// The player's behind their seat, the rest beside it; the player and a
@@ -696,9 +723,9 @@ namespace CampLayout
 					SetRingBedroll(r + 1, 2, true);
 					r += 2;
 				}
-				for (std::int32_t k = 1; r < _bedrolls && k < 5; ++k) {
+				for (std::int32_t k = 1; r < _bedrolls && k < 7; ++k) {
 					const std::int32_t place = FanPlace(k);
-					if (!_used[static_cast<std::size_t>(place + 2)]) {
+					if (!_used[static_cast<std::size_t>(place + 3)]) {
 						SetRingBedroll(r++, place, false);
 					}
 				}
@@ -899,7 +926,7 @@ namespace CampLayout
 			std::vector<std::int32_t>                         _bedGroup;
 			std::vector<std::int32_t>                         _bedOrder;
 			std::vector<float>                                _ringSeatTurn;
-			std::array<bool, 5>                               _used{};  // ring places -2 to 2, at place + 2
+			std::array<bool, 7>                               _used{};  // ring places -3 to 3, at place + 3
 		};
 
 		// --- Native functions ----------------------------------------------------
