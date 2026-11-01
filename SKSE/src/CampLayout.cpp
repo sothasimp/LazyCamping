@@ -221,6 +221,23 @@ namespace CampLayout
 			a_ref->Enable(false);
 		}
 
+		// The world map only shows markers in the player's map marker list,
+		// which the game fills from the worldspace on loading. The camp's marker
+		// starts out in the holding cell, an interior, so it's never in it:
+		// add it.
+		void ListMapMarker(RE::TESObjectREFR* a_marker)
+		{
+			auto* player = RE::PlayerCharacter::GetSingleton();
+			if (!player || !a_marker) {
+				return;
+			}
+			auto&      markers = player->GetPlayerRuntimeData().currentMapMarkers;
+			const auto handle = a_marker->GetHandle();
+			if (std::ranges::find(markers, handle) == markers.end()) {
+				markers.push_back(handle);
+			}
+		}
+
 		// --- Layout helpers ----------------------------------------------------
 
 		// Place `index` in the fan: 0 in the middle, then alternately right and
@@ -837,6 +854,7 @@ namespace CampLayout
 						extra->mapData->SetVisible(true);
 						extra->mapData->flags.set(RE::MapMarkerData::Flag::kCanTravelTo);
 					}
+					ListMapMarker(marker);
 				}
 			}
 
@@ -1030,6 +1048,17 @@ namespace CampLayout
 		std::vector<std::int32_t>       GetBedGroups(RE::StaticFunctionTag*) { return built.bedGroups; }
 		std::vector<std::int32_t>       GetBedOrders(RE::StaticFunctionTag*) { return built.bedOrders; }
 		std::vector<RE::TESObjectREFR*> GetTubSeats(RE::StaticFunctionTag*) { return built.tubSeats; }
+	}
+
+	void ListCampMapMarker()
+	{
+		auto        camp = CampScript();
+		const auto* value = camp ? ScriptObjects::AutoProperty(camp.get(), "LZC_CampMapMarker") : nullptr;
+		auto*       form = FormValue(value);
+		auto*       marker = form ? form->As<RE::TESObjectREFR>() : nullptr;
+		if (marker && !marker->IsDisabled()) {
+			ListMapMarker(marker);
+		}
 	}
 
 	bool UnrollKit(RE::TESObjectREFR* a_kit)

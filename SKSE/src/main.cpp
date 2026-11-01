@@ -1,4 +1,5 @@
 #include "BedrollSeats.h"
+#include "CampLayout.h"
 #include "Events.h"
 #include "GrassHider.h"
 #include "Menu.h"
@@ -50,6 +51,7 @@ SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
 		} else if (a_message->type == SKSE::MessagingInterface::kPostLoadGame ||
 				   a_message->type == SKSE::MessagingInterface::kNewGame) {
 			Menu::ApplyLoadedSettings();
+			CampLayout::ListCampMapMarker();
 		}
 	});
 

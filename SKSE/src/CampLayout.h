@@ -14,4 +14,8 @@ namespace CampLayout
 	// rolled-up bedrolls (see the BedrollsStartRolled setting). Returns
 	// whether it was. Main thread only.
 	bool UnrollKit(RE::TESObjectREFR* a_kit);
+
+	// Puts the camp's map marker back in the player's map marker list after
+	// loading a save with a camp up (the list isn't kept in the save).
+	void ListCampMapMarker();
 }
