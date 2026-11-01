@@ -2,6 +2,13 @@
 -- Build: xmake config -m release && xmake
 set_xmakever("2.8.2")
 
+add_rules("mode.debug", "mode.release")
+
+-- The C++ runtime is built into the DLL (and CommonLib and its packages), so
+-- it doesn't depend on the player's Visual C++ Redistributable being at least
+-- as new as the compiler.
+set_runtimes(is_mode("debug") and "MTd" or "MT")
+
 includes("lib/commonlibsse-ng")
 
 set_project("LazyCamping")
@@ -10,12 +17,6 @@ set_license("GPL-3.0")
 
 set_languages("c++23")
 set_warnings("allextra")
-
-add_rules("mode.debug", "mode.release")
-
--- The C++ runtime is built into the DLL, so it doesn't depend on the player's
--- Visual C++ Redistributable being at least as new as the compiler.
-set_runtimes(is_mode("debug") and "MTd" or "MT")
 
 target("LazyCamping")
     add_deps("commonlibsse-ng")
