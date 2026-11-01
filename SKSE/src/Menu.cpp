@@ -184,7 +184,7 @@ namespace Menu
 			}
 
 			bool changed = false;
-			changed |= ImGuiMCP::Checkbox("Campfire", &values.placeCampfire);
+			changed |= ImGuiMCP::Checkbox("Toggle Campfire", &values.placeCampfire);
 			ImGuiMCP::SetItemTooltip("Place the campfire with its clutter, light and cooking. Without it there's no firewood mechanic or chopping block either. Takes effect at the next camp.");
 			ImGuiMCP::BeginDisabled(!values.placeCampfire);
 			changed |= ImGuiMCP::Checkbox("Firewood mechanic", &values.firewoodMechanic);
@@ -200,7 +200,7 @@ namespace Menu
 			ImGuiMCP::EndDisabled();
 			changed |= ImGuiMCP::Checkbox("Align to slope", &values.alignToSlope);
 			ImGuiMCP::SetItemTooltip("Tilt the tents, bedrolls, seats, fire and clutter to match the ground. Takes effect at the next camp.");
-			changed |= ImGuiMCP::Checkbox("Seats by the fire", &values.placeFireSeats);
+			changed |= ImGuiMCP::Checkbox("Toggle sitting spots", &values.placeFireSeats);
 			ImGuiMCP::SetItemTooltip("Place the seats round the fire, the player's and the followers'. The seats on the bedrolls stay either way. Takes effect at the next camp.");
 			ImGuiMCP::BeginDisabled(!values.placeFireSeats);
 			changed |= ImGuiMCP::Combo("Seat colour", &values.seatColor, kSeatColors, static_cast<int>(std::size(kSeatColors)));
