@@ -224,7 +224,7 @@ xmake config -m release
 xmake
 ```
 
-(If you already cloned without `--recursive`, run `git submodule update --init` first. CommonLibSSE-NG is pinned as a submodule in `SKSE/lib/commonlibsse-ng`.)
+(If you already cloned without `--recursive`, run `git submodule update --init` first. CommonLibSSE-NG, alandtse's maintained fork, is pinned as a submodule in `SKSE/lib/commonlibsse-ng`, at a release tag.)
 
 The full Visual Studio IDE isn't required. The free **Build Tools for Visual Studio**, with only the *Desktop development with C++* workload selected, are enough.
 
@@ -238,9 +238,9 @@ You can also start a build by hand with *Run workflow*.
 
 xmake downloads the dependencies (such as spdlog) on its first run. The DLL ends up in `SKSE/dist/SKSE/Plugins/LazyCamping.dll`.
 
-The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x) and VR. Players need **SKSE** and **Address Library for SKSE Plugins** installed. The plugin writes a log to `Documents/My Games/Skyrim Special Edition/SKSE/LazyCamping.log`.
+The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x and 1.7.x) and VR. Players need **SKSE** and **Address Library for SKSE Plugins** installed, both matching their game version: on 1.7.99, SKSE 2.3.0 or newer and Address Library 12 or newer; on 1.7.104, Address Library 13 or newer. The plugin writes a log to `Documents/My Games/Skyrim Special Edition/SKSE/LazyCamping.log`.
 
-> CommonLibSSE-NG has maintained forks, such as alandtse's `CommonLibVR` (`ng` branch). If a future game update breaks the build, point the `SKSE/lib/commonlibsse-ng` submodule at one of those. The plugin only uses a handful of stable APIs.
+> If a future game update stops the plugin loading (as 1.7.99 did for plugins built on older CommonLib), move the `SKSE/lib/commonlibsse-ng` submodule to the latest release tag of [alandtse/CommonLibSSE-NG](https://github.com/alandtse/CommonLibSSE-NG) and rebuild. The plugin only uses a handful of stable APIs.
 
 ## 4. Compile scripts and package
 
