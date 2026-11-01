@@ -458,6 +458,17 @@ Int Function OrderGap(Int a, Int b)
 	Return b - a
 EndFunction
 
+; The followers at camp, for the tent and bedroll kits they carry.
+Actor[] Function CampFollowers()
+	Actor[] actors = new Actor[5]
+	Int i = 0
+	While i < Followers.Length && i < actors.Length
+		actors[i] = Followers[i].GetActorRef()
+		i += 1
+	EndWhile
+	Return actors
+EndFunction
+
 Int Function PartnerCount()
 	Int count = 0
 	Int i = 0

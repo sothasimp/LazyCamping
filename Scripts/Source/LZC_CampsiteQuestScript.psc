@@ -236,7 +236,7 @@ Int Property kCookingStation = 37 AutoReadOnly     ; hidden, at the fire
 Int Property kTub = 38 AutoReadOnly
 Int Property kSlotCount = 39 AutoReadOnly
 
-Int Property kNativeVersion = 15 AutoReadOnly         ; LazyCamping.dll needed
+Int Property kNativeVersion = 16 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
 ; With BedrollsStartRolled: each bedroll's rolled-up bedroll (None once
@@ -261,12 +261,13 @@ Int Function GetVersion() Global Native
 
 ; Sets up a camp in front of the player in one go: works out which tents and
 ; bedrolls go up and where everything stands from this script's properties
-; (partners and couples are the follower counts), checks the ground, places it
+; (partners and couples are the follower counts; the tent and bedroll kits
+; akFollowers carry count with the player's), checks the ground, places it
 ; all with its clutter, moves the cook box, backpack and map marker to the
 ; camp, sets up the bedroll seats and hides the grass. Returns the placed
 ; references in placedRefs' slots, then the clutter; or an empty array if the
 ; camp couldn't go up, GetBuildStatus saying why (see NotifySiteProblem).
-ObjectReference[] Function BuildCamp(Quest campQuest, Int partners, Int couples) Global Native
+ObjectReference[] Function BuildCamp(Quest campQuest, Int partners, Int couples, Actor[] akFollowers) Global Native
 Int Function GetBuildStatus() Global Native
 
 ; What the last BuildCamp laid out, for the follower quest: the fire seats
@@ -402,9 +403,12 @@ Function SetUpCamp()
 	EndIf
 	Int partners = 0
 	Int couples = 0
+	Actor[] campers = None
 	If followers
 		partners = followers.PartnerCount()
 		couples = followers.CoupleCount()
+		; The tent and bedroll kits they carry count along with the player's.
+		campers = followers.CampFollowers()
 	EndIf
 
 	; Where the tub's trigger box and water stand around the tub anchor in the
@@ -429,7 +433,7 @@ Function SetUpCamp()
 	; properties, checks the ground, places everything in one frame and moves
 	; the cook box, backpack, map marker and the tub's trigger box and water
 	; to the camp.
-	placedRefs = BuildCamp(Self, partners, couples)
+	placedRefs = BuildCamp(Self, partners, couples, campers)
 	Int status = GetBuildStatus()
 	If status != 0 || placedRefs.Length <= kSlotCount
 		NotifySiteProblem(status)

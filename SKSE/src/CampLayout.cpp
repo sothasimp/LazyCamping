@@ -287,7 +287,7 @@ namespace CampLayout
 		class Builder
 		{
 		public:
-			Builder(const Properties& a_props, RE::Actor* a_player, std::int32_t a_partners, std::int32_t a_couples) :
+			Builder(const Properties& a_props, RE::Actor* a_player, const std::vector<RE::Actor*>& a_followers, std::int32_t a_partners, std::int32_t a_couples) :
 				_props(a_props),
 				_player(a_player),
 				_partners(a_partners),
@@ -308,7 +308,17 @@ namespace CampLayout
 				_bedGroup.assign(kMaxBedrolls, 0);
 				_bedOrder.assign(kMaxBedrolls, 0);
 				_ringSeatTurn.assign(kMaxBedrolls, 0.0f);
+				// The kits the followers carry count too: a follower with a tent kit
+				// and a bedroll kit brings their own tent.
 				_counts = a_player->GetInventoryCounts();
+				for (auto* follower : a_followers) {
+					if (!follower) {
+						continue;
+					}
+					for (const auto& [object, count] : follower->GetInventoryCounts()) {
+						_counts[object] += count;
+					}
+				}
 			}
 
 			std::vector<RE::TESObjectREFR*> Run()
@@ -1032,7 +1042,8 @@ namespace CampLayout
 
 		// Sets up the camp for the quest's script; returns the placed references
 		// (empty if it couldn't: see GetBuildStatus).
-		std::vector<RE::TESObjectREFR*> BuildCamp(RE::StaticFunctionTag*, RE::TESQuest* a_quest, std::int32_t a_partners, std::int32_t a_couples)
+		std::vector<RE::TESObjectREFR*> BuildCamp(RE::StaticFunctionTag*, RE::TESQuest* a_quest, std::int32_t a_partners, std::int32_t a_couples,
+			std::vector<RE::Actor*> a_followers)
 		{
 			built = {};
 			auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
@@ -1047,7 +1058,7 @@ namespace CampLayout
 				return {};
 			}
 			const Properties props(object.get());
-			return Builder(props, player, a_partners, a_couples).Run();
+			return Builder(props, player, a_followers, a_partners, a_couples).Run();
 		}
 
 		// Unrolls camp bedroll a_bed (0 to kMaxBedrolls - 1) if it's still
