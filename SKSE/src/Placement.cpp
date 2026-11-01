@@ -31,7 +31,7 @@ namespace Placement
 		pick.rayInput.from = RE::hkVector4(from * scale);
 		pick.rayInput.to = RE::hkVector4(to * scale);
 		// The line-of-sight layer hits terrain, statics, trees and clutter, but not water.
-		pick.rayInput.filterInfo = static_cast<std::uint32_t>(RE::COL_LAYER::kLOS);
+		pick.rayInput.filterInfo.SetCollisionLayer(RE::COL_LAYER::kLOS);
 
 		{
 			RE::BSReadLockGuard lock(world->worldLock);
