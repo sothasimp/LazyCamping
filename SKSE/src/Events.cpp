@@ -64,7 +64,7 @@ namespace Events
 					FromPlugin(a_event->objectActivated->GetBaseObject())) {
 					RE::TESObjectREFR* target = a_event->objectActivated.get();
 					// A rolled-up bedroll unrolls where its bedroll was laid out.
-					if (CampLayout::UnrollKit(target) || CampLayout::ToggleLantern(target)) {
+					if (CampLayout::UnrollKit(target)) {
 						return RE::BSEventNotifyControl::kContinue;
 					}
 					RE::TESObjectREFR* actor = a_event->actionRef.get();

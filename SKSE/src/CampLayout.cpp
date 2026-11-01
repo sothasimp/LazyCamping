@@ -110,7 +110,6 @@ namespace CampLayout
 			std::vector<RE::TESObjectREFR*> tubSeats;
 			std::vector<RE::TESObjectREFR*> rolledKits;  // by bedroll, None once unrolled (or never rolled)
 			std::vector<std::int32_t>       owners;      // by returned reference: the layout slot it belongs to
-			std::vector<RE::TESObjectREFR*> lanterns;    // unlit, lit, light for each tent lantern
 		};
 		Built built;
 
@@ -377,7 +376,6 @@ namespace CampLayout
 					return {};
 				}
 				Settle(refs);
-				AddLanternLights(refs, owners);
 				RollUp(refs, owners);
 				built.owners = owners;
 				Report(refs);
@@ -943,12 +941,10 @@ namespace CampLayout
 				} };
 				// The tub water isn't copied: the script moves it onto the tub.
 				auto* water = _props.Form<RE::TESObjectREFR>("LZC_TubWater");
-				// Lanterns in the clutter only with PlaceTentLanterns.
-				auto* lantern = _props.Bool("PlaceTentLanterns", true) ? nullptr : _props.Form<RE::TESBoundObject>("LZC_TentLantern");
 				for (std::size_t s = 0; s < sets.size(); ++s) {
 					_layout.setAnchors.push_back(_props.Form<RE::TESObjectREFR>(sets[s].first));
 					for (auto* item : _props.Forms<RE::TESObjectREFR>(sets[s].second)) {
-						if (item && item != water && (!lantern || item->GetBaseObject() != lantern)) {
+						if (item && item != water) {
 							_layout.setItems.push_back(item);
 							_layout.itemSet.push_back(static_cast<std::int32_t>(s) + 1);
 						}
@@ -1068,44 +1064,6 @@ namespace CampLayout
 					a_refs.push_back(kit.get());
 					a_owners.push_back(-1);
 					built.rolledKits[b] = kit.get();
-				}
-			}
-
-			// Each unlit lantern in the clutter (LZC_TentLantern, an Activator)
-			// gets a lit one (LZC_TentLanternLit) and its light
-			// (LZC_TentLanternLight) in the same spot, both off until it's lit:
-			// see ToggleLantern. They're added to a_refs, so packing up takes
-			// them, and listed as unlit, lit, light in built.lanterns.
-			void AddLanternLights(std::vector<RE::TESObjectREFR*>& a_refs, std::vector<std::int32_t>& a_owners) const
-			{
-				built.lanterns.clear();
-				auto* unlit = _props.Form<RE::TESBoundObject>("LZC_TentLantern");
-				auto* lit = _props.Form<RE::TESBoundObject>("LZC_TentLanternLit");
-				auto* light = _props.Form<RE::TESBoundObject>("LZC_TentLanternLight");
-				if (!unlit || !lit) {
-					return;
-				}
-				const std::size_t count = a_refs.size();
-				for (std::size_t i = kSlotCount + 1; i < count; ++i) {
-					auto* lantern = a_refs[i];
-					if (!lantern || lantern->GetBaseObject() != unlit) {
-						continue;
-					}
-					built.lanterns.push_back(lantern);
-					for (auto* base : { lit, light }) {
-						RE::TESObjectREFR* added = nullptr;
-						if (base) {
-							if (const auto placed = lantern->PlaceObjectAtMe(base, false)) {
-								placed->data.angle = lantern->data.angle;
-								placed->SetPosition(lantern->GetPosition());
-								placed->Disable();
-								added = placed.get();
-								a_refs.push_back(added);
-								a_owners.push_back(-1);
-							}
-						}
-						built.lanterns.push_back(added);
-					}
 				}
 			}
 
@@ -1255,7 +1213,6 @@ namespace CampLayout
 
 		std::int32_t GetBuildStatus(RE::StaticFunctionTag*) { return built.status; }
 		std::vector<RE::TESObjectREFR*> GetRolledKits(RE::StaticFunctionTag*) { return built.rolledKits; }
-		std::vector<RE::TESObjectREFR*> GetLanterns(RE::StaticFunctionTag*) { return built.lanterns; }
 		std::vector<std::int32_t>       GetPlacedOwners(RE::StaticFunctionTag*) { return built.owners; }
 		std::vector<RE::TESObjectREFR*> GetFireSeats(RE::StaticFunctionTag*) { return built.fireSeats; }
 		std::vector<std::int32_t>       GetFirePlaces(RE::StaticFunctionTag*) { return built.firePlaces; }
@@ -1276,44 +1233,6 @@ namespace CampLayout
 		if (marker && !marker->IsDisabled()) {
 			ListMapMarker(marker);
 		}
-	}
-
-	bool ToggleLantern(RE::TESObjectREFR* a_ref)
-	{
-		auto        camp = a_ref ? CampScript() : nullptr;
-		const auto* value = camp ? ScriptObjects::AutoProperty(camp.get(), "TentLanterns") : nullptr;
-		const auto  lanterns = value && value->IsArray() ? value->GetArray() : nullptr;
-		const auto  refAt = [&](std::size_t a_index) -> RE::TESObjectREFR* {
-			auto* form = a_index < lanterns->size() ? FormValue(&(*lanterns)[a_index]) : nullptr;
-			return form ? form->As<RE::TESObjectREFR>() : nullptr;
-		};
-		for (std::size_t i = 0; lanterns && i < lanterns->size(); ++i) {
-			if (refAt(i) != a_ref || i % 3 == 2) {
-				continue;
-			}
-			// Unlit (0) or lit (1) of a lantern's three: swap them over, with
-			// the light following the lit one.
-			const std::size_t first = i - i % 3;
-			const bool        lighting = i % 3 == 0;
-			auto*             unlit = refAt(first);
-			auto*             lit = refAt(first + 1);
-			auto*             light = refAt(first + 2);
-			if (!unlit || !lit) {
-				return true;
-			}
-			for (auto* on : { lighting ? lit : unlit, lighting ? light : nullptr }) {
-				if (on) {
-					on->Enable(false);
-				}
-			}
-			for (auto* off : { lighting ? unlit : lit, lighting ? nullptr : light }) {
-				if (off) {
-					off->Disable();
-				}
-			}
-			return true;
-		}
-		return false;
 	}
 
 	bool UnrollKit(RE::TESObjectREFR* a_kit)
@@ -1343,7 +1262,6 @@ namespace CampLayout
 		a_vm->RegisterFunction("GetBedOrders"sv, kClass, GetBedOrders);
 		a_vm->RegisterFunction("GetTubSeats"sv, kClass, GetTubSeats);
 		a_vm->RegisterFunction("GetRolledKits"sv, kClass, GetRolledKits);
-		a_vm->RegisterFunction("GetLanterns"sv, kClass, GetLanterns);
 		a_vm->RegisterFunction("GetPlacedOwners"sv, kClass, GetPlacedOwners);
 		a_vm->RegisterFunction("UnrollBeds"sv, kClass, UnrollBeds);
 	}
