@@ -38,6 +38,7 @@ namespace CampLayout
 		constexpr std::int32_t kMaxTents = 3;
 		constexpr std::int32_t kMaxBedrolls = 12;
 		constexpr std::int32_t kRingBedrolls = 6;
+		constexpr std::int32_t kOutsideBedrolls = 3;  // most bedrolls outside the tents, once they're full
 		constexpr std::int32_t kFullRing = 5;  // from this many tentless bedrolls, a full ring round the fire
 		constexpr std::int32_t kMaxFollowerSeats = 5;
 		constexpr std::int32_t kSmall = 0;
@@ -65,7 +66,7 @@ namespace CampLayout
 		constexpr float kRingStep = 50.0f;
 		constexpr float kSeatStep = 60.0f;
 		constexpr float kChoppingBlockGap = 60.0f;
-		constexpr float kChoppingBlockBesideTub = 210.0f;  // without tents: from the tub's centre, round the fire
+		constexpr float kChoppingBlockHalfSize = 40.0f;
 		constexpr float kChoppingBlockTentlessOut = 60.0f;  // without tents: this much further from the fire than the tub
 		constexpr float kChoppingBlockTentlessTurn = -8.0f;  // without tents: on top of kChoppingBlockTurn (negative: anticlockwise), 17 clockwise in all
 		constexpr float kChoppingBlockBesideSmallTent = 90.0f;
@@ -324,11 +325,9 @@ namespace CampLayout
 				if (_props.Form<RE::TESBoundObject>("LZC_Tub") && _props.Bool("PlaceTub", true)) {
 					LayOutTub();
 				}
-				if (_props.Bool("FirewoodMechanic", false) && _props.Form<RE::TESBoundObject>("LZC_Firepit")) {
+				const bool firewood = _props.Bool("FirewoodMechanic", false) && _props.Form<RE::TESBoundObject>("LZC_Firepit");
+				if (firewood) {
 					Set(kFirepit, _props.Form<RE::TESForm>("LZC_Firepit"), kSeatRadius, 0.0f, 0.0f);
-					if (_props.Form<RE::TESBoundObject>("LZC_ChoppingBlock") && _props.Bool("PlaceChoppingBlock", true)) {
-						LayOutChoppingBlock();
-					}
 				}
 				LayOutSeats();
 				if (_tents.empty()) {
@@ -337,6 +336,10 @@ namespace CampLayout
 					LayOutTentBedrolls();
 				}
 				LayOutBedrollSeats();
+				// After the bedrolls: without tents it goes beside the player's.
+				if (firewood && _props.Form<RE::TESBoundObject>("LZC_ChoppingBlock") && _props.Bool("PlaceChoppingBlock", true)) {
+					LayOutChoppingBlock();
+				}
 				CollectClutter();
 
 				std::vector<std::int32_t> owners;
@@ -462,6 +465,9 @@ namespace CampLayout
 						}
 					}
 				}
+				// Bedrolls the tents can't hold lie outside, by the fire.
+				_outside = std::clamp(std::min(_bedrollsCarried - _bedrolls, kOutsideBedrolls), 0, kMaxBedrolls - _bedrolls);
+				_bedrolls += _outside;
 				if (_tents[0].size != kLarge) {
 					std::size_t main = 0;
 					for (std::size_t t = 1; t < _tents.size(); ++t) {
@@ -601,7 +607,7 @@ namespace CampLayout
 			}
 
 			// Beside the outermost tent, on its far side from the middle one;
-			// without tents, outside the bedrolls beside the tub. Always level.
+			// without tents, right of the player's bedroll and its clutter. Always level.
 			void LayOutChoppingBlock()
 			{
 				_layout.forms[kChoppingBlock] = _props.Form<RE::TESForm>("LZC_ChoppingBlock");
@@ -614,14 +620,51 @@ namespace CampLayout
 					                       (tent.size == kSmall ? kChoppingBlockBesideSmallTent : kChoppingBlockBesideLargeTent);
 					SetBesideTent(kChoppingBlock, tent.fwd, tent.side, tent.turn, outward, distance);
 				} else {
-					// Outside the bedrolls, beside the tub's spot, on its far side
-					// from the player's bedroll.
-					const auto [tubBearing, radius] = TentlessTubSpot();
-					SetOutsideRing(kChoppingBlock, tubBearing - kChoppingBlockBesideTub / radius * 180.0f / std::numbers::pi_v<float>,
-						radius + kChoppingBlockTentlessOut);
+					// As far from the fire as ever (the tub's distance, plus a
+					// little), round to the right of the player's bedroll and its
+					// clutter as seen across the fire (the tub is on the left).
+					const float radius = TentlessTubSpot().second + kChoppingBlockTentlessOut;
+					SetOutsideRing(kChoppingBlock, RightOfPlayerBedroll() + (kChoppingBlockGap + kChoppingBlockHalfSize) / radius * 180.0f / std::numbers::pi_v<float>,
+						radius);
 					_layout.turn[kChoppingBlock] += kChoppingBlockTentlessTurn;
 				}
 				_layout.turn[kChoppingBlock] += kChoppingBlockTurn;
+			}
+
+			// Without tents: the bearing from the fire of the right-hand edge of
+			// the player's bedroll and its clutter (LZC_RingBedrollClutter,
+			// measured around its anchor in the holding cell), as seen across the
+			// fire.
+			float RightOfPlayerBedroll() const
+			{
+				const float fwd = _layout.fwd[kFirstBedroll];
+				const float side = _layout.side[kFirstBedroll];
+				const float turn = _layout.turn[kFirstBedroll];
+				const auto  bearingOf = [](float a_fwd, float a_side) {
+                    return std::atan2(a_side, a_fwd - kSeatRadius) * 180.0f / std::numbers::pi_v<float>;
+				};
+				// The bedroll lies sideways: its ends are kBedrollHalfLength along
+				// its own forward axis.
+				float rightmost = std::max(bearingOf(fwd + kBedrollHalfLength * Cos(turn), side + kBedrollHalfLength * Sin(turn)),
+					bearingOf(fwd - kBedrollHalfLength * Cos(turn), side - kBedrollHalfLength * Sin(turn)));
+
+				auto* anchor = _props.Form<RE::TESObjectREFR>("LZC_RingBedrollClutterAnchor");
+				if (!anchor) {
+					return rightmost;
+				}
+				// The bedroll's facing, turned as its anchor is.
+				const float         facing = turn + anchor->GetAngle().z * 180.0f / std::numbers::pi_v<float>;
+				const RE::NiMatrix3 toAnchor = Placement::MatrixFromAngles(anchor->GetAngle()).Transpose();
+				for (auto* item : _props.Forms<RE::TESObjectREFR>("LZC_RingBedrollClutter")) {
+					if (!item) {
+						continue;
+					}
+					// x right, y forward of the bedroll.
+					const RE::NiPoint3 offset = toAnchor * (item->GetPosition() - anchor->GetPosition());
+					rightmost = std::max(rightmost, bearingOf(fwd + offset.y * Cos(facing) + offset.x * Cos(facing + 90.0f),
+														side + offset.y * Sin(facing) + offset.x * Sin(facing + 90.0f)));
+				}
+				return rightmost;
 			}
 
 			void SetSeat(std::size_t a_slot, RE::TESForm* a_seat, float a_bearing)
@@ -716,6 +759,22 @@ namespace CampLayout
 						add(t, b);
 					}
 				}
+				// The rest outside the tents, on the player's side of the fire where
+				// no tent stands: straight behind where the player stood, then to
+				// either side, lying sideways like the bedrolls of a camp without
+				// tents.
+				const std::int32_t colorBase = pairBase.back() + (_tents.back().beds + 1) / 2;
+				for (std::int32_t k = 0; k < _outside; ++k) {
+					const std::int32_t place = FanPlace(k);
+					const float        bearing = 180.0f + static_cast<float>(place) * kRingStep;
+					const std::size_t  slot = kFirstBedroll + next;
+					Set(slot, BedrollForm(colorBase + k), kSeatRadius + kBedrollRingRadius * Cos(bearing), kBedrollRingRadius * Sin(bearing),
+						bearing + kBedrollRingYaw);
+					_bedGroup[next] = static_cast<std::int32_t>(_tents.size());
+					_bedOrder[next] = place * 2;
+					_ringSeatTurn[next] = bearing + 180.0f;
+					++next;
+				}
 			}
 
 			// Without tents: a bedroll lying sideways at fan `place` round the fire,
@@ -772,7 +831,8 @@ namespace CampLayout
 					if (!_layout.forms[kFirstBedroll + b]) {
 						continue;
 					}
-					const float turn = _tents.empty() ? _ringSeatTurn[b] : _layout.turn[kFirstTent + _bedGroup[b]];
+					const bool  outside = _tents.empty() || _bedGroup[b] >= static_cast<std::int32_t>(_tents.size());
+					const float turn = outside ? _ringSeatTurn[b] : _layout.turn[kFirstTent + _bedGroup[b]];
 					Set(kFirstBedrollSeat + b, seat, _layout.fwd[kFirstBedroll + b], _layout.side[kFirstBedroll + b], turn);
 				}
 			}
@@ -951,6 +1011,7 @@ namespace CampLayout
 			std::vector<Tent>                                 _tents;
 			std::int32_t                                      _bedrollsCarried{ 0 };
 			std::int32_t                                      _bedrolls{ 0 };
+			std::int32_t                                      _outside{ 0 };  // with tents: bedrolls outside them
 			std::vector<std::int32_t>                         _bedGroup;
 			std::vector<std::int32_t>                         _bedOrder;
 			std::vector<float>                                _ringSeatTurn;
