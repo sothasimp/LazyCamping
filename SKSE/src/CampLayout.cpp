@@ -314,6 +314,7 @@ namespace CampLayout
 				// The kits the followers carry count too: a follower with a tent kit
 				// and a bedroll kit brings their own tent.
 				_counts = a_player->GetInventoryCounts();
+				_followers = a_followers;
 				_followerCounts.resize(a_followers.size());
 				for (std::size_t f = 0; f < a_followers.size(); ++f) {
 					if (!a_followers[f]) {
@@ -328,8 +329,10 @@ namespace CampLayout
 
 			std::vector<RE::TESObjectREFR*> Run()
 			{
+				LogKits();
 				ChooseTents();
 				ShareBedrolls();
+				LogTents();
 				PlaceTents();
 
 				std::vector<Papyrus::Camp::Footprint> footprints{ { kSeatRadius, 0.0f, 0.0f, kFireHalfSize, kFireHalfSize } };
@@ -397,6 +400,48 @@ namespace CampLayout
 					}
 				}
 				return -1;
+			}
+
+			// The kits each camper carries, to the log.
+			void LogKits() const
+			{
+				std::vector<RE::TESForm*> kits{ _props.Form<RE::TESForm>("LZC_BedrollKit") };
+				for (auto* kit : _props.Forms<RE::TESForm>("LZC_SmallTentKits")) {
+					kits.push_back(kit);
+				}
+				for (auto* kit : _props.Forms<RE::TESForm>("LZC_LargeTentKits")) {
+					kits.push_back(kit);
+				}
+				const auto describe = [&](const RE::TESObjectREFR::InventoryCountMap& a_counts) {
+					std::string text;
+					for (auto* kit : kits) {
+						auto* object = kit ? kit->As<RE::TESBoundObject>() : nullptr;
+						if (auto it = object ? a_counts.find(object) : a_counts.end(); it != a_counts.end() && it->second > 0) {
+							text += std::format("{}{} x{}", text.empty() ? "" : ", ", kit->GetName(), it->second);
+						}
+					}
+					return text.empty() ? std::string("no kits") : text;
+				};
+				auto* player = RE::PlayerCharacter::GetSingleton();
+				logger::info("BuildCamp: player carries {}", describe(player ? player->GetInventoryCounts() : RE::TESObjectREFR::InventoryCountMap{}));
+				logger::info("BuildCamp: {} follower slot(s), {} partner(s), {} couple(s)", _followers.size(), _partners, _couples);
+				for (std::size_t f = 0; f < _followers.size(); ++f) {
+					if (_followers[f]) {
+						logger::info("BuildCamp: follower {} {} ({:08X}) carries {}", f, _followers[f]->GetName(), _followers[f]->GetFormID(),
+							describe(_followerCounts[f]));
+					}
+				}
+			}
+
+			// The tents chosen and their bedrolls, to the log.
+			void LogTents() const
+			{
+				logger::info("BuildCamp: {} bedroll kit(s) in all, {} tent(s), {} bedroll(s) outside", _bedrollsCarried, _tents.size(), _outside);
+				for (std::size_t t = 0; t < _tents.size(); ++t) {
+					const auto& tent = _tents[t];
+					logger::info("BuildCamp: tent {}: {} colour {}, {} bedroll(s), kit from {}", t, tent.size == kLarge ? "large" : "small", tent.color, tent.beds,
+						tent.owner < 0 ? std::string("the player") : std::format("follower {}", tent.owner));
+				}
 			}
 
 			void Set(std::size_t a_slot, RE::TESForm* a_form, float a_fwd, float a_side, float a_turn)
@@ -1057,6 +1102,7 @@ namespace CampLayout
 			std::int32_t                                      _partners;
 			std::int32_t                                      _couples;
 			RE::TESObjectREFR::InventoryCountMap              _counts;  // the player's and the followers' together
+			std::vector<RE::Actor*>                           _followers;
 			std::vector<RE::TESObjectREFR::InventoryCountMap> _followerCounts;
 			Papyrus::Camp::Layout                             _layout;
 			std::vector<Tent>                                 _tents;
