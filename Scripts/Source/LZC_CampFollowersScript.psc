@@ -61,6 +61,7 @@ ObjectReference[] campBedrolls
 ObjectReference[] campBedSeats   ; the seat on each bedroll, same index
 Int[] bedGroup
 Int[] bedOrder
+Int[] bedOwner                   ; the follower whose tent kit each bedroll's tent is, or -1
 ObjectReference[] fireSeats      ; seats by the fire, the player's first
 Int[] fireGroups                 ; all 0: one ring
 Int[] firePlaces                 ; place in the fan (neighbours differ by 1)
@@ -70,8 +71,9 @@ Int[] spotOrder
 
 ; Called by the camp script once everything is placed. allBeds holds every
 ; camp bedroll and bedSeats the seat on each (groups/orders say where each one
-; is); followers get theirs when the player sleeps or sits on a bedroll.
-Function Assign(ObjectReference akCampfire, ObjectReference[] akFireSeats, Int[] places, ObjectReference[] allBeds, ObjectReference[] bedSeats, Int[] groups, Int[] orders)
+; is, owners whose tent kit its tent came from); followers get theirs when the
+; player sleeps or sits on a bedroll.
+Function Assign(ObjectReference akCampfire, ObjectReference[] akFireSeats, Int[] places, ObjectReference[] allBeds, ObjectReference[] bedSeats, Int[] groups, Int[] orders, Int[] owners)
 	CampAnchor = akCampfire
 	If CampCenter
 		CampCenter.ForceRefTo(akCampfire)
@@ -84,6 +86,7 @@ Function Assign(ObjectReference akCampfire, ObjectReference[] akFireSeats, Int[]
 	campBedSeats = bedSeats
 	bedGroup = groups
 	bedOrder = orders
+	bedOwner = owners
 	ClearAll(Bedrolls)
 	ClearAll(Seats)
 	RegisterForSleep()
@@ -151,14 +154,14 @@ Function OnPlayerSat(ObjectReference akFurniture)
 	EndIf
 	Int fireSeat = IndexOf(fireSeats, akFurniture)
 	If fireSeat >= 0
-		ForceChosen(Seats, fireSeats, ChooseSpots(fireSeats, fireGroups, firePlaces, fireSeat))
+		ForceChosen(Seats, fireSeats, ChooseSpots(fireSeats, fireGroups, firePlaces, None, fireSeat))
 		SetActivity(kSitting)
 	Else
 		Int bedSeat = IndexOf(campBedSeats, akFurniture)
 		If bedSeat >= 0
 			; Bedrolls still rolled up have no seat yet.
 			ObjectReference[] open = UnrolledOnly(campBedSeats)
-			ForceChosen(Seats, open, ChooseSpots(open, bedGroup, bedOrder, bedSeat))
+			ForceChosen(Seats, open, ChooseSpots(open, bedGroup, bedOrder, bedOwner, bedSeat))
 			SetActivity(kSitting)
 		EndIf
 	EndIf
@@ -266,7 +269,7 @@ EndEvent
 ; Gives each follower a camp bedroll the player isn't lying in, unrolling
 ; it if it's still rolled up.
 Function AssignBedrolls()
-	Int[] chosen = ChooseSpots(campBedrolls, bedGroup, bedOrder, BedrollUnderPlayer())
+	Int[] chosen = ChooseSpots(campBedrolls, bedGroup, bedOrder, bedOwner, BedrollUnderPlayer())
 	ForceChosen(Bedrolls, campBedrolls, chosen)
 	ObjectReference[] beds = new ObjectReference[5]
 	Int i = 0
@@ -297,10 +300,12 @@ EndFunction
 ; on them, or the fire seats), with `groups`/`orders` saying where each one is
 ; (same group and orders 1 apart = side by side), skipping the player's spot
 ; (-1 for none). Partners choose first, taking the free spots next to the
-; player's; then each follower couple takes two free spots side by side;
+; player's; then followers whose tent kit put up a tent take a spot in it
+; (`owners`, or None), their mate beside them; then each follower couple
+; takes two free spots side by side;
 ; everyone else takes the rest in camp order, so followers spread across the
 ; tents. Returns each follower's spot index, or -1.
-Int[] Function ChooseSpots(ObjectReference[] spots, Int[] groups, Int[] orders, Int playerBed)
+Int[] Function ChooseSpots(ObjectReference[] spots, Int[] groups, Int[] orders, Int[] owners, Int playerBed)
 	spotGroup = groups
 	spotOrder = orders
 	Bool[] taken = new Bool[12]
@@ -336,13 +341,35 @@ Int[] Function ChooseSpots(ObjectReference[] spots, Int[] groups, Int[] orders, 
 		EndWhile
 	EndIf
 
+	; Followers whose tent kit put up a tent take a bedroll in it, their mate
+	; (a follower couple) beside them.
+	Int[] mates = Mates()
+	If owners
+		i = 0
+		While i < Followers.Length && i < chosen.Length
+			If chosen[i] < 0 && Followers[i].GetReference()
+				chosen[i] = OwnFree(taken, owners, i)
+				If chosen[i] >= 0
+					taken[chosen[i]] = True
+					Int mate = mates[i]
+					If mate >= 0 && chosen[mate] < 0
+						chosen[mate] = NearestFree(taken, chosen[i])
+						If chosen[mate] >= 0
+							taken[chosen[mate]] = True
+						EndIf
+					EndIf
+				EndIf
+			EndIf
+			i += 1
+		EndWhile
+	EndIf
+
 	; Each follower couple takes two free bedrolls side by side, normally in
 	; the tent set aside for them.
-	Int[] mates = Mates()
 	i = 0
 	While i < mates.Length
 		Int j = mates[i]
-		If j > i
+		If j > i && chosen[i] < 0 && chosen[j] < 0
 			Int first = FreePairStart(taken)
 			If first >= 0
 				chosen[i] = first
@@ -385,6 +412,18 @@ Function ForceChosen(ReferenceAlias[] aliases, ObjectReference[] spots, Int[] ch
 		EndIf
 		i += 1
 	EndWhile
+EndFunction
+
+; The first free spot in a tent from follower's own tent kit, or -1.
+Int Function OwnFree(Bool[] taken, Int[] owners, Int follower)
+	Int i = 0
+	While i < taken.Length && i < owners.Length
+		If !taken[i] && owners[i] == follower
+			Return i
+		EndIf
+		i += 1
+	EndWhile
+	Return -1
 EndFunction
 
 ; Index of the camp bedroll the player is lying in, or -1.

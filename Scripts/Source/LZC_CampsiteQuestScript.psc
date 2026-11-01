@@ -279,6 +279,7 @@ Int[] Function GetFirePlaces() Global Native
 ObjectReference[] Function GetCampBeds() Global Native
 ObjectReference[] Function GetBedSeats() Global Native
 Int[] Function GetBedGroups() Global Native
+Int[] Function GetBedOwners() Global Native
 Int[] Function GetBedOrders() Global Native
 ObjectReference[] Function GetTubSeats() Global Native
 ObjectReference[] Function GetRolledKits() Global Native
@@ -454,7 +455,7 @@ Function SetUpCamp()
 		; Every camp bedroll goes to the follower quest, which hands them out
 		; when the player sleeps; the fire seats, the player's first, with their
 		; places in the fan; where each bedroll is, for partners and couples.
-		followers.Assign(placedRefs[kCampfire], GetFireSeats(), GetFirePlaces(), GetCampBeds(), GetBedSeats(), GetBedGroups(), GetBedOrders())
+		followers.Assign(placedRefs[kCampfire], GetFireSeats(), GetFirePlaces(), GetCampBeds(), GetBedSeats(), GetBedGroups(), GetBedOrders(), GetBedOwners())
 		followers.SetTubSeats(GetTubSeats())
 	EndIf
 

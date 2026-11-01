@@ -103,6 +103,7 @@ namespace CampLayout
 			std::vector<RE::TESObjectREFR*> beds;
 			std::vector<RE::TESObjectREFR*> bedSeats;
 			std::vector<std::int32_t>       bedGroups;
+			std::vector<std::int32_t>       bedOwners;
 			std::vector<std::int32_t>       bedOrders;
 			std::vector<RE::TESObjectREFR*> tubSeats;
 			std::vector<RE::TESObjectREFR*> rolledKits;  // by bedroll, None once unrolled (or never rolled)
@@ -279,6 +280,7 @@ namespace CampLayout
 			std::int32_t        size{ kSmall };
 			std::int32_t        color{ 0 };
 			std::int32_t        beds{ 0 };
+			std::int32_t        owner{ -1 };  // the follower whose kit it is (index), or -1 for the player's
 			float               fwd{ 0.0f };
 			float               side{ 0.0f };
 			float               turn{ 0.0f };
@@ -311,11 +313,13 @@ namespace CampLayout
 				// The kits the followers carry count too: a follower with a tent kit
 				// and a bedroll kit brings their own tent.
 				_counts = a_player->GetInventoryCounts();
-				for (auto* follower : a_followers) {
-					if (!follower) {
+				_followerCounts.resize(a_followers.size());
+				for (std::size_t f = 0; f < a_followers.size(); ++f) {
+					if (!a_followers[f]) {
 						continue;
 					}
-					for (const auto& [object, count] : follower->GetInventoryCounts()) {
+					_followerCounts[f] = a_followers[f]->GetInventoryCounts();
+					for (const auto& [object, count] : _followerCounts[f]) {
 						_counts[object] += count;
 					}
 				}
@@ -379,6 +383,21 @@ namespace CampLayout
 				return it != _counts.end() ? it->second : 0;
 			}
 
+			// Whose tent kit a tent goes up from: a follower's first (so they
+			// can sleep in their own tent), then the player's. Returns the
+			// follower's index, or -1.
+			std::int32_t TakeKit(RE::TESForm* a_kit)
+			{
+				auto* object = a_kit ? a_kit->As<RE::TESBoundObject>() : nullptr;
+				for (std::size_t f = 0; object && f < _followerCounts.size(); ++f) {
+					if (auto it = _followerCounts[f].find(object); it != _followerCounts[f].end() && it->second > 0) {
+						--it->second;
+						return static_cast<std::int32_t>(f);
+					}
+				}
+				return -1;
+			}
+
 			void Set(std::size_t a_slot, RE::TESForm* a_form, float a_fwd, float a_side, float a_turn)
 			{
 				_layout.forms[a_slot] = a_form;
@@ -426,6 +445,7 @@ namespace CampLayout
 				for (std::size_t color = 0; color < largeKits.size() && _tents.empty() && _bedrollsCarried > 0; ++color) {
 					if (largeKits[color] && Count(largeKits[color]) > 0) {
 						_tents.push_back({ nullptr, kLarge, static_cast<std::int32_t>(color) });
+						_tents.back().owner = TakeKit(largeKits[color]);
 					}
 				}
 				const auto room = [&] {
@@ -435,6 +455,7 @@ namespace CampLayout
 				for (std::size_t color = 0; color < smallKits.size() && room(); ++color) {
 					for (std::int32_t have = smallKits[color] ? Count(smallKits[color]) : 0; have > 0 && room(); --have) {
 						_tents.push_back({ nullptr, kSmall, static_cast<std::int32_t>(color) });
+						_tents.back().owner = TakeKit(smallKits[color]);
 					}
 				}
 			}
@@ -1003,6 +1024,14 @@ namespace CampLayout
 				built.beds.assign(a_refs.begin() + kFirstBedroll, a_refs.begin() + kFirstBedroll + kMaxBedrolls);
 				built.bedSeats.assign(a_refs.begin() + kFirstBedrollSeat, a_refs.begin() + kFirstBedrollSeat + kMaxBedrolls);
 				built.bedGroups = _bedGroup;
+				// Whose kit each bedroll's tent came from (a follower's index), or -1.
+				built.bedOwners.assign(kMaxBedrolls, -1);
+				for (std::int32_t b = 0; b < kMaxBedrolls; ++b) {
+					const auto group = static_cast<std::size_t>(_bedGroup[b]);
+					if (a_refs[kFirstBedroll + b] && group < _tents.size()) {
+						built.bedOwners[b] = _tents[group].owner;
+					}
+				}
 				built.bedOrders = _bedOrder;
 
 				// The seats among the tub clutter: placed furniture whose base is in
@@ -1026,7 +1055,8 @@ namespace CampLayout
 			RE::Actor*                                        _player;
 			std::int32_t                                      _partners;
 			std::int32_t                                      _couples;
-			RE::TESObjectREFR::InventoryCountMap              _counts;
+			RE::TESObjectREFR::InventoryCountMap              _counts;  // the player's and the followers' together
+			std::vector<RE::TESObjectREFR::InventoryCountMap> _followerCounts;
 			Papyrus::Camp::Layout                             _layout;
 			std::vector<Tent>                                 _tents;
 			std::int32_t                                      _bedrollsCarried{ 0 };
@@ -1133,6 +1163,7 @@ namespace CampLayout
 		std::vector<RE::TESObjectREFR*> GetCampBeds(RE::StaticFunctionTag*) { return built.beds; }
 		std::vector<RE::TESObjectREFR*> GetBedSeats(RE::StaticFunctionTag*) { return built.bedSeats; }
 		std::vector<std::int32_t>       GetBedGroups(RE::StaticFunctionTag*) { return built.bedGroups; }
+		std::vector<std::int32_t>       GetBedOwners(RE::StaticFunctionTag*) { return built.bedOwners; }
 		std::vector<std::int32_t>       GetBedOrders(RE::StaticFunctionTag*) { return built.bedOrders; }
 		std::vector<RE::TESObjectREFR*> GetTubSeats(RE::StaticFunctionTag*) { return built.tubSeats; }
 	}
@@ -1171,6 +1202,7 @@ namespace CampLayout
 		a_vm->RegisterFunction("GetCampBeds"sv, kClass, GetCampBeds);
 		a_vm->RegisterFunction("GetBedSeats"sv, kClass, GetBedSeats);
 		a_vm->RegisterFunction("GetBedGroups"sv, kClass, GetBedGroups);
+		a_vm->RegisterFunction("GetBedOwners"sv, kClass, GetBedOwners);
 		a_vm->RegisterFunction("GetBedOrders"sv, kClass, GetBedOrders);
 		a_vm->RegisterFunction("GetTubSeats"sv, kClass, GetTubSeats);
 		a_vm->RegisterFunction("GetRolledKits"sv, kClass, GetRolledKits);
