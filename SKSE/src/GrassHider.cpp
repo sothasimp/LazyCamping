@@ -135,6 +135,23 @@ namespace GrassHider
 			// Groups already checked against the current circle.
 			std::set<std::tuple<const InstanceGroup*, const std::uint16_t*, std::uint32_t>> clean;
 			bool layoutBad{ false };
+			bool logPending{ false };  // log what the next pass finds
+		};
+
+		// What a pass over the camp's cells found, for the log.
+		struct Stats
+		{
+			std::uint32_t cells{ 0 };          // loaded cells under the circle
+			std::uint32_t noGrassData{ 0 };    // of those, without ExtraCellGrassData
+			std::uint32_t handles{ 0 };        // grass types in them
+			std::uint32_t busyShapes{ 0 };     // skipped: the game was adding grass
+			std::uint32_t otherSize{ 0 };      // skipped: not 16 half floats an instance
+			std::uint32_t lastOtherSize{ 0 };
+			std::uint32_t groups{ 0 };         // instance groups checked
+			std::uint32_t instances{ 0 };
+			std::uint32_t inCircle{ 0 };       // inside the circle across the ground
+			std::uint32_t wrongHeight{ 0 };    // of those, outside its height band
+			std::uint32_t removed{ 0 };
 		};
 
 		State& GetState()
@@ -190,16 +207,29 @@ namespace GrassHider
 		}
 
 		// Removes the cell's grass instances inside the circle.
-		void HideInCell(RE::TESObjectCELL* a_cell, std::int32_t a_cellX, std::int32_t a_cellY, const Circle& a_circle)
+		// The south-west corner of the 12x12 block of cells a cell's grass is
+		// measured from. Whether the blocks are aligned by rounding toward zero
+		// or down only matters for negative coordinates, so both are tried and
+		// the one the grass fits is used.
+		float BlockOrigin(std::int32_t a_cell, bool a_floor)
+		{
+			std::int32_t block = a_cell / kCellsPerBlock;
+			if (a_floor && a_cell < 0 && a_cell % kCellsPerBlock != 0) {
+				--block;
+			}
+			return kCellSize * static_cast<float>(kCellsPerBlock * block);
+		}
+
+		void HideInCell(RE::TESObjectCELL* a_cell, std::int32_t a_cellX, std::int32_t a_cellY, const Circle& a_circle, Stats& a_stats)
 		{
 			auto& state = GetState();
+			++a_stats.cells;
 			auto* extra = a_cell->extraList.GetByType<RE::ExtraCellGrassData>();
 			if (!extra) {
+				++a_stats.noGrassData;
 				return;
 			}
 
-			const float originX = kCellSize * static_cast<float>(kCellsPerBlock * (a_cellX / kCellsPerBlock));
-			const float originY = kCellSize * static_cast<float>(kCellsPerBlock * (a_cellY / kCellsPerBlock));
 			const float cellMinX = kCellSize * static_cast<float>(a_cellX) - kCellSlack;
 			const float cellMinY = kCellSize * static_cast<float>(a_cellY) - kCellSlack;
 			const float cellMaxX = cellMinX + kCellSize + 2.0f * kCellSlack;
@@ -209,12 +239,19 @@ namespace GrassHider
 			for (auto* entry : extra->grassHandles) {
 				auto* handle = reinterpret_cast<GrassHandle*>(entry);
 				auto* shape = handle ? handle->shape.get() : nullptr;
+				if (!shape) {
+					continue;
+				}
+				++a_stats.handles;
 				// Leave a shape alone while the game is adding grass to it.
-				if (!shape || shape->GetIsAddingInstances()) {
+				if (shape->GetIsAddingInstances()) {
+					++a_stats.busyShapes;
 					continue;
 				}
 				auto& data = DataOf(shape);
 				if (data.instanceSize != kHalvesPerInstance) {
+					++a_stats.otherSize;
+					a_stats.lastOtherSize = data.instanceSize;
 					continue;
 				}
 
@@ -230,6 +267,29 @@ namespace GrassHider
 						continue;
 					}
 
+					++a_stats.groups;
+					a_stats.instances += group->instanceCount;
+
+					// Which block alignment the group's grass fits.
+					const auto strayCount = [&](bool a_floor) {
+						const float ox = BlockOrigin(a_cellX, a_floor);
+						const float oy = BlockOrigin(a_cellY, a_floor);
+						std::uint32_t count = 0;
+						for (std::uint32_t n = 0; n < group->instanceCount; ++n) {
+							const auto* instance = instances + static_cast<std::size_t>(n) * kHalvesPerInstance;
+							const float x = ox + HalfToFloat(instance[0]);
+							const float y = oy + HalfToFloat(instance[1]);
+							if (x < cellMinX || x > cellMaxX || y < cellMinY || y > cellMaxY) {
+								++count;
+							}
+						}
+						return count;
+					};
+					const std::uint32_t truncStrays = strayCount(false);
+					const bool          floorAligned = truncStrays > 0 && (a_cellX < 0 || a_cellY < 0) && strayCount(true) < truncStrays;
+					const float         originX = BlockOrigin(a_cellX, floorAligned);
+					const float         originY = BlockOrigin(a_cellY, floorAligned);
+
 					kept.clear();
 					std::uint32_t removed = 0;
 					std::uint32_t strays = 0;
@@ -241,18 +301,28 @@ namespace GrassHider
 						if (x < cellMinX || x > cellMaxX || y < cellMinY || y > cellMaxY) {
 							++strays;
 						}
+						const float dx = x - a_circle.x;
+						const float dy = y - a_circle.y;
+						if (dx * dx + dy * dy <= a_circle.radius * a_circle.radius) {
+							++a_stats.inCircle;
+							if (z < a_circle.minZ || z > a_circle.maxZ) {
+								++a_stats.wrongHeight;
+							}
+						}
 						if (a_circle.Contains(x, y, z)) {
 							++removed;
 						} else {
 							kept.insert(kept.end(), instance, instance + kHalvesPerInstance);
 						}
 					}
+					a_stats.removed += removed;
 
 					// Grass that isn't where it should be means the layout isn't
 					// what this code expects (another game version, or a mod
 					// that changes it). Stop rather than remove the wrong grass.
 					if (strays * 4 > group->instanceCount) {
-						logger::warn("Grass in cell ({}, {}) isn't laid out as expected; grass hiding is off", a_cellX, a_cellY);
+						logger::warn("Grass in cell ({}, {}) isn't laid out as expected ({} of {} instances outside the cell); grass hiding is off",
+							a_cellX, a_cellY, strays, group->instanceCount);
 						state.layoutBad = true;
 						return;
 					}
@@ -305,10 +375,20 @@ namespace GrassHider
 			state.rebuild.clear();
 
 			if (state.circle && !state.layoutBad) {
+				Stats stats;
 				for (const auto& [x, y] : CellsUnder(*state.circle)) {
 					if (auto* cell = LoadedCell(state.world, x, y)) {
-						HideInCell(cell, x, y, *state.circle);
+						HideInCell(cell, x, y, *state.circle, stats);
 					}
+				}
+				if (state.logPending) {
+					state.logPending = false;
+					const auto& c = *state.circle;
+					logger::info("Grass: circle at ({:.0f}, {:.0f}) radius {:.0f}, heights {:.0f} to {:.0f}", c.x, c.y, c.radius, c.minZ, c.maxZ);
+					logger::info("Grass: {} loaded cell(s), {} without grass data; {} grass type(s), {} busy, {} other format (size {}); "
+								 "{} group(s), {} instance(s), {} in the circle, {} of those at the wrong height; {} removed{}",
+						stats.cells, stats.noGrassData, stats.handles, stats.busyShapes, stats.otherSize, stats.lastOtherSize, stats.groups,
+						stats.instances, stats.inCircle, stats.wrongHeight, stats.removed, state.layoutBad ? "; stopped: unexpected layout" : "");
 				}
 			}
 			UpdateBusy();
@@ -340,6 +420,7 @@ namespace GrassHider
 			state.world = world;
 			state.circle = circle;
 			state.clean.clear();
+			state.logPending = true;
 			UpdateBusy();
 		}
 		return true;
@@ -434,6 +515,8 @@ namespace GrassHider
 			circle.minZ = bottom - circle.radius * 0.5f;
 			circle.maxZ = top + circle.radius * 0.5f;
 			state.circle = circle;
+			state.layoutBad = false;
+			state.logPending = true;
 		}
 		Update();
 	}
