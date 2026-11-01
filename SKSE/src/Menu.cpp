@@ -184,7 +184,7 @@ namespace Menu
 			}
 
 			bool changed = false;
-			changed |= ImGuiMCP::Checkbox("Toggle Campfire", &values.placeCampfire);
+			changed |= ImGuiMCP::Checkbox("Toggle campfire", &values.placeCampfire);
 			ImGuiMCP::SetItemTooltip("Place the campfire with its clutter, light and cooking. Without it there's no firewood mechanic or chopping block either. Takes effect at the next camp.");
 			ImGuiMCP::BeginDisabled(!values.placeCampfire);
 			changed |= ImGuiMCP::Checkbox("Firewood mechanic", &values.firewoodMechanic);
