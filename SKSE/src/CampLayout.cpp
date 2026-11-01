@@ -65,8 +65,7 @@ namespace CampLayout
 		constexpr float kRingStep = 50.0f;
 		constexpr float kSeatStep = 60.0f;
 		constexpr float kChoppingBlockGap = 60.0f;
-		constexpr float kChoppingBlockOut = 90.0f;
-		constexpr float kChoppingBlockAside = 40.0f;
+		constexpr float kChoppingBlockBesideTub = 210.0f;  // without tents: from the tub's centre, round the fire
 		constexpr float kChoppingBlockBesideSmallTent = 90.0f;
 		constexpr float kChoppingBlockBesideLargeTent = 170.0f;
 		constexpr float kChoppingBlockTurn = 25.0f;
@@ -556,15 +555,29 @@ namespace CampLayout
 				if (_bedrolls >= kFullRing) {
 					// Outside the ring, between the player's bedroll and the next on
 					// the left.
-					SetOutsideRing(kTub, -RingStep() / 2.0f, kBedrollRingRadius + kChoppingBlockGap + kTubHalfWidth);
+					const auto [bearing, radius] = TentlessTubSpot();
+					SetOutsideRing(kTub, bearing, radius);
 					return;
 				}
 				SetBesideTent(kTub, kSeatRadius + kBedrollRingRadius, 0.0f, 180.0f, -1.0f, kBedrollHalfLength + kChoppingBlockGap + kTubHalfWidth);
 			}
 
+			// Where the tub stands without tents, as a bearing and distance from
+			// the fire's centre: outside a full ring, between the player's bedroll
+			// and the next on the left, or left of the player's bedroll at the back
+			// of the arc.
+			std::pair<float, float> TentlessTubSpot() const
+			{
+				if (_bedrolls >= kFullRing) {
+					return { -RingStep() / 2.0f, kBedrollRingRadius + kChoppingBlockGap + kTubHalfWidth };
+				}
+				const float fwd = kBedrollRingRadius;
+				const float side = -(kBedrollHalfLength + kChoppingBlockGap + kTubHalfWidth);
+				return { std::atan2(side, fwd) * 180.0f / std::numbers::pi_v<float>, std::hypot(fwd, side) };
+			}
+
 			// Beside the outermost tent, on its far side from the middle one;
-			// without tents, past the end of the bedroll arc (or outside a full ring).
-			// Always level.
+			// without tents, outside the bedrolls beside the tub. Always level.
 			void LayOutChoppingBlock()
 			{
 				_layout.forms[kChoppingBlock] = _props.Form<RE::TESForm>("LZC_ChoppingBlock");
@@ -576,20 +589,11 @@ namespace CampLayout
 					const float distance = TentHalfWidth(tent.size) + kChoppingBlockGap +
 					                       (tent.size == kSmall ? kChoppingBlockBesideSmallTent : kChoppingBlockBesideLargeTent);
 					SetBesideTent(kChoppingBlock, tent.fwd, tent.side, tent.turn, outward, distance);
-				} else if (_bedrolls >= kFullRing) {
-					// Outside the ring, in the gap between two bedrolls on the
-					// player's side of the fire.
-					const float bearing = 180.0f - (_bedrolls % 2 == 0 ? RingStep() / 2.0f : 0.0f);
-					SetOutsideRing(kChoppingBlock, bearing, kBedrollRingRadius + kChoppingBlockOut);
 				} else {
-					const std::int32_t place = FanPlace(_bedrolls);
-					const float        radius = kBedrollRingRadius + kChoppingBlockOut;
-					float              aside = kChoppingBlockAside / radius * 57.29578f;
-					if (place < 0) {
-						aside = -aside;
-					}
-					const float bearing = static_cast<float>(place) * kRingStep + aside;
-					Set(kChoppingBlock, _layout.forms[kChoppingBlock], kSeatRadius + radius * Cos(bearing), radius * Sin(bearing), bearing + 180.0f);
+					// Outside the bedrolls, beside the tub's spot, on its far side
+					// from the player's bedroll.
+					const auto [tubBearing, radius] = TentlessTubSpot();
+					SetOutsideRing(kChoppingBlock, tubBearing - kChoppingBlockBesideTub / radius * 180.0f / std::numbers::pi_v<float>, radius);
 				}
 				_layout.turn[kChoppingBlock] += kChoppingBlockTurn;
 			}
