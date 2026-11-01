@@ -65,7 +65,8 @@ namespace CampLayout
 		constexpr float kRingStep = 50.0f;
 		constexpr float kSeatStep = 60.0f;
 		constexpr float kChoppingBlockGap = 60.0f;
-		constexpr float kChoppingBlockBesideTub = 210.0f;  // without tents: from the tub's centre, round the fire
+		constexpr float kChoppingBlockHalfSize = 40.0f;
+		constexpr float kBedrollHalfWidth = 40.0f;
 		constexpr float kChoppingBlockBesideSmallTent = 90.0f;
 		constexpr float kChoppingBlockBesideLargeTent = 170.0f;
 		constexpr float kChoppingBlockTurn = 25.0f;
@@ -300,11 +301,9 @@ namespace CampLayout
 				if (_props.Form<RE::TESBoundObject>("LZC_Tub") && _props.Bool("PlaceTub", true)) {
 					LayOutTub();
 				}
-				if (_props.Bool("FirewoodMechanic", false) && _props.Form<RE::TESBoundObject>("LZC_Firepit")) {
+				const bool firewood = _props.Bool("FirewoodMechanic", false) && _props.Form<RE::TESBoundObject>("LZC_Firepit");
+				if (firewood) {
 					Set(kFirepit, _props.Form<RE::TESForm>("LZC_Firepit"), kSeatRadius, 0.0f, 0.0f);
-					if (_props.Form<RE::TESBoundObject>("LZC_ChoppingBlock") && _props.Bool("PlaceChoppingBlock", true)) {
-						LayOutChoppingBlock();
-					}
 				}
 				LayOutSeats();
 				if (_tents.empty()) {
@@ -313,6 +312,10 @@ namespace CampLayout
 					LayOutTentBedrolls();
 				}
 				LayOutBedrollSeats();
+				// After the bedrolls: without tents it goes beside the player's.
+				if (firewood && _props.Form<RE::TESBoundObject>("LZC_ChoppingBlock") && _props.Bool("PlaceChoppingBlock", true)) {
+					LayOutChoppingBlock();
+				}
 				CollectClutter();
 
 				std::vector<std::int32_t> owners;
@@ -577,7 +580,7 @@ namespace CampLayout
 			}
 
 			// Beside the outermost tent, on its far side from the middle one;
-			// without tents, outside the bedrolls beside the tub. Always level.
+			// without tents, right of the player's bedroll and its clutter. Always level.
 			void LayOutChoppingBlock()
 			{
 				_layout.forms[kChoppingBlock] = _props.Form<RE::TESForm>("LZC_ChoppingBlock");
@@ -590,12 +593,46 @@ namespace CampLayout
 					                       (tent.size == kSmall ? kChoppingBlockBesideSmallTent : kChoppingBlockBesideLargeTent);
 					SetBesideTent(kChoppingBlock, tent.fwd, tent.side, tent.turn, outward, distance);
 				} else {
-					// Outside the bedrolls, beside the tub's spot, on its far side
-					// from the player's bedroll.
-					const auto [tubBearing, radius] = TentlessTubSpot();
-					SetOutsideRing(kChoppingBlock, tubBearing - kChoppingBlockBesideTub / radius * 180.0f / std::numbers::pi_v<float>, radius);
+					LayOutChoppingBlockBesidePlayerBedroll();
 				}
 				_layout.turn[kChoppingBlock] += kChoppingBlockTurn;
+			}
+
+			// Without tents: on the right of the player's bedroll as seen across
+			// the fire (the tub is on the left), just past the bedroll and the
+			// furthest of its clutter (LZC_RingBedrollClutter, measured around its
+			// anchor in the holding cell), and out past the ring of bedrolls so it
+			// doesn't land on the next one.
+			void LayOutChoppingBlockBesidePlayerBedroll()
+			{
+				const float fwd = _layout.fwd[kFirstBedroll];
+				const float side = _layout.side[kFirstBedroll];
+				float       farthest = side + kBedrollHalfLength;
+
+				auto* anchor = _props.Form<RE::TESObjectREFR>("LZC_RingBedrollClutterAnchor");
+				if (anchor) {
+					// The bedroll's facing, turned as its anchor is.
+					const float         turn = _layout.turn[kFirstBedroll] + anchor->GetAngle().z * 180.0f / std::numbers::pi_v<float>;
+					const RE::NiMatrix3 toAnchor = Placement::MatrixFromAngles(anchor->GetAngle()).Transpose();
+					for (auto* item : _props.Forms<RE::TESObjectREFR>("LZC_RingBedrollClutter")) {
+						if (!item) {
+							continue;
+						}
+						// x right, y forward of the bedroll.
+						const RE::NiPoint3 offset = toAnchor * (item->GetPosition() - anchor->GetPosition());
+						farthest = std::max(farthest, side + offset.y * Sin(turn) + offset.x * Sin(turn + 90.0f));
+					}
+				}
+
+				float blockFwd = fwd - kSeatRadius;  // from the fire's centre
+				float blockSide = farthest + kChoppingBlockGap + kChoppingBlockHalfSize;
+				const float outside = kBedrollRingRadius + kBedrollHalfWidth + kChoppingBlockGap + kChoppingBlockHalfSize;
+				if (const float radius = std::hypot(blockFwd, blockSide); radius < outside) {
+					blockFwd *= outside / radius;
+					blockSide *= outside / radius;
+				}
+				const float bearing = std::atan2(blockSide, blockFwd) * 180.0f / std::numbers::pi_v<float>;
+				Set(kChoppingBlock, _layout.forms[kChoppingBlock], kSeatRadius + blockFwd, blockSide, bearing + 180.0f);
 			}
 
 			void SetSeat(std::size_t a_slot, RE::TESForm* a_seat, float a_bearing)
