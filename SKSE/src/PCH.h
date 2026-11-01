@@ -3,6 +3,10 @@
 #include <RE/Skyrim.h>
 #include <SKSE/SKSE.h>
 
+// windows.h (through CommonLib) renames GetObject to GetObjectA, which hits
+// BSScript::Variable::GetObject.
+#undef GetObject
+
 #include <spdlog/sinks/basic_file_sink.h>
 
 #include <algorithm>
