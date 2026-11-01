@@ -319,10 +319,10 @@ Function HandlePowerCast()
 	; Library).
 	Int nativeVersion = GetVersion()
 	If nativeVersion == 0
-		Debug.Notification("Wayfarer's Rest: LazyCamping.dll isn't loaded (check SKSE and Address Library).")
+		Debug.Notification("Wayfarer: LazyCamping.dll isn't loaded (check SKSE and Address Library).")
 		Return
 	ElseIf nativeVersion < kNativeVersion
-		Debug.Notification("Wayfarer's Rest: LazyCamping.dll is out of date.")
+		Debug.Notification("Wayfarer: LazyCamping.dll is out of date.")
 		Return
 	EndIf
 

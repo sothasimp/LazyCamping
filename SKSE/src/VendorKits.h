@@ -1,6 +1,6 @@
 #pragma once
 
-// Adds Wayfarer's Rest - A Convenient Camping Mod's kits (the LZC_LItemCampingKits leveled list) to the
+// Adds Wayfarer - A Convenient Camping Mod's kits (the LZC_LItemCampingKits leveled list) to the
 // merchant leveled lists in LZC_VendorLists, while the game runs, so no
 // vanilla list is overridden in the plugin.
 namespace VendorKits

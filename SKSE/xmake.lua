@@ -1,4 +1,4 @@
--- Wayfarer's Rest SKSE plugin (LazyCamping.dll)
+-- Wayfarer SKSE plugin (LazyCamping.dll)
 -- Build: xmake config -m release && xmake
 set_xmakever("2.8.2")
 
@@ -18,8 +18,8 @@ target("LazyCamping")
 
     add_rules("commonlibsse-ng.plugin", {
         name = "LazyCamping",
-        author = "Wayfarer's Rest - A Convenient Camping Mod",
-        description = "Native camp placement for Wayfarer's Rest - A Convenient Camping Mod"
+        author = "Wayfarer - A Convenient Camping Mod",
+        description = "Native camp placement for Wayfarer - A Convenient Camping Mod"
     })
 
     add_files("src/**.cpp")

@@ -18,7 +18,7 @@ namespace CampLayout
 	{
 		constexpr auto kClass = "LZC_CampsiteQuestScript"sv;
 		constexpr auto kScript = "LZC_CampsiteQuestScript";
-		constexpr auto kPluginPrefix = "Wayfarer's Rest - A Convenient Camping Mod."sv;
+		constexpr auto kPluginPrefix = "Wayfarer - A Convenient Camping Mod."sv;
 		constexpr RE::FormID kXMarker = 0x3B;  // Skyrim.esm XMarker: the fire's place when there's no fire
 		constexpr auto kBedrollAltPlugin = "Bedroll Alternative - BOS Color Variance.esp"sv;
 
