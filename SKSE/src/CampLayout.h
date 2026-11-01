@@ -15,6 +15,10 @@ namespace CampLayout
 	// whether it was. Main thread only.
 	bool UnrollKit(RE::TESObjectREFR* a_kit);
 
+	// Lights or puts out the tent lantern a_ref is (unlit or lit), if it's
+	// one of the camp's. Returns whether it was. Main thread only.
+	bool ToggleLantern(RE::TESObjectREFR* a_ref);
+
 	// Puts the camp's map marker back in the player's map marker list after
 	// loading a save with a camp up (the list isn't kept in the save).
 	void ListCampMapMarker();

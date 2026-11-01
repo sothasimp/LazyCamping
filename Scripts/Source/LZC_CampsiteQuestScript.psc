@@ -92,6 +92,16 @@ Bool Property PlaceCampfire = True Auto
 {Place the campfire, its clutter, light and cooking (SKSE menu). Without it,
 an invisible marker stands in the fire's place, and the firewood mechanic
 and chopping block are off.}
+Bool Property PlaceTentLanterns = True Auto
+{Place the lanterns in the small tents' clutter (SKSE menu).}
+Activator Property LZC_TentLantern Auto
+{The unlit tent lantern: an Activator with the vanilla Lantern's model. Put
+it in LZC_SmallTentClutter where it should hang; activating it lights it.}
+Activator Property LZC_TentLanternLit Auto
+{The lit tent lantern: an Activator with CandleLanternwithCandle01's model.
+Activating it puts the lantern out.}
+Light Property LZC_TentLanternLight Auto
+{Optional. The light a lit tent lantern gives, placed at the lantern.}
 Bool Property PlaceFireSeats = True Auto
 {Place the seats round the fire, the player's and the followers' (SKSE menu).}
 Bool Property PlaceCampfireLight = True Auto
@@ -242,13 +252,16 @@ Int Property kCookingStation = 37 AutoReadOnly     ; hidden, at the fire
 Int Property kTub = 38 AutoReadOnly
 Int Property kSlotCount = 39 AutoReadOnly
 
-Int Property kNativeVersion = 16 AutoReadOnly         ; LazyCamping.dll needed
+Int Property kNativeVersion = 17 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
 ; With BedrollsStartRolled: each bedroll's rolled-up bedroll (None once
 ; unrolled), and the slot each of placedRefs belongs to (clutter: the object it
 ; came with). Read and updated by LazyCamping.dll as bedrolls unroll.
 ObjectReference[] Property RolledKits Auto Hidden
+; Each tent lantern's unlit, lit and light references (LazyCamping.dll swaps
+; them when one is activated).
+ObjectReference[] Property TentLanterns Auto Hidden
 Int[] Property PlacedOwners Auto Hidden
 Form[] clothesTaken   ; what a clothes basket took off, until it's put back on
 Bool undressed = False
@@ -289,6 +302,7 @@ Int[] Function GetBedOwners() Global Native
 Int[] Function GetBedOrders() Global Native
 ObjectReference[] Function GetTubSeats() Global Native
 ObjectReference[] Function GetRolledKits() Global Native
+ObjectReference[] Function GetLanterns() Global Native
 Int[] Function GetPlacedOwners() Global Native
 ; Unrolls the camp bedrolls among akBeds that are still rolled up.
 Function UnrollBeds(ObjectReference[] akBeds) Global Native
@@ -451,6 +465,7 @@ Function SetUpCamp()
 		Return
 	EndIf
 	RolledKits = GetRolledKits()
+	TentLanterns = GetLanterns()
 	PlacedOwners = GetPlacedOwners()
 	; The cloth sound plays as the camp appears.
 	If LZC_UnpackSound
@@ -680,6 +695,7 @@ Function PackUpCamp()
 	EndIf
 	PackUpRefs(placedRefs, persistent, LZC_CampStorage, storageHome)
 	RolledKits = None
+	TentLanterns = None
 	PlacedOwners = None
 	Int i = 0
 	While i < placedRefs.Length

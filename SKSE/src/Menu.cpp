@@ -37,6 +37,7 @@ namespace Menu
 			bool         bedrollsStartRolled{ true };
 			bool         placeCampfire{ true };
 			bool         placeFireSeats{ true };
+			bool         placeTentLanterns{ true };
 		};
 
 		constexpr const char* kBedrollStyles[] = { "Vanilla", "Bedroll Alternative - Green", "Bedroll Alternative - Blue",
@@ -82,14 +83,15 @@ namespace Menu
 			auto*  rolled = object ? AutoProperty(object.get(), "BedrollsStartRolled") : nullptr;
 			auto*  campfire = object ? AutoProperty(object.get(), "PlaceCampfire") : nullptr;
 			auto*  fireSeats = object ? AutoProperty(object.get(), "PlaceFireSeats") : nullptr;
-			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll && merchants && perFire && mapMarker && rolled && campfire && fireSeats;
+			auto*  lanterns = object ? AutoProperty(object.get(), "PlaceTentLanterns") : nullptr;
+			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll && merchants && perFire && mapMarker && rolled && campfire && fireSeats && lanterns;
 			if (found) {
 				auto* dataHandler = RE::TESDataHandler::GetSingleton();
 				values = { firewood->GetBool(), burnHours->GetFloat(), block->GetBool(), grass->GetBool(), light->GetBool(), tub->GetBool(),
 					tubInTent->GetBool(), slope->GetBool(), seat->GetSInt(), bedroll->GetSInt(),
 					dataHandler && (dataHandler->LookupLoadedModByName(kBedrollAltPlugin) ||
 										dataHandler->LookupLoadedLightModByName(kBedrollAltPlugin)),
-					merchants->GetBool(), perFire->GetSInt(), mapMarker->GetBool(), rolled->GetBool(), campfire->GetBool(), fireSeats->GetBool() };
+					merchants->GetBool(), perFire->GetSInt(), mapMarker->GetBool(), rolled->GetBool(), campfire->GetBool(), fireSeats->GetBool(), lanterns->GetBool() };
 			}
 
 			std::scoped_lock guard(lock);
@@ -126,6 +128,9 @@ namespace Menu
 				}
 				if (auto* fireSeats = AutoProperty(object.get(), "PlaceFireSeats")) {
 					fireSeats->SetBool(a_values.placeFireSeats);
+				}
+				if (auto* lanterns = AutoProperty(object.get(), "PlaceTentLanterns")) {
+					lanterns->SetBool(a_values.placeTentLanterns);
 				}
 				if (auto* rolled = AutoProperty(object.get(), "BedrollsStartRolled")) {
 					rolled->SetBool(a_values.bedrollsStartRolled);
@@ -227,6 +232,8 @@ namespace Menu
 				changed |= ImGuiMCP::Combo("Seat colour", &values.seatColor, kSeatColors, static_cast<int>(std::size(kSeatColors)));
 				ImGuiMCP::SetItemTooltip("The colour of the seats by the fire, matching the tents. Takes effect at the next camp.");
 				ImGuiMCP::EndDisabled();
+				changed |= ImGuiMCP::Checkbox("Tent lanterns", &values.placeTentLanterns);
+				ImGuiMCP::SetItemTooltip("Place a lantern in each small tent, unlit: activate it to light it, and again to put it out. Takes effect at the next camp.");
 				changed |= ImGuiMCP::Checkbox("Bathtub", &values.placeTub);
 				ImGuiMCP::SetItemTooltip("Place a bathtub of water beside the tents. Takes effect at the next camp.");
 				ImGuiMCP::BeginDisabled(!values.placeTub);
