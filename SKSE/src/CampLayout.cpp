@@ -231,7 +231,12 @@ namespace CampLayout
 			if (!player || !a_marker) {
 				return;
 			}
-			auto&      markers = player->GetPlayerRuntimeData().currentMapMarkers;
+			// PlayerCharacter::currentMapMarkers, which CommonLib leaves out of
+			// builds that include VR: at 0x4F8 (SE) or 0x500 (AE). Unknown on VR.
+			if (REL::Module::IsVR()) {
+				return;
+			}
+			auto&      markers = REL::RelocateMemberIfNewer<RE::BSTArray<RE::ObjectRefHandle>>(SKSE::RUNTIME_SSE_1_6_629, player, 0x4F8, 0x500);
 			const auto handle = a_marker->GetHandle();
 			if (std::ranges::find(markers, handle) == markers.end()) {
 				markers.push_back(handle);
