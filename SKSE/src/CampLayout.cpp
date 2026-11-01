@@ -67,7 +67,7 @@ namespace CampLayout
 		constexpr float kChoppingBlockGap = 60.0f;
 		constexpr float kChoppingBlockBesideTub = 210.0f;  // without tents: from the tub's centre, round the fire
 		constexpr float kChoppingBlockTentlessOut = 60.0f;  // without tents: this much further from the fire than the tub
-		constexpr float kChoppingBlockTentlessTurn = -10.0f;  // without tents: on top of kChoppingBlockTurn (negative: anticlockwise)
+		constexpr float kChoppingBlockTentlessTurn = -8.0f;  // without tents: on top of kChoppingBlockTurn (negative: anticlockwise), 17 clockwise in all
 		constexpr float kChoppingBlockBesideSmallTent = 90.0f;
 		constexpr float kChoppingBlockBesideLargeTent = 170.0f;
 		constexpr float kChoppingBlockTurn = 25.0f;
