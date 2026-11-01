@@ -833,8 +833,8 @@ namespace CampLayout
 			}
 
 			// With BedrollsStartRolled, each bedroll is placed as usual, with its
-			// seat and clutter, but disabled, and a rolled-up bedroll dropped where
-			// it lies. Activating that (or a follower going to bed in it) unrolls
+			// seat, but disabled, and a rolled-up bedroll dropped where it lies.
+			// Its clutter (the player's, without tents) shows from the start. Activating that (or a follower going to bed in it) unrolls
 			// the bedroll where it was laid out, however far the rolled one has
 			// been knocked: see Unroll. The rolled ones are added to a_refs, so
 			// packing up takes them.
@@ -863,12 +863,9 @@ namespace CampLayout
 					if (!bed) {
 						continue;
 					}
-					const auto slot = static_cast<std::int32_t>(kFirstBedroll) + b;
-					for (std::size_t k = 0; k < a_refs.size(); ++k) {
-						const bool owned = k > kSlotCount && k < a_owners.size() && a_owners[k] == slot;
-						if (a_refs[k] && (static_cast<std::int32_t>(k) == slot || k == kFirstBedrollSeat + b || owned)) {
-							a_refs[k]->Disable();
-						}
+					bed->Disable();
+					if (auto* seat = a_refs[kFirstBedrollSeat + b]) {
+						seat->Disable();
 					}
 					const auto kit = bed->PlaceObjectAtMe(rolledFor(bed), false);
 					if (!kit) {
