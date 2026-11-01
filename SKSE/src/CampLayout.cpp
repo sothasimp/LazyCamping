@@ -66,6 +66,8 @@ namespace CampLayout
 		constexpr float kSeatStep = 60.0f;
 		constexpr float kChoppingBlockGap = 60.0f;
 		constexpr float kChoppingBlockBesideTub = 210.0f;  // without tents: from the tub's centre, round the fire
+		constexpr float kChoppingBlockTentlessOut = 60.0f;  // without tents: this much further from the fire than the tub
+		constexpr float kChoppingBlockTentlessTurn = -10.0f;  // without tents: on top of kChoppingBlockTurn (negative: anticlockwise)
 		constexpr float kChoppingBlockBesideSmallTent = 90.0f;
 		constexpr float kChoppingBlockBesideLargeTent = 170.0f;
 		constexpr float kChoppingBlockTurn = 25.0f;
@@ -593,7 +595,9 @@ namespace CampLayout
 					// Outside the bedrolls, beside the tub's spot, on its far side
 					// from the player's bedroll.
 					const auto [tubBearing, radius] = TentlessTubSpot();
-					SetOutsideRing(kChoppingBlock, tubBearing - kChoppingBlockBesideTub / radius * 180.0f / std::numbers::pi_v<float>, radius);
+					SetOutsideRing(kChoppingBlock, tubBearing - kChoppingBlockBesideTub / radius * 180.0f / std::numbers::pi_v<float>,
+						radius + kChoppingBlockTentlessOut);
+					_layout.turn[kChoppingBlock] += kChoppingBlockTentlessTurn;
 				}
 				_layout.turn[kChoppingBlock] += kChoppingBlockTurn;
 			}
