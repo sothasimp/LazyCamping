@@ -962,8 +962,12 @@ namespace CampLayout
 					if (!kit) {
 						continue;
 					}
-					// Tilted like its bedroll (to the slope, with AlignToSlope).
+					// Tilted like its bedroll (to the slope, with AlignToSlope). Those
+					// outside the tents are turned round to face the fire.
 					kit->data.angle = bed->data.angle;
+					if (!_tents.empty() && _bedGroup[b] >= static_cast<std::int32_t>(_tents.size())) {
+						kit->data.angle.z += std::numbers::pi_v<float>;
+					}
 					kit->SetPosition(bed->GetPosition() + RE::NiPoint3{ 0.0f, 0.0f, kRolledDrop });
 					a_refs.push_back(kit.get());
 					a_owners.push_back(-1);
