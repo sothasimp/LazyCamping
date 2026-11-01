@@ -88,6 +88,12 @@ It moves onto the fire while the fire is lit, so looking
 at the fire shows "Cook".}
 Light Property LZC_CampfireLight Auto
 {Optional. Flickering firelight placed above the campfire.}
+Bool Property PlaceCampfire = True Auto
+{Place the campfire, its clutter, light and cooking (SKSE menu). Without it,
+an invisible marker stands in the fire's place, and the firewood mechanic
+and chopping block are off.}
+Bool Property PlaceFireSeats = True Auto
+{Place the seats round the fire, the player's and the followers' (SKSE menu).}
 Bool Property PlaceCampfireLight = True Auto
 {Place LZC_CampfireLight. Turn off if a Light Placer config already gives the
 campfire its own light.}

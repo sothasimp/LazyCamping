@@ -19,6 +19,7 @@ namespace CampLayout
 		constexpr auto kClass = "LZC_CampsiteQuestScript"sv;
 		constexpr auto kScript = "LZC_CampsiteQuestScript";
 		constexpr auto kPluginPrefix = "Wayfarer's Rest - A Convenient Camping Mod."sv;
+		constexpr RE::FormID kXMarker = 0x3B;  // Skyrim.esm XMarker: the fire's place when there's no fire
 		constexpr auto kBedrollAltPlugin = "Bedroll Alternative - BOS Color Variance.esp"sv;
 
 		// Slots in the layout (and in the script's placedRefs).
@@ -349,11 +350,13 @@ namespace CampLayout
 				if (_props.Form<RE::TESBoundObject>("LZC_Tub") && _props.Bool("PlaceTub", true)) {
 					LayOutTub();
 				}
-				const bool firewood = _props.Bool("FirewoodMechanic", false) && _props.Form<RE::TESBoundObject>("LZC_Firepit");
+				const bool firewood = _props.Bool("PlaceCampfire", true) && _props.Bool("FirewoodMechanic", false) && _props.Form<RE::TESBoundObject>("LZC_Firepit");
 				if (firewood) {
 					Set(kFirepit, _props.Form<RE::TESForm>("LZC_Firepit"), kSeatRadius, 0.0f, 0.0f);
 				}
-				LayOutSeats();
+				if (_props.Bool("PlaceFireSeats", true)) {
+					LayOutSeats();
+				}
 				if (_tents.empty()) {
 					LayOutRing();
 				} else {
@@ -592,6 +595,12 @@ namespace CampLayout
 
 			void LayOutFire()
 			{
+				if (!_props.Bool("PlaceCampfire", true)) {
+					// No fire: an invisible marker keeps its place as the camp's
+					// centre (for the follower quest and the map marker).
+					Set(kCampfire, RE::TESForm::LookupByID(kXMarker), kSeatRadius, 0.0f, 0.0f);
+					return;
+				}
 				Set(kCampfire, _props.Form<RE::TESForm>("LZC_CampfirePlaced"), kSeatRadius, 0.0f, 0.0f);
 				// One of the two fire clutter sets, at random, if there's a second.
 				std::int32_t fireSet = 1;
@@ -952,7 +961,7 @@ namespace CampLayout
 				auto* campfire = a_refs[kCampfire];
 
 				// The cook box goes over the fire, enabled only while it's lit.
-				auto* cookBox = _props.Form<RE::TESObjectREFR>("LZC_CookBox");
+				auto* cookBox = _props.Bool("PlaceCampfire", true) ? _props.Form<RE::TESObjectREFR>("LZC_CookBox") : nullptr;
 				if (cookBox && campfire) {
 					cookBox->MoveTo(campfire);
 					cookBox->Enable(false);
