@@ -461,19 +461,22 @@ namespace CampLayout
 						_tentTypes.push_back({ kitForms[i], i < tentForms.size() ? tentForms[i] : nullptr, size });
 					}
 				}
-				auto* small = _props.Form<RE::BGSKeyword>("LZC_TentAddonSmall");
-				auto* large = _props.Form<RE::BGSKeyword>("LZC_TentAddonLarge");
+				auto* smallMarker = _props.Form<RE::BGSKeyword>("LZC_TentAddonSmall");  // not "small": a windows.h macro
+				auto* largeMarker = _props.Form<RE::BGSKeyword>("LZC_TentAddonLarge");
 				auto* dataHandler = RE::TESDataHandler::GetSingleton();
-				if (!dataHandler || (!small && !large)) {
+				if (!dataHandler || (!smallMarker && !largeMarker)) {
 					return;
 				}
 				std::int32_t nextSet = 7;  // after the plugin's six clutter sets
 				for (auto* list : dataHandler->GetFormArray<RE::BGSListForm>()) {
-					const auto& forms = list ? list->forms : decltype(list->forms){};
-					if (forms.size() < 3 || !forms[0] || (forms[0] != small && forms[0] != large)) {
+					if (!list) {
 						continue;
 					}
-					TentType kind{ forms[1], forms[2] ? forms[2]->As<RE::TESBoundObject>() : nullptr, forms[0] == large ? kLarge : kSmall };
+					const auto& forms = list->forms;
+					if (forms.size() < 3 || !forms[0] || (forms[0] != smallMarker && forms[0] != largeMarker)) {
+						continue;
+					}
+					TentType kind{ forms[1], forms[2] ? forms[2]->As<RE::TESBoundObject>() : nullptr, forms[0] == largeMarker ? kLarge : kSmall };
 					if (!kind.kit || !kind.tent) {
 						logger::warn("Tent addon list {:08X} needs a kit and a tent after its keyword", list->GetFormID());
 						continue;
