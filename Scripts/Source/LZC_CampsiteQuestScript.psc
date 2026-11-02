@@ -93,8 +93,8 @@ Bool Property PlaceCampfire = True Auto
 an invisible marker stands in the fire's place, and the firewood mechanic
 and chopping block are off.}
 Bool Property FadeOnSetUp = False Auto
-{Fade the screen to black while the camp goes up, and back in once it's up
-(SKSE menu).}
+{Fade the screen to black while the camp goes up or is packed up, and back in
+once it's done (SKSE menu).}
 Bool Property PlaceFireSeats = True Auto
 {Place the seats round the fire, the player's and the followers' (SKSE menu).}
 Bool Property PlaceCampfireLight = True Auto
@@ -667,6 +667,10 @@ Function ConfirmPackUp()
 EndFunction
 
 Function PackUpCamp()
+	If FadeOnSetUp
+		Game.FadeOutGame(True, True, 0.0, 0.5)
+		Utility.Wait(0.5)
+	EndIf
 	If LZC_UnpackSound
 		LZC_UnpackSound.Play(PlayerRef)
 	EndIf
@@ -690,6 +694,9 @@ Function PackUpCamp()
 		storageHome = LZC_CampStorageMarkers[0]
 	EndIf
 	PackUpRefs(placedRefs, persistent, LZC_CampStorage, storageHome)
+	If FadeOnSetUp
+		Game.FadeOutGame(False, True, 0.0, 0.5)
+	EndIf
 	RolledKits = None
 	PlacedOwners = None
 	Int i = 0

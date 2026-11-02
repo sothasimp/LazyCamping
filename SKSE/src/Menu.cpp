@@ -196,8 +196,8 @@ namespace Menu
 				ImGuiMCP::SetItemTooltip("Tilt the tents, bedrolls, seats, fire and clutter to match the ground. Takes effect at the next camp.");
 				changed |= ImGuiMCP::Checkbox("Clear grass around the camp", &values.hideGrassUnderCamp);
 				ImGuiMCP::SetItemTooltip("Clear the grass in a circle around the camp while it's up. Takes effect at the next camp.");
-				changed |= ImGuiMCP::Checkbox("Fade to black during setup", &values.fadeOnSetUp);
-				ImGuiMCP::SetItemTooltip("Fade the screen to black while the camp goes up, and back in once it's up.");
+				changed |= ImGuiMCP::Checkbox("Fade to black during setup and pack-up", &values.fadeOnSetUp);
+				ImGuiMCP::SetItemTooltip("Fade the screen to black while the camp goes up or is packed up, and back in once it's done.");
 				changed |= ImGuiMCP::Checkbox("Map marker", &values.placeMapMarker);
 				ImGuiMCP::SetItemTooltip("Show the camp on the world map while it's up, for fast travel. Takes effect at the next camp.");
 				changed |= ImGuiMCP::Checkbox("Bathtub", &values.placeTub);
