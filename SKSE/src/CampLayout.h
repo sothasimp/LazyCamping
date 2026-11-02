@@ -18,4 +18,10 @@ namespace CampLayout
 	// Puts the camp's map marker back in the player's map marker list after
 	// loading a save with a camp up (the list isn't kept in the save).
 	void ListCampMapMarker();
+
+	// With Campfire installed (looked up at run time), gives the camp's tents
+	// its warm and waterproof keywords and, while a camp is up, tells it which
+	// camp tent the player is in, so Frostfall counts it as shelter. Call after
+	// a game loads.
+	void SetUpCampfireTents();
 }

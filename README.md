@@ -39,6 +39,8 @@ Every bedroll also has a **seat on it**, facing the fire. Followers sit at the f
 
 With **Bedrolls start rolled up** on (SKSE menu, on by default), every bedroll, in the tents or not, starts as a rolled-up bedroll (`LZC_BedrollRolled`, an Activator with the kit's model) dropped where it will lie. Activating one unrolls the bedroll in its place, with its seat. The player's bedroll clutter (without tents) is there from the start. The bedroll's spot is recorded when the camp goes up, so a rolled-up bedroll knocked away (its model can have Havok) still unrolls in the right place. Followers unroll their own at bedtime if the player hasn't, and don't sit on bedrolls still rolled up. Packing up removes them, rolled or not.
 
+**With Campfire installed** (and so **Frostfall**), looked up at run time rather than as a master: the camp's tents get Campfire's *warm* and *waterproof* tent keywords (`isCampfireTentWarm`, `isCampfireTentWaterproof`), and while a camp is up the DLL tells Campfire which camp tent the player is standing in (`_CampInternal.SetCurrentTent`), as Campfire's own tents do. Frostfall then treats the player inside one as sheltered from rain and snow and warm.
+
 **Sneaking and activating any of the camp's bedrolls** sits the player cross-legged on it (on its seat), with or without tents. Activating a bedroll without sneaking opens the usual Sleep/Wait menu.
 
 While a camp is up, the power is called **Pack Up Camp** (" Pack Up Camp"). It keeps its place in favourites and the voice slot. **Casting it** asks *Pack up your camp?* and packs it up if confirmed, from anywhere, so a camp left behind never stops the player making a new one. It's the only way to pack up: activating the tents does nothing.

@@ -1244,6 +1244,108 @@ namespace CampLayout
 		std::vector<RE::TESObjectREFR*> GetTubSeats(RE::StaticFunctionTag*) { return built.tubSeats; }
 	}
 
+	namespace
+	{
+		// Campfire (and through it Frostfall), looked up at run time: not a
+		// master. FormIDs within Campfire.esm.
+		constexpr auto       kCampfirePlugin = "Campfire.esm"sv;
+		constexpr RE::FormID kTentWaterproof = 0x03AB3A;  // isCampfireTentWaterproof
+		constexpr RE::FormID kTentWarm = 0x03AB3B;        // isCampfireTentWarm
+
+		RE::ObjectRefHandle campfireTent;  // the camp tent last reported to Campfire as the player's
+
+		// The camp tent the player stands in, if any.
+		RE::TESObjectREFR* TentAroundPlayer(RE::BSScript::Object* a_camp)
+		{
+			auto*       player = RE::PlayerCharacter::GetSingleton();
+			const auto* deployed = ScriptObjects::AutoProperty(a_camp, "CampDeployed");
+			const auto* placedValue = a_camp->GetVariable("placedRefs");
+			const auto  placed = placedValue && placedValue->IsArray() ? placedValue->GetArray() : nullptr;
+			if (!player || !deployed || !deployed->GetBool() || !placed) {
+				return nullptr;
+			}
+			const auto large = Properties(a_camp).Forms<RE::TESBoundObject>("LZC_LargeTents");
+			const auto pos = player->GetPosition();
+			for (std::size_t t = 0; t < static_cast<std::size_t>(kMaxTents); ++t) {
+				const auto index = kFirstTent + t;
+				auto*      form = index < placed->size() ? FormValue(&(*placed)[index]) : nullptr;
+				auto*      tent = form ? form->As<RE::TESObjectREFR>() : nullptr;
+				if (!tent || tent->IsDisabled() || tent->GetWorldspace() != player->GetWorldspace()) {
+					continue;
+				}
+				const bool  isLarge = std::ranges::find(large, tent->GetBaseObject()) != large.end();
+				const float halfWidth = isLarge ? kLargeTentHalfWidth : kSmallTentHalfWidth;
+				const float halfDepth = isLarge ? kLargeTentHalfDepth : kSmallTentHalfDepth;
+				const auto  centre = tent->GetPosition();
+				const float a = tent->GetAngleZ();
+				const float dx = pos.x - centre.x;
+				const float dy = pos.y - centre.y;
+				const float right = dx * std::cos(a) - dy * std::sin(a);
+				const float forward = dx * std::sin(a) + dy * std::cos(a);
+				if (std::abs(right) < halfWidth && std::abs(forward) < halfDepth && std::abs(pos.z - centre.z) < 300.0f) {
+					return tent;
+				}
+			}
+			return nullptr;
+		}
+
+		// Tells Campfire which camp tent the player is in (or that they've
+		// left it), as its own tents do, so Frostfall counts it as shelter.
+		void UpdateCampfireTent()
+		{
+			const auto camp = CampScript();
+			auto*      tent = camp ? TentAroundPlayer(camp.get()) : nullptr;
+			if (tent == campfireTent.get().get()) {
+				return;
+			}
+			campfireTent = tent ? tent->GetHandle() : RE::ObjectRefHandle();
+			auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
+			if (!vm) {
+				return;
+			}
+			RE::BSTSmartPointer<RE::BSScript::IStackCallbackFunctor> callback;
+			vm->DispatchStaticCall("_CampInternal", "SetCurrentTent", RE::MakeFunctionArguments(std::move(tent)), callback);
+		}
+	}
+
+	void SetUpCampfireTents()
+	{
+		auto* dataHandler = RE::TESDataHandler::GetSingleton();
+		if (!dataHandler || (!dataHandler->LookupLoadedModByName(kCampfirePlugin) && !dataHandler->LookupLoadedLightModByName(kCampfirePlugin))) {
+			return;
+		}
+		// Campfire's warm and waterproof tent keywords on the camp's tents.
+		auto  camp = CampScript();
+		auto* warm = dataHandler->LookupForm<RE::BGSKeyword>(kTentWarm, kCampfirePlugin);
+		auto* waterproof = dataHandler->LookupForm<RE::BGSKeyword>(kTentWaterproof, kCampfirePlugin);
+		if (camp) {
+			const Properties props(camp.get());
+			for (const auto* list : { "LZC_SmallTents", "LZC_LargeTents" }) {
+				for (auto* tent : props.Forms<RE::TESObjectACTI>(list)) {
+					for (auto* keyword : { warm, waterproof }) {
+						if (tent && keyword && !tent->HasKeyword(keyword)) {
+							tent->AddKeyword(keyword);
+						}
+					}
+				}
+			}
+		}
+		campfireTent = {};
+
+		static std::once_flag polling;
+		std::call_once(polling, [] {
+			logger::info("Campfire found: the camp's tents count as Campfire tents (Frostfall shelter)");
+			std::thread([] {
+				for (;;) {
+					std::this_thread::sleep_for(1s);
+					if (auto* tasks = SKSE::GetTaskInterface()) {
+						tasks->AddTask(UpdateCampfireTent);
+					}
+				}
+			}).detach();
+		});
+	}
+
 	void ListCampMapMarker()
 	{
 		auto        camp = CampScript();

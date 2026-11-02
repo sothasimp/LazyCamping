@@ -52,6 +52,7 @@ SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
 				   a_message->type == SKSE::MessagingInterface::kNewGame) {
 			Menu::ApplyLoadedSettings();
 			CampLayout::ListCampMapMarker();
+			CampLayout::SetUpCampfireTents();
 		}
 	});
 
