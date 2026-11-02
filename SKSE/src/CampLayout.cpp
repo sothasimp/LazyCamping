@@ -288,6 +288,34 @@ namespace CampLayout
 			float               turn{ 0.0f };
 		};
 
+		// Containers a follower framework keeps a follower's items in, besides
+		// their own inventory. Nether's Follower Framework (looked up at run
+		// time, not a master): with a custom outfit, a follower's extra storage
+		// lives in their satchel, nwsFFSatchelList's entry at their rank in
+		// nwsFF_storedFac (nwsFollowerSetsScript).
+		std::vector<RE::TESObjectREFR*> FollowerStores(RE::Actor* a_follower)
+		{
+			constexpr auto       kNFF = "nwsFollowerFramework.esp"sv;
+			constexpr RE::FormID kStoredFaction = 0x0487D2;  // nwsFF_storedFac
+			constexpr RE::FormID kSatchelList = 0x4AF847;    // nwsFFSatchelList
+			std::vector<RE::TESObjectREFR*> stores;
+			auto*                           dataHandler = RE::TESDataHandler::GetSingleton();
+			if (!a_follower || !dataHandler || (!dataHandler->LookupLoadedModByName(kNFF) && !dataHandler->LookupLoadedLightModByName(kNFF))) {
+				return stores;
+			}
+			auto* stored = dataHandler->LookupForm<RE::TESFaction>(kStoredFaction, kNFF);
+			auto* satchels = dataHandler->LookupForm<RE::BGSListForm>(kSatchelList, kNFF);
+			if (stored && satchels && a_follower->IsInFaction(stored)) {
+				const auto slot = a_follower->GetFactionRank(stored, false);
+				if (slot >= 0 && static_cast<std::size_t>(slot) < satchels->forms.size()) {
+					if (auto* satchel = satchels->forms[slot] ? satchels->forms[slot]->As<RE::TESObjectREFR>() : nullptr) {
+						stores.push_back(satchel);
+					}
+				}
+			}
+			return stores;
+		}
+
 		class Builder
 		{
 		public:
@@ -322,6 +350,12 @@ namespace CampLayout
 						continue;
 					}
 					_followerCounts[f] = a_followers[f]->GetInventoryCounts();
+					// Kits a follower framework keeps for them elsewhere count too.
+					for (auto* store : FollowerStores(a_followers[f])) {
+						for (const auto& [object, count] : store->GetInventoryCounts()) {
+							_followerCounts[f][object] += count;
+						}
+					}
 					for (const auto& [object, count] : _followerCounts[f]) {
 						_counts[object] += count;
 					}
