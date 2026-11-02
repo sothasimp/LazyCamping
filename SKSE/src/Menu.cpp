@@ -205,7 +205,7 @@ namespace Menu
 				changed |= ImGuiMCP::Checkbox("Bedrolls start rolled up", &values.bedrollsStartRolled);
 				ImGuiMCP::SetItemTooltip("Each bedroll starts as a rolled-up bedroll on the ground: activate it to unroll it in its place. Followers unroll their own at bedtime. Takes effect at the next camp.");
 				ImGuiMCP::BeginDisabled(!values.bedrollAltLoaded);
-				changed |= ImGuiMCP::Combo("Bedroll", &values.bedrollStyle, kBedrollStyles, static_cast<int>(std::size(kBedrollStyles)));
+				changed |= ImGuiMCP::Combo("Bedroll Style", &values.bedrollStyle, kBedrollStyles, static_cast<int>(std::size(kBedrollStyles)));
 				ImGuiMCP::SetItemTooltip("Needs Bedroll Alternative - BOS Color Variance. The camp's bedrolls: vanilla, one of its colors, or its colors in turn, pairs in a tent matching. Takes effect at the next camp.");
 				ImGuiMCP::EndDisabled();
 			}
