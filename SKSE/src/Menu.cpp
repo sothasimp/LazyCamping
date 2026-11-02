@@ -186,6 +186,30 @@ namespace Menu
 			bool       changed = false;
 			const auto open = ImGuiMCP::ImGuiTreeNodeFlags_DefaultOpen;
 
+			if (ImGuiMCP::CollapsingHeader("Camp", open)) {
+				changed |= ImGuiMCP::Checkbox("Align to slope", &values.alignToSlope);
+				ImGuiMCP::SetItemTooltip("Tilt the tents, bedrolls, seats, fire and clutter to match the ground. Takes effect at the next camp.");
+				changed |= ImGuiMCP::Checkbox("Clear grass around the camp", &values.hideGrassUnderCamp);
+				ImGuiMCP::SetItemTooltip("Clear the grass in a circle around the camp while it's up. Takes effect at the next camp.");
+				changed |= ImGuiMCP::Checkbox("Map marker", &values.placeMapMarker);
+				ImGuiMCP::SetItemTooltip("Show the camp on the world map while it's up, for fast travel. Takes effect at the next camp.");
+				changed |= ImGuiMCP::Checkbox("Bathtub", &values.placeTub);
+				ImGuiMCP::SetItemTooltip("Place a bathtub of water beside the tents. Takes effect at the next camp.");
+				ImGuiMCP::BeginDisabled(!values.placeTub);
+				changed |= ImGuiMCP::Checkbox("Bathtub inside the large tent", &values.tubInLargeTent);
+				ImGuiMCP::SetItemTooltip("Put the bathtub inside the large tent, in place of its third and fourth bedrolls, so it holds 2 at most. Takes effect at the next camp.");
+				ImGuiMCP::EndDisabled();
+			}
+
+			if (ImGuiMCP::CollapsingHeader("Bedrolls", open)) {
+				changed |= ImGuiMCP::Checkbox("Bedrolls start rolled up", &values.bedrollsStartRolled);
+				ImGuiMCP::SetItemTooltip("Each bedroll starts as a rolled-up bedroll on the ground: activate it to unroll it in its place. Followers unroll their own at bedtime. Takes effect at the next camp.");
+				ImGuiMCP::BeginDisabled(!values.bedrollAltLoaded);
+				changed |= ImGuiMCP::Combo("Bedroll", &values.bedrollStyle, kBedrollStyles, static_cast<int>(std::size(kBedrollStyles)));
+				ImGuiMCP::SetItemTooltip("Needs Bedroll Alternative - BOS Color Variance. The camp's bedrolls: vanilla, one of its colors, or its colors in turn, pairs in a tent matching. Takes effect at the next camp.");
+				ImGuiMCP::EndDisabled();
+			}
+
 			if (ImGuiMCP::CollapsingHeader("Fire", open)) {
 				changed |= ImGuiMCP::Checkbox("Firepit", &values.placeCampfire);
 				ImGuiMCP::SetItemTooltip("Place the campfire with its clutter, light and cooking. Without it there's no firewood mechanic or chopping block either. Takes effect at the next camp.");
@@ -208,30 +232,6 @@ namespace Menu
 				ImGuiMCP::BeginDisabled(!values.placeFireSeats);
 				changed |= ImGuiMCP::Combo("Cushion color", &values.seatColor, kSeatColors, static_cast<int>(std::size(kSeatColors)));
 				ImGuiMCP::SetItemTooltip("The color of the fireside cushions, matching the tents. Takes effect at the next camp.");
-				ImGuiMCP::EndDisabled();
-			}
-
-			if (ImGuiMCP::CollapsingHeader("Camp", open)) {
-				changed |= ImGuiMCP::Checkbox("Align to slope", &values.alignToSlope);
-				ImGuiMCP::SetItemTooltip("Tilt the tents, bedrolls, seats, fire and clutter to match the ground. Takes effect at the next camp.");
-				changed |= ImGuiMCP::Checkbox("Clear grass around the camp", &values.hideGrassUnderCamp);
-				ImGuiMCP::SetItemTooltip("Clear the grass in a circle around the camp while it's up. Takes effect at the next camp.");
-				changed |= ImGuiMCP::Checkbox("Map marker", &values.placeMapMarker);
-				ImGuiMCP::SetItemTooltip("Show the camp on the world map while it's up, for fast travel. Takes effect at the next camp.");
-				changed |= ImGuiMCP::Checkbox("Bathtub", &values.placeTub);
-				ImGuiMCP::SetItemTooltip("Place a bathtub of water beside the tents. Takes effect at the next camp.");
-				ImGuiMCP::BeginDisabled(!values.placeTub);
-				changed |= ImGuiMCP::Checkbox("Bathtub inside the large tent", &values.tubInLargeTent);
-				ImGuiMCP::SetItemTooltip("Put the bathtub inside the large tent, in place of its third and fourth bedrolls, so it holds 2 at most. Takes effect at the next camp.");
-				ImGuiMCP::EndDisabled();
-			}
-
-			if (ImGuiMCP::CollapsingHeader("Bedrolls", open)) {
-				changed |= ImGuiMCP::Checkbox("Bedrolls start rolled up", &values.bedrollsStartRolled);
-				ImGuiMCP::SetItemTooltip("Each bedroll starts as a rolled-up bedroll on the ground: activate it to unroll it in its place. Followers unroll their own at bedtime. Takes effect at the next camp.");
-				ImGuiMCP::BeginDisabled(!values.bedrollAltLoaded);
-				changed |= ImGuiMCP::Combo("Bedroll", &values.bedrollStyle, kBedrollStyles, static_cast<int>(std::size(kBedrollStyles)));
-				ImGuiMCP::SetItemTooltip("Needs Bedroll Alternative - BOS Color Variance. The camp's bedrolls: vanilla, one of its colors, or its colors in turn, pairs in a tent matching. Takes effect at the next camp.");
 				ImGuiMCP::EndDisabled();
 			}
 
