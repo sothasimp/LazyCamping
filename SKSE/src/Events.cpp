@@ -74,6 +74,29 @@ namespace Events
 			}
 		};
 
+		// The camp's seats: furniture from this plugin, or any furniture in the
+		// tub's clutter set (whose seats may be vanilla furniture).
+		bool IsCampSeat(const RE::TESBoundObject* a_base)
+		{
+			if (!a_base) {
+				return false;
+			}
+			if (FromPlugin(a_base)) {
+				return true;
+			}
+			auto        camp = CampScript();
+			const auto* value = camp ? ScriptObjects::AutoProperty(camp.get(), "LZC_TubClutter") : nullptr;
+			const auto  items = value && value->IsArray() ? value->GetArray() : nullptr;
+			for (std::size_t i = 0; items && i < items->size(); ++i) {
+				auto* form = ScriptObjects::FormValue(&(*items)[i]);
+				auto* item = form ? form->As<RE::TESObjectREFR>() : nullptr;
+				if (item && item->GetBaseObject() == a_base) {
+					return true;
+				}
+			}
+			return false;
+		}
+
 		// Sitting cross-legged on the ground puts the third-person camera in
 		// the fixed furniture camera. While the player sits on one of the
 		// camp's seats, it's switched back to the ordinary third-person camera
@@ -120,7 +143,7 @@ namespace Events
 					return RE::BSEventNotifyControl::kContinue;
 				}
 				if (a_event->type == RE::TESFurnitureEvent::FurnitureEventType::kEnter) {
-					SeatCamera::seated = FromPlugin(a_event->targetFurniture->GetBaseObject());
+					SeatCamera::seated = IsCampSeat(a_event->targetFurniture->GetBaseObject());
 					if (auto followers = FollowersScript()) {
 						RE::TESObjectREFR* furniture = a_event->targetFurniture.get();
 						ScriptObjects::Call(followers, "OnPlayerSat", std::move(furniture));
