@@ -190,6 +190,8 @@ namespace Menu
 				changed |= ImGuiMCP::Checkbox("Firepit", &values.placeCampfire);
 				ImGuiMCP::SetItemTooltip("Place the campfire with its clutter, light and cooking. Without it there's no firewood mechanic or chopping block either. Takes effect at the next camp.");
 				ImGuiMCP::BeginDisabled(!values.placeCampfire);
+				changed |= ImGuiMCP::Checkbox("Campfire light marker", &values.placeCampfireLight);
+				ImGuiMCP::SetItemTooltip("Place a light with the campfire. Turn off if a Light Placer config already lights it. Takes effect at the next camp.");
 				changed |= ImGuiMCP::Checkbox("Firewood mechanic", &values.firewoodMechanic);
 				ImGuiMCP::SetItemTooltip("The fire starts out unlit: activate it with firewood to light it. Takes effect at the next camp.");
 				ImGuiMCP::BeginDisabled(!values.firewoodMechanic);
@@ -197,21 +199,6 @@ namespace Menu
 				ImGuiMCP::SetItemTooltip("How long a fire lit with firewood burns, in game hours. Takes effect the next time it's lit.");
 				changed |= ImGuiMCP::SliderInt("Firewood to light the fire", &values.firewoodPerFire, 1, 6);
 				ImGuiMCP::SetItemTooltip("How many firewood lighting the fire uses up.");
-				ImGuiMCP::EndDisabled();
-				ImGuiMCP::EndDisabled();
-			}
-
-			if (ImGuiMCP::CollapsingHeader("Camp", open)) {
-				changed |= ImGuiMCP::Checkbox("Align to slope", &values.alignToSlope);
-				ImGuiMCP::SetItemTooltip("Tilt the tents, bedrolls, seats, fire and clutter to match the ground. Takes effect at the next camp.");
-				changed |= ImGuiMCP::Checkbox("Clear grass around the camp", &values.hideGrassUnderCamp);
-				ImGuiMCP::SetItemTooltip("Clear the grass in a circle around the camp while it's up. Takes effect at the next camp.");
-				changed |= ImGuiMCP::Checkbox("Map marker", &values.placeMapMarker);
-				ImGuiMCP::SetItemTooltip("Show the camp on the world map while it's up, for fast travel. Takes effect at the next camp.");
-				ImGuiMCP::BeginDisabled(!values.placeCampfire);
-				changed |= ImGuiMCP::Checkbox("Campfire light marker", &values.placeCampfireLight);
-				ImGuiMCP::SetItemTooltip("Place a light with the campfire. Turn off if a Light Placer config already lights it. Takes effect at the next camp.");
-				ImGuiMCP::BeginDisabled(!values.firewoodMechanic);
 				changed |= ImGuiMCP::Checkbox("Wood chopping block", &values.placeChoppingBlock);
 				ImGuiMCP::SetItemTooltip("Place a woodcutting block, for chopping firewood. Needs the firewood mechanic. Takes effect at the next camp.");
 				ImGuiMCP::EndDisabled();
@@ -222,6 +209,15 @@ namespace Menu
 				changed |= ImGuiMCP::Combo("Seat colour", &values.seatColor, kSeatColors, static_cast<int>(std::size(kSeatColors)));
 				ImGuiMCP::SetItemTooltip("The colour of the seats by the fire, matching the tents. Takes effect at the next camp.");
 				ImGuiMCP::EndDisabled();
+			}
+
+			if (ImGuiMCP::CollapsingHeader("Camp", open)) {
+				changed |= ImGuiMCP::Checkbox("Align to slope", &values.alignToSlope);
+				ImGuiMCP::SetItemTooltip("Tilt the tents, bedrolls, seats, fire and clutter to match the ground. Takes effect at the next camp.");
+				changed |= ImGuiMCP::Checkbox("Clear grass around the camp", &values.hideGrassUnderCamp);
+				ImGuiMCP::SetItemTooltip("Clear the grass in a circle around the camp while it's up. Takes effect at the next camp.");
+				changed |= ImGuiMCP::Checkbox("Map marker", &values.placeMapMarker);
+				ImGuiMCP::SetItemTooltip("Show the camp on the world map while it's up, for fast travel. Takes effect at the next camp.");
 				changed |= ImGuiMCP::Checkbox("Bathtub", &values.placeTub);
 				ImGuiMCP::SetItemTooltip("Place a bathtub of water beside the tents. Takes effect at the next camp.");
 				ImGuiMCP::BeginDisabled(!values.placeTub);
