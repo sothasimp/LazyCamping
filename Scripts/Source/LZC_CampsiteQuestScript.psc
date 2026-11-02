@@ -92,6 +92,9 @@ Bool Property PlaceCampfire = True Auto
 {Place the campfire, its clutter, light and cooking (SKSE menu). Without it,
 an invisible marker stands in the fire's place, and the firewood mechanic
 and chopping block are off.}
+Bool Property FadeOnSetUp = False Auto
+{Fade the screen to black while the camp goes up, and back in once it's up
+(SKSE menu).}
 Bool Property PlaceFireSeats = True Auto
 {Place the seats round the fire, the player's and the followers' (SKSE menu).}
 Bool Property PlaceCampfireLight = True Auto
@@ -396,6 +399,11 @@ Bool Function HasAllKits()
 EndFunction
 
 Function SetUpCamp()
+	If FadeOnSetUp
+		Game.FadeOutGame(True, True, 0.0, 0.5)
+		Utility.Wait(0.5)
+	EndIf
+
 	; Start the follower quest first: its aliases find the followers who are
 	; with the player. Partners and couples decide how the bedrolls are shared
 	; out between the tents.
@@ -442,6 +450,9 @@ Function SetUpCamp()
 	; to the camp.
 	placedRefs = BuildCamp(Self, partners, couples, campers)
 	Int status = GetBuildStatus()
+	If FadeOnSetUp
+		Game.FadeOutGame(False, True, 0.0, 0.5)
+	EndIf
 	If status != 0 || placedRefs.Length <= kSlotCount
 		NotifySiteProblem(status)
 		placedRefs = new ObjectReference[39]

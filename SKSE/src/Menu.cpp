@@ -37,6 +37,7 @@ namespace Menu
 			bool         bedrollsStartRolled{ true };
 			bool         placeCampfire{ true };
 			bool         placeFireSeats{ true };
+			bool         fadeOnSetUp{ false };
 		};
 
 		constexpr const char* kBedrollStyles[] = { "Vanilla", "Bedroll Alternative - Green", "Bedroll Alternative - Blue",
@@ -82,14 +83,15 @@ namespace Menu
 			auto*  rolled = object ? AutoProperty(object.get(), "BedrollsStartRolled") : nullptr;
 			auto*  campfire = object ? AutoProperty(object.get(), "PlaceCampfire") : nullptr;
 			auto*  fireSeats = object ? AutoProperty(object.get(), "PlaceFireSeats") : nullptr;
-			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll && merchants && perFire && mapMarker && rolled && campfire && fireSeats;
+			auto*  fade = object ? AutoProperty(object.get(), "FadeOnSetUp") : nullptr;
+			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll && merchants && perFire && mapMarker && rolled && campfire && fireSeats && fade;
 			if (found) {
 				auto* dataHandler = RE::TESDataHandler::GetSingleton();
 				values = { firewood->GetBool(), burnHours->GetFloat(), block->GetBool(), grass->GetBool(), light->GetBool(), tub->GetBool(),
 					tubInTent->GetBool(), slope->GetBool(), seat->GetSInt(), bedroll->GetSInt(),
 					dataHandler && (dataHandler->LookupLoadedModByName(kBedrollAltPlugin) ||
 										dataHandler->LookupLoadedLightModByName(kBedrollAltPlugin)),
-					merchants->GetBool(), perFire->GetSInt(), mapMarker->GetBool(), rolled->GetBool(), campfire->GetBool(), fireSeats->GetBool() };
+					merchants->GetBool(), perFire->GetSInt(), mapMarker->GetBool(), rolled->GetBool(), campfire->GetBool(), fireSeats->GetBool(), fade->GetBool() };
 			}
 
 			std::scoped_lock guard(lock);
@@ -126,6 +128,9 @@ namespace Menu
 				}
 				if (auto* fireSeats = AutoProperty(object.get(), "PlaceFireSeats")) {
 					fireSeats->SetBool(a_values.placeFireSeats);
+				}
+				if (auto* fade = AutoProperty(object.get(), "FadeOnSetUp")) {
+					fade->SetBool(a_values.fadeOnSetUp);
 				}
 				if (auto* rolled = AutoProperty(object.get(), "BedrollsStartRolled")) {
 					rolled->SetBool(a_values.bedrollsStartRolled);
@@ -191,6 +196,8 @@ namespace Menu
 				ImGuiMCP::SetItemTooltip("Tilt the tents, bedrolls, seats, fire and clutter to match the ground. Takes effect at the next camp.");
 				changed |= ImGuiMCP::Checkbox("Clear grass around the camp", &values.hideGrassUnderCamp);
 				ImGuiMCP::SetItemTooltip("Clear the grass in a circle around the camp while it's up. Takes effect at the next camp.");
+				changed |= ImGuiMCP::Checkbox("Fade to black during setup", &values.fadeOnSetUp);
+				ImGuiMCP::SetItemTooltip("Fade the screen to black while the camp goes up, and back in once it's up.");
 				changed |= ImGuiMCP::Checkbox("Map marker", &values.placeMapMarker);
 				ImGuiMCP::SetItemTooltip("Show the camp on the world map while it's up, for fast travel. Takes effect at the next camp.");
 				changed |= ImGuiMCP::Checkbox("Bathtub", &values.placeTub);
