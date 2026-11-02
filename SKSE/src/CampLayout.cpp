@@ -1128,9 +1128,29 @@ namespace CampLayout
 
 		// Sets up the camp for the quest's script; returns the placed references
 		// (empty if it couldn't: see GetBuildStatus).
+		// The followers in the follower quest's Followers aliases, in the
+		// script's order, read here rather than trusting what the script passed
+		// (an older compiled follower script passes none).
+		std::vector<RE::Actor*> FollowerActors()
+		{
+			static RE::FormID quest = 0;
+			auto              followers = ScriptObjects::FindQuestScript(kPluginPrefix, "LZC_CampFollowersScript", quest);
+			const auto*       value = followers ? ScriptObjects::AutoProperty(followers.get(), "Followers") : nullptr;
+			const auto        aliases = value && value->IsArray() ? value->GetArray() : nullptr;
+			std::vector<RE::Actor*> actors;
+			for (std::size_t i = 0; aliases && i < aliases->size(); ++i) {
+				auto* alias = (*aliases)[i].Unpack<RE::BGSRefAlias*>();
+				actors.push_back(alias ? alias->GetActorReference() : nullptr);
+			}
+			return actors;
+		}
+
 		std::vector<RE::TESObjectREFR*> BuildCamp(RE::StaticFunctionTag*, RE::TESQuest* a_quest, std::int32_t a_partners, std::int32_t a_couples,
 			std::vector<RE::Actor*> a_followers)
 		{
+			if (std::ranges::none_of(a_followers, [](RE::Actor* a_actor) { return a_actor != nullptr; })) {
+				a_followers = FollowerActors();
+			}
 			built = {};
 			auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
 			auto* policy = vm ? vm->GetObjectHandlePolicy() : nullptr;
