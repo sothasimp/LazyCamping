@@ -206,8 +206,8 @@ namespace Menu
 				changed |= ImGuiMCP::Checkbox("Fireside cushions", &values.placeFireSeats);
 				ImGuiMCP::SetItemTooltip("Place the seats round the fire, the player's and the followers'. The seats on the bedrolls stay either way. Takes effect at the next camp.");
 				ImGuiMCP::BeginDisabled(!values.placeFireSeats);
-				changed |= ImGuiMCP::Combo("Cushion colour", &values.seatColor, kSeatColors, static_cast<int>(std::size(kSeatColors)));
-				ImGuiMCP::SetItemTooltip("The colour of the fireside cushions, matching the tents. Takes effect at the next camp.");
+				changed |= ImGuiMCP::Combo("Cushion color", &values.seatColor, kSeatColors, static_cast<int>(std::size(kSeatColors)));
+				ImGuiMCP::SetItemTooltip("The color of the fireside cushions, matching the tents. Takes effect at the next camp.");
 				ImGuiMCP::EndDisabled();
 			}
 
@@ -231,7 +231,7 @@ namespace Menu
 				ImGuiMCP::SetItemTooltip("Each bedroll starts as a rolled-up bedroll on the ground: activate it to unroll it in its place. Followers unroll their own at bedtime. Takes effect at the next camp.");
 				ImGuiMCP::BeginDisabled(!values.bedrollAltLoaded);
 				changed |= ImGuiMCP::Combo("Bedroll", &values.bedrollStyle, kBedrollStyles, static_cast<int>(std::size(kBedrollStyles)));
-				ImGuiMCP::SetItemTooltip("Needs Bedroll Alternative - BOS Color Variance. The camp's bedrolls: vanilla, one of its colours, or its colours in turn, pairs in a tent matching. Takes effect at the next camp.");
+				ImGuiMCP::SetItemTooltip("Needs Bedroll Alternative - BOS Color Variance. The camp's bedrolls: vanilla, one of its colors, or its colors in turn, pairs in a tent matching. Takes effect at the next camp.");
 				ImGuiMCP::EndDisabled();
 			}
 
