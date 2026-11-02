@@ -74,18 +74,59 @@ namespace Events
 			}
 		};
 
-		// The player sitting down, for followers to join them.
+		// Sitting cross-legged on the ground puts the third-person camera in
+		// the fixed furniture camera. While the player sits on one of the
+		// camp's seats, it's switched back to the ordinary third-person camera
+		// with free rotation, so it can be turned round them as on a chair.
+		namespace SeatCamera
+		{
+			std::atomic<bool> seated{ false };
+
+			void Update()
+			{
+				auto* camera = RE::PlayerCamera::GetSingleton();
+				if (!seated || !camera || REL::Module::IsVR() || !camera->IsCurrentState(RE::CameraState::kFurniture, RE::CameraState::kFurniture)) {
+					return;
+				}
+				auto* state = camera->GetRuntimeData().cameraStates[RE::CameraState::kThirdPerson].get();
+				if (auto* thirdPerson = skyrim_cast<RE::ThirdPersonState*>(state)) {
+					thirdPerson->freeRotationEnabled = true;
+					camera->SetState(thirdPerson);
+				}
+			}
+
+			void Install()
+			{
+				std::thread([] {
+					for (;;) {
+						std::this_thread::sleep_for(100ms);
+						if (seated) {
+							if (auto* tasks = SKSE::GetTaskInterface()) {
+								tasks->AddTask(Update);
+							}
+						}
+					}
+				}).detach();
+			}
+		}
+
+		// The player sitting down, for followers to join them (and standing up).
 		class Furniture : public RE::BSTEventSink<RE::TESFurnitureEvent>
 		{
 		public:
 			RE::BSEventNotifyControl ProcessEvent(const RE::TESFurnitureEvent* a_event, RE::BSTEventSource<RE::TESFurnitureEvent>*) override
 			{
-				if (a_event && a_event->actor && a_event->actor->IsPlayerRef() && a_event->targetFurniture &&
-					a_event->type == RE::TESFurnitureEvent::FurnitureEventType::kEnter) {
+				if (!a_event || !a_event->actor || !a_event->actor->IsPlayerRef() || !a_event->targetFurniture) {
+					return RE::BSEventNotifyControl::kContinue;
+				}
+				if (a_event->type == RE::TESFurnitureEvent::FurnitureEventType::kEnter) {
+					SeatCamera::seated = FromPlugin(a_event->targetFurniture->GetBaseObject());
 					if (auto followers = FollowersScript()) {
 						RE::TESObjectREFR* furniture = a_event->targetFurniture.get();
 						ScriptObjects::Call(followers, "OnPlayerSat", std::move(furniture));
 					}
+				} else {
+					SeatCamera::seated = false;
 				}
 				return RE::BSEventNotifyControl::kContinue;
 			}
@@ -99,6 +140,7 @@ namespace Events
 			logger::warn("No script event source; camp events won't be handled");
 			return;
 		}
+		SeatCamera::Install();
 		static SpellCast spellCast;
 		static Activate  activate;
 		static Furniture furniture;
