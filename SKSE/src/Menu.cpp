@@ -183,36 +183,31 @@ namespace Menu
 				return;
 			}
 
-			bool changed = false;
-			ImGuiMCP::BeginDisabled(!values.placeCampfire);
-			changed |= ImGuiMCP::Checkbox("Firewood mechanic", &values.firewoodMechanic);
-			ImGuiMCP::SetItemTooltip("The fire starts out unlit: activate it with firewood to light it. Needs the firepit. Takes effect at the next camp.");
-			ImGuiMCP::BeginDisabled(!values.firewoodMechanic);
-			changed |= ImGuiMCP::SliderFloat("Fire burn time", &values.fireBurnHours, 1.0f, 24.0f, "%.0f hours");
-			ImGuiMCP::SetItemTooltip("How long a fire lit with firewood burns, in game hours. Takes effect the next time it's lit.");
-			changed |= ImGuiMCP::SliderInt("Firewood to light the fire", &values.firewoodPerFire, 1, 6);
-			ImGuiMCP::SetItemTooltip("How many firewood lighting the fire uses up.");
-			ImGuiMCP::EndDisabled();
-			ImGuiMCP::EndDisabled();
-			changed |= ImGuiMCP::Checkbox("Align to slope", &values.alignToSlope);
-			ImGuiMCP::SetItemTooltip("Tilt the tents, bedrolls, seats, fire and clutter to match the ground. Takes effect at the next camp.");
-			ImGuiMCP::BeginDisabled(!values.bedrollAltLoaded);
-			changed |= ImGuiMCP::Combo("Bedroll", &values.bedrollStyle, kBedrollStyles, static_cast<int>(std::size(kBedrollStyles)));
-			ImGuiMCP::SetItemTooltip("Needs Bedroll Alternative - BOS Color Variance. The camp's bedrolls: vanilla, one of its colours, or its colours in turn, pairs in a tent matching. Takes effect at the next camp.");
-			ImGuiMCP::EndDisabled();
-			changed |= ImGuiMCP::Checkbox("Bedrolls start rolled up", &values.bedrollsStartRolled);
-			ImGuiMCP::SetItemTooltip("Each bedroll starts as a rolled-up bedroll on the ground: activate it to unroll it in its place. Followers unroll their own at bedtime. Takes effect at the next camp.");
-			changed |= ImGuiMCP::Checkbox("Sell kits at general goods merchants", &values.kitsAtMerchants);
-			ImGuiMCP::SetItemTooltip("Merchants can stock the bedroll and tent kits. Shows at their next restock.");
-			changed |= ImGuiMCP::Checkbox("Clear grass around the camp", &values.hideGrassUnderCamp);
-			ImGuiMCP::SetItemTooltip("Clear the grass in a circle around the camp while it's up. Takes effect at the next camp.");
-			changed |= ImGuiMCP::Checkbox("Map marker", &values.placeMapMarker);
-			ImGuiMCP::SetItemTooltip("Show the camp on the world map while it's up, for fast travel. Takes effect at the next camp.");
+			bool       changed = false;
+			const auto open = ImGuiMCP::ImGuiTreeNodeFlags_DefaultOpen;
 
-			// Which of the camp's objects go up.
-			if (ImGuiMCP::CollapsingHeader("Object toggles", ImGuiMCP::ImGuiTreeNodeFlags_DefaultOpen)) {
+			if (ImGuiMCP::CollapsingHeader("Fire", open)) {
 				changed |= ImGuiMCP::Checkbox("Firepit", &values.placeCampfire);
 				ImGuiMCP::SetItemTooltip("Place the campfire with its clutter, light and cooking. Without it there's no firewood mechanic or chopping block either. Takes effect at the next camp.");
+				ImGuiMCP::BeginDisabled(!values.placeCampfire);
+				changed |= ImGuiMCP::Checkbox("Firewood mechanic", &values.firewoodMechanic);
+				ImGuiMCP::SetItemTooltip("The fire starts out unlit: activate it with firewood to light it. Takes effect at the next camp.");
+				ImGuiMCP::BeginDisabled(!values.firewoodMechanic);
+				changed |= ImGuiMCP::SliderFloat("Fire burn time", &values.fireBurnHours, 1.0f, 24.0f, "%.0f hours");
+				ImGuiMCP::SetItemTooltip("How long a fire lit with firewood burns, in game hours. Takes effect the next time it's lit.");
+				changed |= ImGuiMCP::SliderInt("Firewood to light the fire", &values.firewoodPerFire, 1, 6);
+				ImGuiMCP::SetItemTooltip("How many firewood lighting the fire uses up.");
+				ImGuiMCP::EndDisabled();
+				ImGuiMCP::EndDisabled();
+			}
+
+			if (ImGuiMCP::CollapsingHeader("Camp", open)) {
+				changed |= ImGuiMCP::Checkbox("Align to slope", &values.alignToSlope);
+				ImGuiMCP::SetItemTooltip("Tilt the tents, bedrolls, seats, fire and clutter to match the ground. Takes effect at the next camp.");
+				changed |= ImGuiMCP::Checkbox("Clear grass around the camp", &values.hideGrassUnderCamp);
+				ImGuiMCP::SetItemTooltip("Clear the grass in a circle around the camp while it's up. Takes effect at the next camp.");
+				changed |= ImGuiMCP::Checkbox("Map marker", &values.placeMapMarker);
+				ImGuiMCP::SetItemTooltip("Show the camp on the world map while it's up, for fast travel. Takes effect at the next camp.");
 				ImGuiMCP::BeginDisabled(!values.placeCampfire);
 				changed |= ImGuiMCP::Checkbox("Campfire light marker", &values.placeCampfireLight);
 				ImGuiMCP::SetItemTooltip("Place a light with the campfire. Turn off if a Light Placer config already lights it. Takes effect at the next camp.");
@@ -233,6 +228,20 @@ namespace Menu
 				changed |= ImGuiMCP::Checkbox("Bathtub in the large tent", &values.tubInLargeTent);
 				ImGuiMCP::SetItemTooltip("Put the bathtub inside the large tent, in place of its third and fourth bedrolls, so it holds 2 at most. Takes effect at the next camp.");
 				ImGuiMCP::EndDisabled();
+			}
+
+			if (ImGuiMCP::CollapsingHeader("Bedrolls", open)) {
+				changed |= ImGuiMCP::Checkbox("Bedrolls start rolled up", &values.bedrollsStartRolled);
+				ImGuiMCP::SetItemTooltip("Each bedroll starts as a rolled-up bedroll on the ground: activate it to unroll it in its place. Followers unroll their own at bedtime. Takes effect at the next camp.");
+				ImGuiMCP::BeginDisabled(!values.bedrollAltLoaded);
+				changed |= ImGuiMCP::Combo("Bedroll", &values.bedrollStyle, kBedrollStyles, static_cast<int>(std::size(kBedrollStyles)));
+				ImGuiMCP::SetItemTooltip("Needs Bedroll Alternative - BOS Color Variance. The camp's bedrolls: vanilla, one of its colours, or its colours in turn, pairs in a tent matching. Takes effect at the next camp.");
+				ImGuiMCP::EndDisabled();
+			}
+
+			if (ImGuiMCP::CollapsingHeader("Leveled lists", open)) {
+				changed |= ImGuiMCP::Checkbox("Sell kits at general goods merchants", &values.kitsAtMerchants);
+				ImGuiMCP::SetItemTooltip("Merchants can stock the bedroll and tent kits. Shows at their next restock.");
 			}
 
 			if (changed) {
