@@ -187,7 +187,7 @@ namespace Menu
 			const auto open = ImGuiMCP::ImGuiTreeNodeFlags_DefaultOpen;
 
 			if (ImGuiMCP::CollapsingHeader("Camp", open)) {
-				changed |= ImGuiMCP::Checkbox("Align to slope", &values.alignToSlope);
+				changed |= ImGuiMCP::Checkbox("Align objects to ground slope", &values.alignToSlope);
 				ImGuiMCP::SetItemTooltip("Tilt the tents, bedrolls, seats, fire and clutter to match the ground. Takes effect at the next camp.");
 				changed |= ImGuiMCP::Checkbox("Clear grass around the camp", &values.hideGrassUnderCamp);
 				ImGuiMCP::SetItemTooltip("Clear the grass in a circle around the camp while it's up. Takes effect at the next camp.");
