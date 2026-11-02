@@ -214,7 +214,7 @@ namespace Menu
 				changed |= ImGuiMCP::Checkbox("Firepit", &values.placeCampfire);
 				ImGuiMCP::SetItemTooltip("Place the campfire with its clutter, light and cooking. Without it there's no firewood mechanic or chopping block either. Takes effect at the next camp.");
 				ImGuiMCP::BeginDisabled(!values.placeCampfire);
-				changed |= ImGuiMCP::Checkbox("Campfire light marker", &values.placeCampfireLight);
+				changed |= ImGuiMCP::Checkbox("Light marker", &values.placeCampfireLight);
 				ImGuiMCP::SetItemTooltip("Place a light with the campfire. Turn off if a Light Placer config already lights it. Takes effect at the next camp.");
 				changed |= ImGuiMCP::Checkbox("Firewood mechanic", &values.firewoodMechanic);
 				ImGuiMCP::SetItemTooltip("The fire starts out unlit: activate it with firewood to light it. Takes effect at the next camp.");
