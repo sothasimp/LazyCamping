@@ -5,6 +5,7 @@
 #include "Menu.h"
 #include "Papyrus.h"
 #include "Serialization.h"
+#include "VendorKits.h"
 
 // SKSEPluginInfo (name, version, Address Library compatibility) is generated
 // by the commonlibsse-ng.plugin xmake rule.
@@ -48,6 +49,7 @@ SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
 			Menu::Register();
 		} else if (a_message->type == SKSE::MessagingInterface::kDataLoaded) {
 			Events::Install();
+			VendorKits::Inject();
 		} else if (a_message->type == SKSE::MessagingInterface::kPostLoadGame ||
 				   a_message->type == SKSE::MessagingInterface::kNewGame) {
 			Menu::ApplyLoadedSettings();
