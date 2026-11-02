@@ -55,6 +55,6 @@ SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
 		}
 	});
 
-	logger::info("Wayfarer - A Convenient Camping Mod loaded");
+	logger::info("Wayfarer - A Convenient Camping Framework loaded");
 	return true;
 }

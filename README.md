@@ -1,4 +1,4 @@
-# Wayfarer - A Convenient Camping Mod
+# Wayfarer - A Convenient Camping Framework
 
 A camping mod for Skyrim Special Edition.
 
@@ -72,7 +72,7 @@ SKSE/                           C++ plugin (LazyCamping.dll), required
   src/Menu.cpp                  the optional SKSE Menu Framework page
   src/ScriptObjects.cpp         reading and writing other scripts' properties
   extern/SKSEMenuFramework/     SKSE Menu Framework 3's API header (LGPL-2.1)
-Wayfarer - A Convenient Camping Mod.esp
+Wayfarer - A Convenient Camping Framework.esp
                                 the plugin, edited in the Creation Kit
 ```
 
@@ -93,11 +93,11 @@ Compiled `.pex` files go in `Data/Scripts/`.
 
 ---
 
-## 2. The plugin (`Wayfarer - A Convenient Camping Mod.esp`)
+## 2. The plugin (`Wayfarer - A Convenient Camping Framework.esp`)
 
-`Wayfarer - A Convenient Camping Mod.esp` is edited in the Creation Kit and committed to the repository like any other file.
+`Wayfarer - A Convenient Camping Framework.esp` is edited in the Creation Kit and committed to the repository like any other file.
 
-**Before editing it in the Creation Kit,** take the latest `Wayfarer - A Convenient Camping Mod.esp` from the repository: some records (the recipes, the merchant list) are sometimes added to it directly, and saving over an older copy loses them. After saving, check that the quest's object properties are still filled.
+**Before editing it in the Creation Kit,** take the latest `Wayfarer - A Convenient Camping Framework.esp` from the repository: some records (the recipes, the merchant list) are sometimes added to it directly, and saving over an older copy loses them. After saving, check that the quest's object properties are still filled.
 
 ### What's in it
 
@@ -195,10 +195,10 @@ The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFol
 
 ### 2d. How players get the kits
 
-**Merchants.** `Wayfarer - A Convenient Camping Mod.esp` has a leveled list of every kit, `LZC_LItemCampingKits` (one random kit, 50% chance none), and a form list, `LZC_VendorLists`, of merchant leveled lists to add it to: fill that in the Creation Kit with the general goods vendor lists (the leveled lists their merchant chests use). LazyCamping.dll adds the kit list to each of them while the game runs, so no vanilla list is overridden in the plugin and nothing conflicts with other mods that edit them. The SKSE menu's *Sell kits at general goods merchants* turns it off (`KitsAtMerchants`); merchants show the change at their next restock.
+**Merchants.** `Wayfarer - A Convenient Camping Framework.esp` has a leveled list of every kit, `LZC_LItemCampingKits` (one random kit, 50% chance none), and a form list, `LZC_VendorLists`, of merchant leveled lists to add it to: fill that in the Creation Kit with the general goods vendor lists (the leveled lists their merchant chests use). LazyCamping.dll adds the kit list to each of them while the game runs, so no vanilla list is overridden in the plugin and nothing conflicts with other mods that edit them. The SKSE menu's *Sell kits at general goods merchants* turns it off (`KitsAtMerchants`); merchants show the change at their next restock.
 
 
-The committed `Wayfarer - A Convenient Camping Mod.esp` has a recipe for every kit (`LZC_Recipe…`), all at a tanning rack (`CraftingTanningRack`), every colour alike:
+The committed `Wayfarer - A Convenient Camping Framework.esp` has a recipe for every kit (`LZC_Recipe…`), all at a tanning rack (`CraftingTanningRack`), every colour alike:
 
 - Bedroll = 2× Linen Wrap + 2× `LeatherStrips`
 - Small tent kit = 3× Linen Wrap + 3× `LeatherStrips` + 2× `Firewood01`
@@ -246,10 +246,10 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 ## 4. Compile scripts and package
 
 1. In the CK, compile the three scripts, `LZC_CampsiteQuestScript`, `LZC_CampFollowersScript` and `LZC_TubTriggerScript` (*Gameplay > Papyrus Script Manager*). The quest script's native functions compile without the DLL; they're only bound at runtime.
-2. `Wayfarer - A Convenient Camping Mod.esp` adds only new records, so it can be flagged as ESL, but first its FormIDs must be compacted into the light plugin range (up to `0xFFF`): in xEdit, right-click it, *Compact FormIDs for ESL*, then set the ESL flag (or *File > Compact Active File Form IDs* in the Creation Kit). Compacting renumbers its records, which breaks saves made with it. The DLL finds every form through the quest scripts' properties (the bedroll kit's texture sets are `LZC_BedrollTextureGreen`, `LZC_BedrollTextureBlue` and `LZC_BedrollTextureRed`), so nothing in it needs changing.
+2. `Wayfarer - A Convenient Camping Framework.esp` adds only new records, so it can be flagged as ESL, but first its FormIDs must be compacted into the light plugin range (up to `0xFFF`): in xEdit, right-click it, *Compact FormIDs for ESL*, then set the ESL flag (or *File > Compact Active File Form IDs* in the Creation Kit). Compacting renumbers its records, which breaks saves made with it. The DLL finds every form through the quest scripts' properties (the bedroll kit's texture sets are `LZC_BedrollTextureGreen`, `LZC_BedrollTextureBlue` and `LZC_BedrollTextureRed`), so nothing in it needs changing.
 3. Package these files:
    ```
-   Wayfarer - A Convenient Camping Mod.esp
+   Wayfarer - A Convenient Camping Framework.esp
    Scripts/LZC_CampsiteQuestScript.pex
    Scripts/LZC_CampFollowersScript.pex
    Scripts/LZC_TubTriggerScript.pex

@@ -18,8 +18,8 @@ target("LazyCamping")
 
     add_rules("commonlibsse-ng.plugin", {
         name = "LazyCamping",
-        author = "Wayfarer - A Convenient Camping Mod",
-        description = "Native camp placement for Wayfarer - A Convenient Camping Mod"
+        author = "Wayfarer - A Convenient Camping Framework",
+        description = "Native camp placement for Wayfarer - A Convenient Camping Framework"
     })
 
     add_files("src/**.cpp")

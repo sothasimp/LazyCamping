@@ -56,7 +56,7 @@ namespace Menu
 		RE::BSTSmartPointer<RE::BSScript::Object> FindScript()
 		{
 			static RE::FormID quest = 0;
-			return ScriptObjects::FindQuestScript("Wayfarer - A Convenient Camping Mod."sv, kScript, quest);
+			return ScriptObjects::FindQuestScript("Wayfarer - A Convenient Camping Framework."sv, kScript, quest);
 		}
 
 		using ScriptObjects::AutoProperty;
