@@ -221,7 +221,7 @@ namespace Menu
 				changed |= ImGuiMCP::Checkbox("Bathtub", &values.placeTub);
 				ImGuiMCP::SetItemTooltip("Place a bathtub of water beside the tents. Takes effect at the next camp.");
 				ImGuiMCP::BeginDisabled(!values.placeTub);
-				changed |= ImGuiMCP::Checkbox("Bathtub in the large tent", &values.tubInLargeTent);
+				changed |= ImGuiMCP::Checkbox("Bathtub inside the large tent", &values.tubInLargeTent);
 				ImGuiMCP::SetItemTooltip("Put the bathtub inside the large tent, in place of its third and fourth bedrolls, so it holds 2 at most. Takes effect at the next camp.");
 				ImGuiMCP::EndDisabled();
 			}
