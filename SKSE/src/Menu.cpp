@@ -206,8 +206,8 @@ namespace Menu
 				changed |= ImGuiMCP::Checkbox("Fireside cushions", &values.placeFireSeats);
 				ImGuiMCP::SetItemTooltip("Place the seats round the fire, the player's and the followers'. The seats on the bedrolls stay either way. Takes effect at the next camp.");
 				ImGuiMCP::BeginDisabled(!values.placeFireSeats);
-				changed |= ImGuiMCP::Combo("Seat colour", &values.seatColor, kSeatColors, static_cast<int>(std::size(kSeatColors)));
-				ImGuiMCP::SetItemTooltip("The colour of the seats by the fire, matching the tents. Takes effect at the next camp.");
+				changed |= ImGuiMCP::Combo("Cushion colour", &values.seatColor, kSeatColors, static_cast<int>(std::size(kSeatColors)));
+				ImGuiMCP::SetItemTooltip("The colour of the fireside cushions, matching the tents. Takes effect at the next camp.");
 				ImGuiMCP::EndDisabled();
 			}
 
