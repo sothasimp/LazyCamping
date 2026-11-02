@@ -280,7 +280,7 @@ namespace CampLayout
 		{
 			RE::TESBoundObject* form{ nullptr };
 			std::int32_t        size{ kSmall };
-			std::int32_t        color{ 0 };
+			std::int32_t        color{ 0 };  // its kind: index into _tentTypes
 			std::int32_t        beds{ 0 };
 			std::int32_t        owner{ -1 };  // the follower whose kit it is (index), or -1 for the player's
 			float               fwd{ 0.0f };
@@ -330,6 +330,7 @@ namespace CampLayout
 
 			std::vector<RE::TESObjectREFR*> Run()
 			{
+				FindTentTypes();
 				LogKits();
 				ChooseTents();
 				ShareBedrolls();
@@ -409,11 +410,8 @@ namespace CampLayout
 			void LogKits() const
 			{
 				std::vector<RE::TESForm*> kits{ _props.Form<RE::TESForm>("LZC_BedrollKit") };
-				for (auto* kit : _props.Forms<RE::TESForm>("LZC_SmallTentKits")) {
-					kits.push_back(kit);
-				}
-				for (auto* kit : _props.Forms<RE::TESForm>("LZC_LargeTentKits")) {
-					kits.push_back(kit);
+				for (const auto& kind : _tentTypes) {
+					kits.push_back(kind.kit);
 				}
 				const auto describe = [&](const RE::TESObjectREFR::InventoryCountMap& a_counts) {
 					std::string text;
@@ -444,6 +442,56 @@ namespace CampLayout
 					const auto& tent = _tents[t];
 					logger::info("BuildCamp: tent {}: {} colour {}, {} bedroll(s), kit from {}", t, tent.size == kLarge ? "large" : "small", tent.color, tent.beds,
 						tent.owner < 0 ? std::string("the player") : std::format("follower {}", tent.owner));
+				}
+			}
+
+			// The kinds of tent: the plugin's own (LZC_SmallTentKits/LZC_SmallTents
+			// and the large ones, same order), then addon tents. An addon tent is
+			// a form list in any plugin whose first entry is LZC_TentAddonSmall or
+			// LZC_TentAddonLarge, then the kit (MiscObject), the tent (Activator),
+			// and optionally its own clutter: the anchor reference and the item
+			// references, arranged around it as for the plugin's own sets.
+			void FindTentTypes()
+			{
+				for (const auto& [kits, tents, size] : { std::tuple{ "LZC_LargeTentKits", "LZC_LargeTents", kLarge },
+						 std::tuple{ "LZC_SmallTentKits", "LZC_SmallTents", kSmall } }) {
+					const auto kitForms = _props.Forms<RE::TESForm>(kits);
+					const auto tentForms = _props.Forms<RE::TESBoundObject>(tents);
+					for (std::size_t i = 0; i < kitForms.size(); ++i) {
+						_tentTypes.push_back({ kitForms[i], i < tentForms.size() ? tentForms[i] : nullptr, size });
+					}
+				}
+				auto* small = _props.Form<RE::BGSKeyword>("LZC_TentAddonSmall");
+				auto* large = _props.Form<RE::BGSKeyword>("LZC_TentAddonLarge");
+				auto* dataHandler = RE::TESDataHandler::GetSingleton();
+				if (!dataHandler || (!small && !large)) {
+					return;
+				}
+				std::int32_t nextSet = 7;  // after the plugin's six clutter sets
+				for (auto* list : dataHandler->GetFormArray<RE::BGSListForm>()) {
+					const auto& forms = list ? list->forms : decltype(list->forms){};
+					if (forms.size() < 3 || !forms[0] || (forms[0] != small && forms[0] != large)) {
+						continue;
+					}
+					TentType kind{ forms[1], forms[2] ? forms[2]->As<RE::TESBoundObject>() : nullptr, forms[0] == large ? kLarge : kSmall };
+					if (!kind.kit || !kind.tent) {
+						logger::warn("Tent addon list {:08X} needs a kit and a tent after its keyword", list->GetFormID());
+						continue;
+					}
+					if (forms.size() > 3 && forms[3]) {
+						kind.anchor = forms[3]->As<RE::TESObjectREFR>();
+						for (std::size_t i = 4; i < forms.size(); ++i) {
+							if (auto* item = forms[i] ? forms[i]->As<RE::TESObjectREFR>() : nullptr) {
+								kind.items.push_back(item);
+							}
+						}
+						if (kind.anchor) {
+							kind.clutterSet = nextSet++;
+						}
+					}
+					logger::info("Tent addon {:08X}: {} tent {:08X}, kit {:08X}, {} clutter item(s)", list->GetFormID(),
+						kind.size == kLarge ? "large" : "small", kind.tent->GetFormID(), kind.kit->GetFormID(), kind.items.size());
+					_tentTypes.push_back(std::move(kind));
 				}
 			}
 
@@ -489,22 +537,25 @@ namespace CampLayout
 			void ChooseTents()
 			{
 				_bedrollsCarried = Count(_props.Form<RE::TESForm>("LZC_BedrollKit"));
-				const auto largeKits = _props.Forms<RE::TESForm>("LZC_LargeTentKits");
-				const auto smallKits = _props.Forms<RE::TESForm>("LZC_SmallTentKits");
-				for (std::size_t color = 0; color < largeKits.size() && _tents.empty() && _bedrollsCarried > 0; ++color) {
-					if (largeKits[color] && Count(largeKits[color]) > 0) {
-						_tents.push_back({ nullptr, kLarge, static_cast<std::int32_t>(color) });
-						_tents.back().owner = TakeKit(largeKits[color]);
+				for (std::size_t type = 0; type < _tentTypes.size() && _tents.empty() && _bedrollsCarried > 0; ++type) {
+					const auto& kind = _tentTypes[type];
+					if (kind.size == kLarge && kind.kit && Count(kind.kit) > 0) {
+						_tents.push_back({ nullptr, kLarge, static_cast<std::int32_t>(type) });
+						_tents.back().owner = TakeKit(kind.kit);
 					}
 				}
 				const auto room = [&] {
 					return static_cast<std::int32_t>(_tents.size()) < kMaxTents &&
 					       static_cast<std::int32_t>(_tents.size()) < _bedrollsCarried;
 				};
-				for (std::size_t color = 0; color < smallKits.size() && room(); ++color) {
-					for (std::int32_t have = smallKits[color] ? Count(smallKits[color]) : 0; have > 0 && room(); --have) {
-						_tents.push_back({ nullptr, kSmall, static_cast<std::int32_t>(color) });
-						_tents.back().owner = TakeKit(smallKits[color]);
+				for (std::size_t type = 0; type < _tentTypes.size() && room(); ++type) {
+					const auto& kind = _tentTypes[type];
+					if (kind.size != kSmall || !kind.kit) {
+						continue;
+					}
+					for (std::int32_t have = Count(kind.kit); have > 0 && room(); --have) {
+						_tents.push_back({ nullptr, kSmall, static_cast<std::int32_t>(type) });
+						_tents.back().owner = TakeKit(kind.kit);
 					}
 				}
 			}
@@ -575,9 +626,10 @@ namespace CampLayout
 				for (std::size_t t = 0; t < _tents.size(); ++t) {
 					auto&       tent = _tents[t];
 					const auto& forms = tent.size == kLarge ? largeTents : smallTents;
-					if (!forms.empty()) {
-						const auto color = static_cast<std::size_t>(tent.color);
-						tent.form = color < forms.size() && forms[color] ? forms[color] : forms[0];
+					const auto  type = static_cast<std::size_t>(tent.color);
+					tent.form = type < _tentTypes.size() ? _tentTypes[type].tent : nullptr;
+					if (!tent.form && !forms.empty()) {
+						tent.form = forms[0];
 					}
 					const float bearing = FanBearing(static_cast<std::int32_t>(t));
 					const float distance = tent.size == kLarge ? kLargeTentDistance : kSmallTentDistance;
@@ -827,7 +879,9 @@ namespace CampLayout
 					_layout.fwd[kFirstTent + t] = _tents[t].fwd;
 					_layout.side[kFirstTent + t] = _tents[t].side;
 					_layout.turn[kFirstTent + t] = _tents[t].turn;
-					_layout.clutterSet[kFirstTent + t] = 2 + _tents[t].size;  // 2 small, 3 large
+					// 2 small, 3 large, or an addon tent's own set.
+					const auto& kind = _tentTypes[static_cast<std::size_t>(_tents[t].color)];
+					_layout.clutterSet[kFirstTent + t] = kind.clutterSet > 0 ? kind.clutterSet : 2 + _tents[t].size;
 				}
 				// Each touching pair, counted tent by tent, takes the next colour step.
 				std::vector<std::int32_t> pairBase(_tents.size(), 0);
@@ -950,8 +1004,27 @@ namespace CampLayout
 						}
 					}
 				}
+				// Addon tents' own clutter sets, after the six above.
+				std::set<RE::TESBoundObject*> storageBases;
 				for (auto* marker : _props.Forms<RE::TESObjectREFR>("LZC_CampStorageMarkers")) {
 					_layout.storageMarkers.push_back(marker);
+					if (marker && marker->GetBaseObject()) {
+						storageBases.insert(marker->GetBaseObject());
+					}
+				}
+				for (const auto& kind : _tentTypes) {
+					if (kind.clutterSet <= 0) {
+						continue;
+					}
+					_layout.setAnchors.push_back(kind.anchor);
+					for (auto* item : kind.items) {
+						_layout.setItems.push_back(item);
+						_layout.itemSet.push_back(kind.clutterSet);
+						// A copy of the storage backpack in it marks the storage spot.
+						if (storageBases.contains(item->GetBaseObject())) {
+							_layout.storageMarkers.push_back(item);
+						}
+					}
 				}
 			}
 
@@ -1110,6 +1183,16 @@ namespace CampLayout
 			RE::Actor*                                        _player;
 			std::int32_t                                      _partners;
 			std::int32_t                                      _couples;
+			struct TentType
+			{
+				RE::TESForm*                    kit{ nullptr };
+				RE::TESBoundObject*             tent{ nullptr };
+				std::int32_t                    size{ kSmall };
+				RE::TESObjectREFR*              anchor{ nullptr };  // an addon tent's own clutter set, if any
+				std::vector<RE::TESObjectREFR*> items;
+				std::int32_t                    clutterSet{ 0 };  // its set number, or 0 for the plugin's
+			};
+			std::vector<TentType>                             _tentTypes;
 			RE::TESObjectREFR::InventoryCountMap              _counts;  // the player's and the followers' together
 			std::vector<RE::Actor*>                           _followers;
 			std::vector<RE::TESObjectREFR::InventoryCountMap> _followerCounts;

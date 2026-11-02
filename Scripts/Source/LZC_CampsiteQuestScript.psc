@@ -92,6 +92,12 @@ Bool Property PlaceCampfire = True Auto
 {Place the campfire, its clutter, light and cooking (SKSE menu). Without it,
 an invisible marker stands in the fire's place, and the firewood mechanic
 and chopping block are off.}
+Keyword Property LZC_TentAddonSmall Auto
+{Marks a tent addon's form list: this keyword first, then the tent kit
+(MiscObject), the tent (Activator) and optionally its own clutter anchor and
+clutter item references. Any plugin can add one; LazyCamping.dll finds them.}
+Keyword Property LZC_TentAddonLarge Auto
+{As LZC_TentAddonSmall, for a large tent.}
 Bool Property FadeOnSetUp = False Auto
 {Fade the screen to black while the camp goes up or is packed up, and back in
 once it's done (SKSE menu).}
