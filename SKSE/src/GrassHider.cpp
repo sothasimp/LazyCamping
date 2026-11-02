@@ -249,7 +249,10 @@ namespace GrassHider
 					continue;
 				}
 				auto& data = DataOf(shape);
-				if (data.instanceSize != kHalvesPerInstance) {
+				// Grass added a group at a time (from No Grass In Objects' cache,
+				// say) leaves the shape's instance size at 0; each group's own
+				// buffer size is checked below instead.
+				if (data.instanceSize != kHalvesPerInstance && data.instanceSize != 0) {
 					++a_stats.otherSize;
 					a_stats.lastOtherSize = data.instanceSize;
 					continue;
@@ -263,6 +266,16 @@ namespace GrassHider
 					const auto* instances = group && group->vertexBuffer ? group->vertexBuffer->data : nullptr;
 					const auto  key = std::make_tuple(group, instances, group ? group->instanceCount : 0);
 					if (!instances || group->instanceCount == 0 || state.clean.contains(key)) {
+						++i;
+						continue;
+					}
+					// The buffer must hold at least 16 half floats an instance,
+					// whatever the shape says.
+					const std::size_t needed = static_cast<std::size_t>(group->instanceCount) * kHalvesPerInstance * sizeof(std::uint16_t);
+					if (data.instanceSize == 0 && group->vertexBuffer->byteWidth < needed) {
+						++a_stats.otherSize;
+						a_stats.lastOtherSize = static_cast<std::uint32_t>(group->vertexBuffer->byteWidth / group->instanceCount / sizeof(std::uint16_t));
+						state.clean.insert(key);
 						++i;
 						continue;
 					}
