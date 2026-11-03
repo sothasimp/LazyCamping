@@ -570,6 +570,7 @@ namespace CampLayout
 					std::int32_t              bedrollStyle = 0;
 					RE::TESObjectREFR*        fireAnchor = nullptr;
 					std::vector<RE::TESObjectREFR*> fireItems;
+					bool                      noFireClutter = false;
 					std::vector<RE::TESObjectREFR*> items;
 					for (std::size_t i = 1; i < forms.size(); ++i) {
 						auto* form = forms[i];
@@ -597,7 +598,9 @@ namespace CampLayout
 							bedrollStyle = static_cast<std::int32_t>(global->value);
 						} else if (auto* nested = form->As<RE::BGSListForm>()) {
 							// The fire's clutter when one of these is the player's tent:
-							// an anchor base (items linked to it), or references.
+							// an anchor base (items linked to it), or references; an
+							// empty list for none at all.
+							noFireClutter = nested->forms.empty();
 							for (auto* entry : nested->forms) {
 								if (auto* ref = entry ? entry->As<RE::TESObjectREFR>() : nullptr) {
 									if (fireAnchor) {
@@ -609,7 +612,7 @@ namespace CampLayout
 									std::tie(fireAnchor, fireItems) = LinkedClutter(entry);
 								}
 							}
-							if (!fireAnchor) {
+							if (!fireAnchor && !noFireClutter) {
 								logger::warn("Tent addon list {:08X}: no fire clutter anchor found in {:08X}", list->GetFormID(), nested->GetFormID());
 							}
 						} else {
@@ -627,7 +630,7 @@ namespace CampLayout
 						continue;
 					}
 					const std::int32_t clutterSet = anchor ? nextSet++ : 0;
-					const std::int32_t fireSet = fireAnchor ? nextSet++ : 0;
+					const std::int32_t fireSet = fireAnchor ? nextSet++ : noFireClutter ? -1 : 0;
 					for (auto& kind : kinds) {
 						// A tent already added (by another list) is updated, not
 						// added again: a patch can give an addon's tents a bedroll,
@@ -640,7 +643,7 @@ namespace CampLayout
 							if (bedrollStyle != 0) {
 								same->bedrollStyle = bedrollStyle;
 							}
-							if (fireAnchor) {
+							if (fireAnchor || noFireClutter) {
 								same->fireAnchor = fireAnchor;
 								same->fireItems = fireItems;
 								same->fireSet = fireSet;
@@ -838,8 +841,8 @@ namespace CampLayout
 				// An addon's own fire clutter, when the player's tent is one of its.
 				if (!_tents.empty()) {
 					const auto type = static_cast<std::size_t>(_tents[0].color);
-					if (type < _tentTypes.size() && _tentTypes[type].fireSet > 0) {
-						fireSet = _tentTypes[type].fireSet;
+					if (type < _tentTypes.size() && _tentTypes[type].fireSet != 0) {
+						fireSet = std::max(_tentTypes[type].fireSet, 0);  // -1: no fire clutter
 					}
 				}
 				_layout.clutterSet[kCampfire] = fireSet;
@@ -1426,7 +1429,7 @@ namespace CampLayout
 				std::int32_t                    bedrollStyle{ 0 };  // or its own bedroll style (as BedrollStyle), if not 0
 				RE::TESObjectREFR*              fireAnchor{ nullptr };  // the fire's clutter when it's the player's tent, if any
 				std::vector<RE::TESObjectREFR*> fireItems;
-				std::int32_t                    fireSet{ 0 };
+				std::int32_t                    fireSet{ 0 };  // its set number, 0 for the plugin's, -1 for none
 			};
 			std::vector<TentType>                             _tentTypes;
 			RE::TESObjectREFR::InventoryCountMap              _counts;  // the player's and the followers' together
