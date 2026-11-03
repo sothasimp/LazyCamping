@@ -21,6 +21,7 @@ namespace CampLayout
 		constexpr auto kPluginPrefix = "Wayfarer - A Convenient Camping Framework."sv;
 		constexpr RE::FormID kXMarker = 0x3B;  // Skyrim.esm XMarker: the fire's place when there's no fire
 		constexpr auto kBedrollAltPlugin = "Bedroll Alternative - BOS Color Variance.esp"sv;
+		constexpr auto kAshNomadBedrollsPlugin = "Ash Nomad - Bedrolls - BOS Distributed.esp"sv;
 
 		// Slots in the layout (and in the script's placedRefs).
 		constexpr std::size_t kCampfire = 0;
@@ -977,22 +978,28 @@ namespace CampLayout
 			}
 
 			// A bedroll in the style chosen on the SKSE menu: vanilla, or one of
-			// Bedroll Alternative's colours. `colorSeq` steps through green, blue
-			// and red for mixed colours.
+			// The bedroll for BedrollStyle: vanilla (0), Bedroll Alternative's green,
+			// blue, red or mixed (1-4), or Ash Nomad's blue, red, purple or mixed
+			// (5-8), each looked up at run time. `colorSeq` steps through the three
+			// colours for mixed.
 			RE::TESForm* BedrollForm(std::int32_t a_colorSeq) const
 			{
-				auto*        vanilla = _props.Form<RE::TESForm>("LZC_BedrollPlaced");
-				std::int32_t style = _props.Int("BedrollStyle", 0);
-				auto*        dataHandler = RE::TESDataHandler::GetSingleton();
-				if (style < 1 || style > 4 || !dataHandler ||
-					(!dataHandler->LookupLoadedModByName(kBedrollAltPlugin) && !dataHandler->LookupLoadedLightModByName(kBedrollAltPlugin))) {
+				auto*              vanilla = _props.Form<RE::TESForm>("LZC_BedrollPlaced");
+				const std::int32_t style = _props.Int("BedrollStyle", 0);
+				auto*              dataHandler = RE::TESDataHandler::GetSingleton();
+				const bool         ash = style >= 5 && style <= 8;
+				const auto         plugin = ash ? kAshNomadBedrollsPlugin : kBedrollAltPlugin;
+				if (style < 1 || style > 8 || !dataHandler ||
+					(!dataHandler->LookupLoadedModByName(plugin) && !dataHandler->LookupLoadedLightModByName(plugin))) {
 					return vanilla;
 				}
-				if (style == 4) {
-					style = a_colorSeq % 3 + 1;
+				std::int32_t colour = ash ? style - 5 : style - 1;  // 0-2, or 3 for mixed
+				if (colour == 3) {
+					colour = a_colorSeq % 3;
 				}
-				const RE::FormID id = style == 2 ? 0xD70 : style == 3 ? 0xD69 : 0xD62;  // blue, red, green
-				auto*            bedroll = dataHandler->LookupForm(id, kBedrollAltPlugin);
+				constexpr RE::FormID alternative[] = { 0xD62, 0xD70, 0xD69 };  // green, blue, red
+				constexpr RE::FormID ashNomad[] = { 0xD62, 0xD63, 0xD64 };     // Bedroll01_dunmerblue, red, purple
+				auto* bedroll = dataHandler->LookupForm((ash ? ashNomad : alternative)[colour], plugin);
 				return bedroll ? bedroll : vanilla;
 			}
 

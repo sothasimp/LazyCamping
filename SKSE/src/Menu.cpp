@@ -30,7 +30,7 @@ namespace Menu
 			bool         alignToSlope{ true };
 			int          seatColor{ 0 };
 			int          bedrollStyle{ 0 };
-			bool         bedrollAltLoaded{ false };
+			bool         bedrollAltLoaded{ false };  // Bedroll Alternative - BOS Color Variance
 			bool         kitsAtMerchants{ true };
 			int          firewoodPerFire{ 2 };
 			bool         placeMapMarker{ true };
@@ -38,11 +38,24 @@ namespace Menu
 			bool         placeCampfire{ true };
 			bool         placeFireSeats{ true };
 			bool         fadeOnSetUp{ false };
+			bool         ashNomadLoaded{ false };  // Ash Nomad - Bedrolls - BOS Distributed
 		};
 
 		constexpr const char* kBedrollStyles[] = { "Vanilla", "Bedroll Alternative - Green", "Bedroll Alternative - Blue",
-			"Bedroll Alternative - Red", "Bedroll Alternative - Random Color" };
+			"Bedroll Alternative - Red", "Bedroll Alternative - Random Color", "Ash Nomad - Blue", "Ash Nomad - Red", "Ash Nomad - Purple",
+			"Ash Nomad - Random Color" };
 		constexpr auto        kBedrollAltPlugin = "Bedroll Alternative - BOS Color Variance.esp"sv;
+		constexpr auto        kAshNomadBedrollsPlugin = "Ash Nomad - Bedrolls - BOS Distributed.esp"sv;
+
+		bool PluginLoaded(std::string_view a_name)
+		{
+			auto* dataHandler = RE::TESDataHandler::GetSingleton();
+			return dataHandler && (dataHandler->LookupLoadedModByName(a_name) || dataHandler->LookupLoadedLightModByName(a_name));
+		}
+
+		// The style the bedroll kit's texture follows: only Bedroll Alternative's
+		// colours have one.
+		int KitStyle(int a_style, bool a_altLoaded) { return a_altLoaded && a_style >= 1 && a_style <= 4 ? a_style : 0; }
 
 		constexpr const char* kSeatColors[] = { "Brown", "White", "Plaid - Green", "Plaid - Yellow", "Plaid - Blue" };
 
@@ -89,9 +102,9 @@ namespace Menu
 				auto* dataHandler = RE::TESDataHandler::GetSingleton();
 				values = { firewood->GetBool(), burnHours->GetFloat(), block->GetBool(), grass->GetBool(), light->GetBool(), tub->GetBool(),
 					tubInTent->GetBool(), slope->GetBool(), seat->GetSInt(), bedroll->GetSInt(),
-					dataHandler && (dataHandler->LookupLoadedModByName(kBedrollAltPlugin) ||
-										dataHandler->LookupLoadedLightModByName(kBedrollAltPlugin)),
-					merchants->GetBool(), perFire->GetSInt(), mapMarker->GetBool(), rolled->GetBool(), campfire->GetBool(), fireSeats->GetBool(), fade->GetBool() };
+					PluginLoaded(kBedrollAltPlugin),
+					merchants->GetBool(), perFire->GetSInt(), mapMarker->GetBool(), rolled->GetBool(), campfire->GetBool(), fireSeats->GetBool(), fade->GetBool(),
+					PluginLoaded(kAshNomadBedrollsPlugin) };
 			}
 
 			std::scoped_lock guard(lock);
@@ -153,7 +166,7 @@ namespace Menu
 				if (auto* bedroll = AutoProperty(object.get(), "BedrollStyle")) {
 					bedroll->SetSInt(a_values.bedrollStyle);
 				}
-				BedrollKit::Apply(object.get(), a_values.bedrollAltLoaded ? a_values.bedrollStyle : 0);
+				BedrollKit::Apply(object.get(), KitStyle(a_values.bedrollStyle, a_values.bedrollAltLoaded));
 				if (auto* merchants = AutoProperty(object.get(), "KitsAtMerchants")) {
 					merchants->SetBool(a_values.kitsAtMerchants);
 				}
@@ -211,10 +224,19 @@ namespace Menu
 			if (ImGuiMCP::CollapsingHeader("Bedrolls", open)) {
 				changed |= ImGuiMCP::Checkbox("Bedrolls start rolled up", &values.bedrollsStartRolled);
 				ImGuiMCP::SetItemTooltip("Each bedroll starts as a rolled-up bedroll on the ground: activate it to unroll it in its place. Followers unroll their own at bedtime. Takes effect at the next camp.");
-				ImGuiMCP::BeginDisabled(!values.bedrollAltLoaded);
-				changed |= ImGuiMCP::Combo("Bedroll style", &values.bedrollStyle, kBedrollStyles, static_cast<int>(std::size(kBedrollStyles)));
-				ImGuiMCP::SetItemTooltip("Needs Bedroll Alternative - BOS Color Variance. The camp's bedrolls: vanilla, one of its colors, or its colors in turn, pairs in a tent matching. Takes effect at the next camp.");
-				ImGuiMCP::EndDisabled();
+				// Each mod's styles greyed out unless it's loaded.
+				const int styleCount = static_cast<int>(std::size(kBedrollStyles));
+				if (ImGuiMCP::BeginCombo("Bedroll style", kBedrollStyles[std::clamp(values.bedrollStyle, 0, styleCount - 1)])) {
+					for (int style = 0; style < styleCount; ++style) {
+						const bool available = style == 0 || (style <= 4 ? values.bedrollAltLoaded : values.ashNomadLoaded);
+						if (ImGuiMCP::Selectable(kBedrollStyles[style], values.bedrollStyle == style, available ? 0 : ImGuiMCP::ImGuiSelectableFlags_Disabled)) {
+							values.bedrollStyle = style;
+							changed = true;
+						}
+					}
+					ImGuiMCP::EndCombo();
+				}
+				ImGuiMCP::SetItemTooltip("The camp's bedrolls: vanilla, or with Bedroll Alternative - BOS Color Variance or Ash Nomad - Bedrolls - BOS Distributed installed, one of its colors, or its colors in turn, pairs in a tent matching. Takes effect at the next camp.");
 			}
 
 			if (ImGuiMCP::CollapsingHeader("Fire", open)) {
@@ -265,10 +287,7 @@ namespace Menu
 		VendorKits::Apply(!merchants || merchants->GetBool());
 
 		auto* bedroll = object ? AutoProperty(object.get(), "BedrollStyle") : nullptr;
-		auto* dataHandler = RE::TESDataHandler::GetSingleton();
-		const bool loaded = dataHandler && (dataHandler->LookupLoadedModByName(kBedrollAltPlugin) ||
-											   dataHandler->LookupLoadedLightModByName(kBedrollAltPlugin));
-		BedrollKit::Apply(object.get(), bedroll && loaded ? bedroll->GetSInt() : 0);
+		BedrollKit::Apply(object.get(), bedroll ? KitStyle(bedroll->GetSInt(), PluginLoaded(kBedrollAltPlugin)) : 0);
 	}
 
 	void Register()
