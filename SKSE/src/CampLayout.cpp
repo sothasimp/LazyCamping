@@ -567,6 +567,7 @@ namespace CampLayout
 					RE::TESObjectREFR*  anchor = nullptr;
 					RE::TESForm*        anchorBase = nullptr;
 					std::vector<RE::TESForm*> bedrolls;
+					std::int32_t              bedrollStyle = 0;
 					std::vector<RE::TESObjectREFR*> items;
 					for (std::size_t i = 1; i < forms.size(); ++i) {
 						auto* form = forms[i];
@@ -590,6 +591,8 @@ namespace CampLayout
 							kit = form;
 						} else if (form->Is(RE::FormType::Furniture)) {
 							bedrolls.push_back(form);
+						} else if (auto* global = form->As<RE::TESGlobal>()) {
+							bedrollStyle = static_cast<std::int32_t>(global->value);
 						} else {
 							anchorBase = form;
 						}
@@ -614,6 +617,9 @@ namespace CampLayout
 							if (!bedrolls.empty()) {
 								same->bedrolls = bedrolls;
 							}
+							if (bedrollStyle != 0) {
+								same->bedrollStyle = bedrollStyle;
+							}
 							if (anchor) {
 								same->anchor = anchor;
 								same->items = items;
@@ -623,6 +629,7 @@ namespace CampLayout
 							continue;
 						}
 						kind.bedrolls = bedrolls;
+						kind.bedrollStyle = bedrollStyle;
 						kind.anchor = anchor;
 						kind.items = items;
 						kind.clutterSet = clutterSet;
@@ -977,29 +984,39 @@ namespace CampLayout
 			}
 
 			// A bedroll in the style chosen on the SKSE menu: vanilla, or one of
-			// The bedroll for BedrollStyle: vanilla (0), Bedroll Alternative's green,
-			// blue, red or mixed (1-4), or Ash Nomad's blue, red, purple or mixed
-			// (5-8), each looked up at run time. `colorSeq` steps through the three
-			// colours for mixed.
-			RE::TESForm* BedrollForm(std::int32_t a_colorSeq) const
+			// The bedroll for a bedroll style: Bedroll Alternative's green, blue,
+			// red or mixed (1-4), or Ash Nomad's blue, red, purple or mixed (5-8),
+			// each looked up at run time; nullptr for vanilla (0) or if that mod
+			// isn't loaded. `colorSeq` steps through the three colours for mixed.
+			static RE::TESForm* StyleBedroll(std::int32_t a_style, std::int32_t a_colorSeq)
 			{
-				auto*              vanilla = _props.Form<RE::TESForm>("LZC_BedrollPlaced");
-				const std::int32_t style = _props.Int("BedrollStyle", 0);
-				auto*              dataHandler = RE::TESDataHandler::GetSingleton();
-				const bool         ash = style >= 5 && style <= 8;
-				const auto         plugin = ash ? kAshNomadBedrollsPlugin : kBedrollAltPlugin;
-				if (style < 1 || style > 8 || !dataHandler ||
+				auto*      dataHandler = RE::TESDataHandler::GetSingleton();
+				const bool ash = a_style >= 5 && a_style <= 8;
+				const auto plugin = ash ? kAshNomadBedrollsPlugin : kBedrollAltPlugin;
+				if (a_style < 1 || a_style > 8 || !dataHandler ||
 					(!dataHandler->LookupLoadedModByName(plugin) && !dataHandler->LookupLoadedLightModByName(plugin))) {
-					return vanilla;
+					return nullptr;
 				}
-				std::int32_t colour = ash ? style - 5 : style - 1;  // 0-2, or 3 for mixed
+				std::int32_t colour = ash ? a_style - 5 : a_style - 1;  // 0-2, or 3 for mixed
 				if (colour == 3) {
 					colour = a_colorSeq % 3;
 				}
 				constexpr RE::FormID alternative[] = { 0xD62, 0xD70, 0xD69 };  // green, blue, red
 				constexpr RE::FormID ashNomad[] = { 0xD62, 0xD63, 0xD64 };     // Bedroll01_dunmerblue, red, purple
-				auto* bedroll = dataHandler->LookupForm((ash ? ashNomad : alternative)[colour], plugin);
-				return bedroll ? bedroll : vanilla;
+				return dataHandler->LookupForm((ash ? ashNomad : alternative)[colour], plugin);
+			}
+
+			// The bedroll for BedrollStyle (SKSE menu), or for a_style if given and
+			// its mod is loaded (an addon tent's own style); vanilla otherwise.
+			RE::TESForm* BedrollForm(std::int32_t a_colorSeq, std::int32_t a_style = 0) const
+			{
+				if (auto* bedroll = StyleBedroll(a_style, a_colorSeq)) {
+					return bedroll;
+				}
+				if (auto* bedroll = StyleBedroll(_props.Int("BedrollStyle", 0), a_colorSeq)) {
+					return bedroll;
+				}
+				return _props.Form<RE::TESForm>("LZC_BedrollPlaced");
 			}
 
 			// Side by side across the tent, facing the way it does: a small tent's
@@ -1013,8 +1030,10 @@ namespace CampLayout
 				// An addon tent can bring its own bedrolls, taken in turn by color
 				// step (the two of a touching pair matching).
 				const auto   type = static_cast<std::size_t>(a_tent.color);
-				const auto*  own = type < _tentTypes.size() && !_tentTypes[type].bedrolls.empty() ? &_tentTypes[type].bedrolls : nullptr;
-				RE::TESForm* bedroll = own ? (*own)[static_cast<std::size_t>(a_colorSeq) % own->size()] : BedrollForm(a_colorSeq);
+				const auto*  kind = type < _tentTypes.size() ? &_tentTypes[type] : nullptr;
+				const auto*  own = kind && !kind->bedrolls.empty() ? &kind->bedrolls : nullptr;
+				RE::TESForm* bedroll = own ? (*own)[static_cast<std::size_t>(a_colorSeq) % own->size()] :
+				                             BedrollForm(a_colorSeq, kind ? kind->bedrollStyle : 0);
 				Set(a_slot, bedroll,
 					a_tent.fwd + offset * Cos(a_tent.turn + 90.0f) - back * Cos(a_tent.turn),
 					a_tent.side + offset * Sin(a_tent.turn + 90.0f) - back * Sin(a_tent.turn),
@@ -1364,6 +1383,7 @@ namespace CampLayout
 				std::vector<RE::TESObjectREFR*> items;
 				std::int32_t                    clutterSet{ 0 };  // its set number, or 0 for the plugin's
 				std::vector<RE::TESForm*>       bedrolls;  // an addon tent's own bedrolls, taken in turn, if any
+				std::int32_t                    bedrollStyle{ 0 };  // or its own bedroll style (as BedrollStyle), if not 0
 			};
 			std::vector<TentType>                             _tentTypes;
 			RE::TESObjectREFR::InventoryCountMap              _counts;  // the player's and the followers' together
