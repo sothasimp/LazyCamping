@@ -1178,6 +1178,21 @@ namespace CampLayout
 				}
 			}
 
+			// Moves one of the persistent pieces from the holding cell (or the last
+			// camp) to a_target, disabled first and enabled after, so it loads
+			// afresh there, collision and all: otherwise it can keep its old
+			// collision and can't be activated at the camp.
+			static void MoveFresh(RE::TESObjectREFR* a_ref, RE::TESObjectREFR* a_target, std::string_view a_what)
+			{
+				a_ref->Disable();
+				a_ref->MoveTo(a_target);
+				a_ref->Enable(false);
+				const auto  pos = a_ref->GetPosition();
+				const auto* cell = a_ref->GetParentCell();
+				logger::info("Moved the {} ({:08X}) to ({:.0f}, {:.0f}, {:.0f}) in cell {:08X}{}", a_what, a_ref->GetFormID(), pos.x, pos.y, pos.z,
+					cell ? cell->GetFormID() : 0, a_ref->IsDisabled() ? ", still disabled" : "");
+			}
+
 			// The pieces that move to the camp rather than being placed.
 			void Settle(std::vector<RE::TESObjectREFR*>& a_refs) const
 			{
@@ -1186,8 +1201,7 @@ namespace CampLayout
 				// The cook box goes over the fire, enabled only while it's lit.
 				auto* cookBox = _props.Bool("PlaceCampfire", true) ? _props.Form<RE::TESObjectREFR>("LZC_CookBox") : nullptr;
 				if (cookBox && campfire) {
-					cookBox->MoveTo(campfire);
-					cookBox->Enable(false);
+					MoveFresh(cookBox, campfire, "cook box");
 				}
 				// With the firewood mechanic the fire starts unlit: the firepit shows.
 				if (a_refs[kFirepit]) {
@@ -1207,7 +1221,7 @@ namespace CampLayout
 				auto* storage = _props.Form<RE::TESObjectREFR>("LZC_CampStorage");
 				if (auto* spot = a_refs[kSlotCount]) {
 					if (storage) {
-						storage->MoveTo(spot);
+						MoveFresh(storage, spot, "storage");
 					}
 					spot->Disable();
 					spot->SetDelete(true);
