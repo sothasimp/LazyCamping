@@ -565,6 +565,7 @@ namespace CampLayout
 					RE::TESForm*        kit = nullptr;
 					RE::TESObjectREFR*  anchor = nullptr;
 					RE::TESForm*        anchorBase = nullptr;
+					RE::TESForm*        bedroll = nullptr;
 					std::vector<RE::TESObjectREFR*> items;
 					for (std::size_t i = 1; i < forms.size(); ++i) {
 						auto* form = forms[i];
@@ -586,6 +587,8 @@ namespace CampLayout
 							}
 						} else if (form->Is(RE::FormType::Misc)) {
 							kit = form;
+						} else if (form->Is(RE::FormType::Furniture)) {
+							bedroll = form;
 						} else {
 							anchorBase = form;
 						}
@@ -602,6 +605,24 @@ namespace CampLayout
 					}
 					const std::int32_t clutterSet = anchor ? nextSet++ : 0;
 					for (auto& kind : kinds) {
+						// A tent already added (by another list) is updated, not
+						// added again: a patch can give an addon's tents a bedroll,
+						// or clutter, by repeating its kit/tent pairs.
+						const auto same = std::ranges::find_if(_tentTypes, [&](const TentType& a_type) { return a_type.tent == kind.tent; });
+						if (same != _tentTypes.end()) {
+							if (bedroll) {
+								same->bedroll = bedroll;
+							}
+							if (anchor) {
+								same->anchor = anchor;
+								same->items = items;
+								same->clutterSet = clutterSet;
+							}
+							logger::info("Tent addon {:08X}: updates tent {:08X}{}", list->GetFormID(), kind.tent->GetFormID(),
+								bedroll ? std::format(" with bedroll {:08X}", bedroll->GetFormID()) : std::string());
+							continue;
+						}
+						kind.bedroll = bedroll;
 						kind.anchor = anchor;
 						kind.items = items;
 						kind.clutterSet = clutterSet;
@@ -983,7 +1004,10 @@ namespace CampLayout
 				const std::int32_t rowLength = a_tent.size == kLarge ? _props.Int("LargeTentCapacity", 4) : a_tent.beds;
 				const float        back = a_tent.size == kLarge ? kLargeTentBedrollBack : 0.0f;
 				const float        offset = RowPosition(rowLength - 1) / 2.0f - RowPosition(a_index);
-				Set(a_slot, BedrollForm(a_colorSeq),
+				// An addon tent can bring its own bedroll.
+				const auto   type = static_cast<std::size_t>(a_tent.color);
+				RE::TESForm* bedroll = type < _tentTypes.size() && _tentTypes[type].bedroll ? _tentTypes[type].bedroll : BedrollForm(a_colorSeq);
+				Set(a_slot, bedroll,
 					a_tent.fwd + offset * Cos(a_tent.turn + 90.0f) - back * Cos(a_tent.turn),
 					a_tent.side + offset * Sin(a_tent.turn + 90.0f) - back * Sin(a_tent.turn),
 					a_tent.size == kLarge ? a_tent.turn + 180.0f : a_tent.turn);
@@ -1129,17 +1153,23 @@ namespace CampLayout
 						storageBases.insert(marker->GetBaseObject());
 					}
 				}
-				// Each addon list's set once, however many tents share it.
-				std::int32_t lastSet = 6;
+				// Each addon set once, however many tents share it, in set number
+				// order (sets are found by position); a number no tent uses any
+				// more (a patch gave its tents other clutter) stays empty.
+				std::map<std::int32_t, const TentType*> addonSets;
 				for (const auto& kind : _tentTypes) {
-					if (kind.clutterSet <= lastSet) {
-						continue;
+					if (kind.clutterSet > 0) {
+						addonSets.try_emplace(kind.clutterSet, &kind);
 					}
-					lastSet = kind.clutterSet;
-					_layout.setAnchors.push_back(kind.anchor);
-					for (auto* item : kind.items) {
+				}
+				const std::int32_t lastSet = addonSets.empty() ? 6 : addonSets.rbegin()->first;
+				for (std::int32_t set = 7; set <= lastSet; ++set) {
+					const auto it = addonSets.find(set);
+					const auto* kind = it != addonSets.end() ? it->second : nullptr;
+					_layout.setAnchors.push_back(kind ? kind->anchor : nullptr);
+					for (auto* item : kind ? kind->items : std::vector<RE::TESObjectREFR*>{}) {
 						_layout.setItems.push_back(item);
-						_layout.itemSet.push_back(kind.clutterSet);
+						_layout.itemSet.push_back(set);
 						// A copy of the storage backpack in it marks the storage spot.
 						if (storageBases.contains(item->GetBaseObject())) {
 							_layout.storageMarkers.push_back(item);
@@ -1311,6 +1341,7 @@ namespace CampLayout
 				RE::TESObjectREFR*              anchor{ nullptr };  // an addon tent's own clutter set, if any
 				std::vector<RE::TESObjectREFR*> items;
 				std::int32_t                    clutterSet{ 0 };  // its set number, or 0 for the plugin's
+				RE::TESForm*                    bedroll{ nullptr };  // an addon tent's own bedroll, if any
 			};
 			std::vector<TentType>                             _tentTypes;
 			RE::TESObjectREFR::InventoryCountMap              _counts;  // the player's and the followers' together
