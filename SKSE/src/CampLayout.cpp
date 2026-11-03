@@ -524,25 +524,49 @@ namespace CampLayout
 					if (forms.size() < 3 || !forms[0] || (forms[0] != smallMarker && forms[0] != largeMarker)) {
 						continue;
 					}
-					TentType kind{ forms[1], forms[2] ? forms[2]->As<RE::TESBoundObject>() : nullptr, forms[0] == largeMarker ? kLarge : kSmall };
-					if (!kind.kit || !kind.tent) {
-						logger::warn("Tent addon list {:08X} needs a kit and a tent after its keyword", list->GetFormID());
+					// Kit/tent pairs (a kit, then the Activator after it), then the
+					// references: the clutter anchor, then its items, shared by
+					// every tent in the list.
+					const std::int32_t  size = forms[0] == largeMarker ? kLarge : kSmall;
+					std::vector<TentType> kinds;
+					RE::TESForm*        kit = nullptr;
+					RE::TESObjectREFR*  anchor = nullptr;
+					std::vector<RE::TESObjectREFR*> items;
+					for (std::size_t i = 1; i < forms.size(); ++i) {
+						auto* form = forms[i];
+						if (!form) {
+							continue;
+						}
+						if (auto* ref = form->As<RE::TESObjectREFR>()) {
+							if (anchor) {
+								items.push_back(ref);
+							} else {
+								anchor = ref;
+							}
+						} else if (form->Is(RE::FormType::Activator)) {
+							if (kit) {
+								kinds.push_back({ kit, form->As<RE::TESBoundObject>(), size });
+								kit = nullptr;
+							} else {
+								logger::warn("Tent addon list {:08X}: tent {:08X} has no kit before it", list->GetFormID(), form->GetFormID());
+							}
+						} else {
+							kit = form;
+						}
+					}
+					if (kinds.empty()) {
+						logger::warn("Tent addon list {:08X} needs a kit and then a tent after its keyword", list->GetFormID());
 						continue;
 					}
-					if (forms.size() > 3 && forms[3]) {
-						kind.anchor = forms[3]->As<RE::TESObjectREFR>();
-						for (std::size_t i = 4; i < forms.size(); ++i) {
-							if (auto* item = forms[i] ? forms[i]->As<RE::TESObjectREFR>() : nullptr) {
-								kind.items.push_back(item);
-							}
-						}
-						if (kind.anchor) {
-							kind.clutterSet = nextSet++;
-						}
+					const std::int32_t clutterSet = anchor ? nextSet++ : 0;
+					for (auto& kind : kinds) {
+						kind.anchor = anchor;
+						kind.items = items;
+						kind.clutterSet = clutterSet;
+						logger::info("Tent addon {:08X}: {} tent {:08X}, kit {:08X}, {} clutter item(s)", list->GetFormID(),
+							size == kLarge ? "large" : "small", kind.tent->GetFormID(), kind.kit->GetFormID(), kind.items.size());
+						_tentTypes.push_back(std::move(kind));
 					}
-					logger::info("Tent addon {:08X}: {} tent {:08X}, kit {:08X}, {} clutter item(s)", list->GetFormID(),
-						kind.size == kLarge ? "large" : "small", kind.tent->GetFormID(), kind.kit->GetFormID(), kind.items.size());
-					_tentTypes.push_back(std::move(kind));
 				}
 			}
 
@@ -1063,10 +1087,13 @@ namespace CampLayout
 						storageBases.insert(marker->GetBaseObject());
 					}
 				}
+				// Each addon list's set once, however many tents share it.
+				std::int32_t lastSet = 6;
 				for (const auto& kind : _tentTypes) {
-					if (kind.clutterSet <= 0) {
+					if (kind.clutterSet <= lastSet) {
 						continue;
 					}
+					lastSet = kind.clutterSet;
 					_layout.setAnchors.push_back(kind.anchor);
 					for (auto* item : kind.items) {
 						_layout.setItems.push_back(item);
