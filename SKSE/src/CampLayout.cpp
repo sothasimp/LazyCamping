@@ -290,18 +290,32 @@ namespace CampLayout
 
 		// Containers a follower framework keeps a follower's items in, besides
 		// their own inventory. Nether's Follower Framework (looked up at run
-		// time, not a master): with a custom outfit, a follower's extra storage
-		// lives in their satchel, nwsFFSatchelList's entry at their rank in
+		// time, not a master): a follower's extra storage is the container in
+		// nwsFollowerXStorage's alias 10 + n, where alias n holds the follower
+		// (nwsFollowerXStoreScript.OpenStorage); with a custom outfit, it's moved
+		// to their satchel, nwsFFSatchelList's entry at their rank in
 		// nwsFF_storedFac (nwsFollowerSetsScript).
 		std::vector<RE::TESObjectREFR*> FollowerStores(RE::Actor* a_follower)
 		{
 			constexpr auto       kNFF = "nwsFollowerFramework.esp"sv;
 			constexpr RE::FormID kStoredFaction = 0x0487D2;  // nwsFF_storedFac
 			constexpr RE::FormID kSatchelList = 0x4AF847;    // nwsFFSatchelList
+			constexpr RE::FormID kStorageQuest = 0x4220F4;   // nwsFollowerXStorage
+			constexpr std::uint32_t kStorageSlots = 10;
 			std::vector<RE::TESObjectREFR*> stores;
 			auto*                           dataHandler = RE::TESDataHandler::GetSingleton();
 			if (!a_follower || !dataHandler || (!dataHandler->LookupLoadedModByName(kNFF) && !dataHandler->LookupLoadedLightModByName(kNFF))) {
 				return stores;
+			}
+			if (auto* storage = dataHandler->LookupForm<RE::TESQuest>(kStorageQuest, kNFF)) {
+				for (std::uint32_t slot = 0; slot < kStorageSlots; ++slot) {
+					if (storage->GetAliasedRef(slot).get().get() == a_follower) {
+						if (auto container = storage->GetAliasedRef(slot + kStorageSlots).get()) {
+							stores.push_back(container.get());
+						}
+						break;
+					}
+				}
 			}
 			auto* stored = dataHandler->LookupForm<RE::TESFaction>(kStoredFaction, kNFF);
 			auto* satchels = dataHandler->LookupForm<RE::BGSListForm>(kSatchelList, kNFF);
