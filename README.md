@@ -219,11 +219,11 @@ For each tent, the addon has:
 
 1. a **tent kit**: a MiscObject the player (or a follower) carries, like `LZC_TentKitSmallBrown`;
 2. a **tent**: an Activator with the tent's mesh, like `LZC_TentSmallBrown` (same footprint as the plugin's small or large tents: about 170 × 170 or 300 × 200 units);
-3. optionally its **own clutter set**: in a holding cell of the addon's own, an anchor (any marker, standing in for the tent: its turn and height turn and raise the tent, as for the plugin's sets) and the clutter items arranged around it. A copy of the storage backpack among them marks where the player's storage goes when it's the player's tent. Without a set of its own, the tent gets the plugin's small or large tent clutter;
+3. optionally its **own clutter set**: in a holding cell of the addon's own, an anchor standing in for the tent (its turn and height turn and raise the tent, as for the plugin's sets) and the clutter items arranged around it. The anchor's base object must be its own (a copy of `XMarkerHeading`, say, used for nothing else), each item's *Linked Ref* must be the anchor, and the anchor and items must all be *Persistent References* (so they're in memory although the holding cell never loads). A copy of the storage backpack among them marks where the player's storage goes when it's the player's tent. Without a set of its own, the tent gets the plugin's small or large tent clutter;
 4. a **form list** tying them together, in this order:
    - `LZC_TentAddonSmall` or `LZC_TentAddonLarge` (keywords from this plugin), for the size of every tent in the list,
    - each tent's kit followed by its tent (as many kit/tent pairs as you like, e.g. one per color),
-   - and, for their own clutter, the anchor reference, then each item reference. All the tents in the list share this clutter set; put a tent in a list of its own to give it different clutter.
+   - and, for their own clutter, the anchor's **base object** (the Creation Kit's form lists hold base objects, not references; the items are found through their linked ref). All the tents in the list share this clutter set; put a tent in a list of its own to give it different clutter. (A list edited in xEdit can hold the anchor and item references themselves instead.)
 
    The editor ID of the list doesn't matter (for example `LZC_TentAddonAshSmall`); the keyword first is what marks it.
 

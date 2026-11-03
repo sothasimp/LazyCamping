@@ -288,6 +288,38 @@ namespace CampLayout
 			float               turn{ 0.0f };
 		};
 
+		// An addon tent's clutter set given by its anchor's base object: the one
+		// placed reference of that base (the anchor) and every reference whose
+		// linked reference is the anchor (the items). Both have to be persistent
+		// to be in memory. Looked up once per anchor base.
+		std::pair<RE::TESObjectREFR*, std::vector<RE::TESObjectREFR*>> LinkedClutter(const RE::TESForm* a_anchorBase)
+		{
+			static std::map<RE::FormID, std::pair<RE::TESObjectREFR*, std::vector<RE::TESObjectREFR*>>> found;
+			if (auto it = found.find(a_anchorBase->GetFormID()); it != found.end()) {
+				return it->second;
+			}
+			RE::TESObjectREFR*              anchor = nullptr;
+			std::vector<RE::TESObjectREFR*> items;
+			const auto& [map, lock] = RE::TESForm::GetAllForms();
+			if (map) {
+				const RE::BSReadLockGuard guard{ lock };
+				for (const auto& [id, form] : *map) {
+					auto* ref = form ? form->As<RE::TESObjectREFR>() : nullptr;
+					if (ref && ref->GetBaseObject() == a_anchorBase) {
+						anchor = ref;
+						break;
+					}
+				}
+				for (const auto& [id, form] : *map) {
+					auto* ref = anchor && form ? form->As<RE::TESObjectREFR>() : nullptr;
+					if (ref && ref != anchor && ref->GetLinkedRef(nullptr) == anchor) {
+						items.push_back(ref);
+					}
+				}
+			}
+			return found[a_anchorBase->GetFormID()] = { anchor, std::move(items) };
+		}
+
 		// Containers a follower framework keeps a follower's items in, besides
 		// their own inventory. Nether's Follower Framework (looked up at run
 		// time, not a master): a follower's extra storage is the container in
@@ -525,12 +557,14 @@ namespace CampLayout
 						continue;
 					}
 					// Kit/tent pairs (a kit, then the Activator after it), then the
-					// references: the clutter anchor, then its items, shared by
-					// every tent in the list.
+					// clutter shared by every tent in the list: the anchor's base
+					// object (its items are linked to the anchor), or the anchor and
+					// item references themselves (lists edited in xEdit).
 					const std::int32_t  size = forms[0] == largeMarker ? kLarge : kSmall;
 					std::vector<TentType> kinds;
 					RE::TESForm*        kit = nullptr;
 					RE::TESObjectREFR*  anchor = nullptr;
+					RE::TESForm*        anchorBase = nullptr;
 					std::vector<RE::TESObjectREFR*> items;
 					for (std::size_t i = 1; i < forms.size(); ++i) {
 						auto* form = forms[i];
@@ -550,8 +584,16 @@ namespace CampLayout
 							} else {
 								logger::warn("Tent addon list {:08X}: tent {:08X} has no kit before it", list->GetFormID(), form->GetFormID());
 							}
-						} else {
+						} else if (form->Is(RE::FormType::Misc)) {
 							kit = form;
+						} else {
+							anchorBase = form;
+						}
+					}
+					if (!anchor && anchorBase) {
+						std::tie(anchor, items) = LinkedClutter(anchorBase);
+						if (!anchor) {
+							logger::warn("Tent addon list {:08X}: no persistent reference of clutter anchor {:08X}", list->GetFormID(), anchorBase->GetFormID());
 						}
 					}
 					if (kinds.empty()) {
