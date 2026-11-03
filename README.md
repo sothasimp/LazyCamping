@@ -225,7 +225,7 @@ For each tent, the addon has:
    - each tent's kit followed by its tent (as many kit/tent pairs as you like, e.g. one per color),
    - and, for their own clutter, the anchor's **base object** (the Creation Kit's form lists hold base objects, not references; the items are found through their linked ref). All the tents in the list share this clutter set; put a tent in a list of its own to give it different clutter. (A list edited in xEdit can hold the anchor and item references themselves instead.)
 
-   - optionally a **bedroll** (Furniture) for every tent in the list, used in place of the vanilla or Bedroll Alternative one.
+   - optionally one or more **bedrolls** (Furniture) for the tents in the list, used in place of the style chosen in the SKSE menu. With several (Ash Nomad's blue, red and purple, say), they're taken in turn, the two of a touching pair matching.
 
    A list that repeats tents another list already added **updates** them rather than adding them twice: its bedroll, and its clutter if it has any, replace theirs. That's how an optional patch, with the addon and another mod as masters, can give the addon's tents that mod's bedrolls only when both are installed: a form list with the same keyword, the same kit/tent pairs, and the other mod's bedroll.
 

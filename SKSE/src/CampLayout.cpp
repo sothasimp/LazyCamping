@@ -566,7 +566,7 @@ namespace CampLayout
 					RE::TESForm*        kit = nullptr;
 					RE::TESObjectREFR*  anchor = nullptr;
 					RE::TESForm*        anchorBase = nullptr;
-					RE::TESForm*        bedroll = nullptr;
+					std::vector<RE::TESForm*> bedrolls;
 					std::vector<RE::TESObjectREFR*> items;
 					for (std::size_t i = 1; i < forms.size(); ++i) {
 						auto* form = forms[i];
@@ -589,7 +589,7 @@ namespace CampLayout
 						} else if (form->Is(RE::FormType::Misc)) {
 							kit = form;
 						} else if (form->Is(RE::FormType::Furniture)) {
-							bedroll = form;
+							bedrolls.push_back(form);
 						} else {
 							anchorBase = form;
 						}
@@ -611,19 +611,18 @@ namespace CampLayout
 						// or clutter, by repeating its kit/tent pairs.
 						const auto same = std::ranges::find_if(_tentTypes, [&](const TentType& a_type) { return a_type.tent == kind.tent; });
 						if (same != _tentTypes.end()) {
-							if (bedroll) {
-								same->bedroll = bedroll;
+							if (!bedrolls.empty()) {
+								same->bedrolls = bedrolls;
 							}
 							if (anchor) {
 								same->anchor = anchor;
 								same->items = items;
 								same->clutterSet = clutterSet;
 							}
-							logger::info("Tent addon {:08X}: updates tent {:08X}{}", list->GetFormID(), kind.tent->GetFormID(),
-								bedroll ? std::format(" with bedroll {:08X}", bedroll->GetFormID()) : std::string());
+							logger::info("Tent addon {:08X}: updates tent {:08X} ({} bedroll(s))", list->GetFormID(), kind.tent->GetFormID(), bedrolls.size());
 							continue;
 						}
-						kind.bedroll = bedroll;
+						kind.bedrolls = bedrolls;
 						kind.anchor = anchor;
 						kind.items = items;
 						kind.clutterSet = clutterSet;
@@ -1011,9 +1010,11 @@ namespace CampLayout
 				const std::int32_t rowLength = a_tent.size == kLarge ? _props.Int("LargeTentCapacity", 4) : a_tent.beds;
 				const float        back = a_tent.size == kLarge ? kLargeTentBedrollBack : 0.0f;
 				const float        offset = RowPosition(rowLength - 1) / 2.0f - RowPosition(a_index);
-				// An addon tent can bring its own bedroll.
+				// An addon tent can bring its own bedrolls, taken in turn by color
+				// step (the two of a touching pair matching).
 				const auto   type = static_cast<std::size_t>(a_tent.color);
-				RE::TESForm* bedroll = type < _tentTypes.size() && _tentTypes[type].bedroll ? _tentTypes[type].bedroll : BedrollForm(a_colorSeq);
+				const auto*  own = type < _tentTypes.size() && !_tentTypes[type].bedrolls.empty() ? &_tentTypes[type].bedrolls : nullptr;
+				RE::TESForm* bedroll = own ? (*own)[static_cast<std::size_t>(a_colorSeq) % own->size()] : BedrollForm(a_colorSeq);
 				Set(a_slot, bedroll,
 					a_tent.fwd + offset * Cos(a_tent.turn + 90.0f) - back * Cos(a_tent.turn),
 					a_tent.side + offset * Sin(a_tent.turn + 90.0f) - back * Sin(a_tent.turn),
@@ -1362,7 +1363,7 @@ namespace CampLayout
 				RE::TESObjectREFR*              anchor{ nullptr };  // an addon tent's own clutter set, if any
 				std::vector<RE::TESObjectREFR*> items;
 				std::int32_t                    clutterSet{ 0 };  // its set number, or 0 for the plugin's
-				RE::TESForm*                    bedroll{ nullptr };  // an addon tent's own bedroll, if any
+				std::vector<RE::TESForm*>       bedrolls;  // an addon tent's own bedrolls, taken in turn, if any
 			};
 			std::vector<TentType>                             _tentTypes;
 			RE::TESObjectREFR::InventoryCountMap              _counts;  // the player's and the followers' together
