@@ -407,8 +407,7 @@ EndFunction
 
 Function SetUpCamp()
 	If FadeOnSetUp
-		Game.FadeOutGame(True, True, 0.0, 0.5)
-		Utility.Wait(0.5)
+		FadeToBlack()
 	EndIf
 
 	; Start the follower quest first: its aliases find the followers who are
@@ -458,7 +457,7 @@ Function SetUpCamp()
 	placedRefs = BuildCamp(Self, partners, couples, campers)
 	Int status = GetBuildStatus()
 	If FadeOnSetUp
-		Game.FadeOutGame(False, True, 0.0, 0.5)
+		FadeBackIn()
 	EndIf
 	If status != 0 || placedRefs.Length <= kSlotCount
 		NotifySiteProblem(status)
@@ -673,10 +672,24 @@ Function ConfirmPackUp()
 	EndIf
 EndFunction
 
+; FadeOnSetUp: fades to black and holds it. FadeOutGame(True, ...) alone fades
+; back in by itself after a moment, so a fade "in" that only starts after a
+; long wait holds the black until FadeBackIn ends it.
+Function FadeToBlack()
+	Game.FadeOutGame(True, True, 0.0, 0.5)
+	Utility.Wait(0.5)
+	Game.FadeOutGame(False, True, 30.0, 0.5)
+EndFunction
+
+; Gives the camp a moment to load in, then fades back in.
+Function FadeBackIn()
+	Utility.Wait(1.0)
+	Game.FadeOutGame(False, True, 0.0, 0.5)
+EndFunction
+
 Function PackUpCamp()
 	If FadeOnSetUp
-		Game.FadeOutGame(True, True, 0.0, 0.5)
-		Utility.Wait(0.5)
+		FadeToBlack()
 	EndIf
 	If LZC_UnpackSound
 		LZC_UnpackSound.Play(PlayerRef)
@@ -702,7 +715,7 @@ Function PackUpCamp()
 	EndIf
 	PackUpRefs(placedRefs, persistent, LZC_CampStorage, storageHome)
 	If FadeOnSetUp
-		Game.FadeOutGame(False, True, 0.0, 0.5)
+		FadeBackIn()
 	EndIf
 	RolledKits = None
 	PlacedOwners = None
