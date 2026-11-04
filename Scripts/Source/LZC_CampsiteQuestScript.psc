@@ -681,9 +681,9 @@ Function FadeToBlack()
 	Game.FadeOutGame(False, True, 60.0, 0.5)
 EndFunction
 
-; Holds the black for 17 seconds while the camp loads in, then fades back in.
+; Holds the black for 3 seconds while the camp loads in, then fades back in.
 Function FadeBackIn()
-	Utility.Wait(17.0)
+	Utility.Wait(3.0)
 	Game.FadeOutGame(False, True, 0.0, 0.5)
 EndFunction
 
