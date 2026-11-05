@@ -672,19 +672,39 @@ Function ConfirmPackUp()
 	EndIf
 EndFunction
 
-; FadeOnSetUp: fades to black and holds it. FadeOutGame(True, ...) alone fades
-; back in by itself after a moment, so a fade "in" that only starts after a
-; long wait holds the black until FadeBackIn ends it.
+; FadeOnSetUp: fades to black and holds it, with Skyrim's own fade image
+; space modifiers (FadeToBlackImod, then FadeToBlackHoldImod), as vanilla
+; scenes do; FadeBackIn ends it with FadeToBlackBackImod. If they can't be
+; found, falls back to FadeOutGame (a fade "in" that only starts after a long
+; wait holds the black).
+ImageSpaceModifier Function SkyrimImod(Int formId)
+	Return Game.GetFormFromFile(formId, "Skyrim.esm") as ImageSpaceModifier
+EndFunction
+
 Function FadeToBlack()
-	Game.FadeOutGame(True, True, 0.0, 0.5)
-	Utility.Wait(0.5)
-	Game.FadeOutGame(False, True, 60.0, 0.5)
+	ImageSpaceModifier fade = SkyrimImod(0x000F756D)  ; FadeToBlackImod
+	ImageSpaceModifier hold = SkyrimImod(0x000F756E)  ; FadeToBlackHoldImod
+	If fade && hold
+		fade.Apply()
+		Utility.Wait(2.0)
+		fade.PopTo(hold)
+	Else
+		Game.FadeOutGame(True, True, 0.0, 0.5)
+		Utility.Wait(0.5)
+		Game.FadeOutGame(False, True, 60.0, 0.5)
+	EndIf
 EndFunction
 
 ; Holds the black for 3 seconds while the camp loads in, then fades back in.
 Function FadeBackIn()
 	Utility.Wait(3.0)
-	Game.FadeOutGame(False, True, 0.0, 0.5)
+	ImageSpaceModifier hold = SkyrimImod(0x000F756E)  ; FadeToBlackHoldImod
+	ImageSpaceModifier back = SkyrimImod(0x000F756F)  ; FadeToBlackBackImod
+	If hold && back
+		hold.PopTo(back)
+	Else
+		Game.FadeOutGame(False, True, 0.0, 0.5)
+	EndIf
 EndFunction
 
 Function PackUpCamp()
