@@ -294,7 +294,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
   - grass from *No Grass In Objects*' cache ends up in the same groups, so this works with it
   - while the camp is up, it checks once a second for grass loading in around the camp (walking back to it, loading a save) and hides that too
   - the camp is saved with the game through SKSE, so this survives a reload
-  - on pack-up, the camp's cells rebuild their grass from scratch
+  - the removed grass is kept and, on pack-up, added back to the same grass shapes it came from, so nothing is regenerated and it works the same with vanilla grass, a grass cache or No Grass In Objects generating grass (cells that unloaded meanwhile simply regrow it when they load)
   
   The grass layouts it relies on aren't in CommonLibSSE-NG; they come from *No Grass In Objects NG* (also GPL-3.0) and *Community Shaders*. **This is untested in game.** If grass isn't where the code expects (another game version, or a mod that changes grass), it stops and writes a warning to `LazyCamping.log` rather than removing the wrong grass. If grass flickers, the game stutters or crashes around a camp, set `HideGrassUnderCamp` to false. It doesn't run in Skyrim VR.
 - **Footprint check**: the check samples 5 points (the centre and four corners). Something small that sits between those points can still poke through the tent. You can add more sample points in `IsAreaClear` if needed.

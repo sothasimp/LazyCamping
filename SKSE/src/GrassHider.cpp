@@ -12,7 +12,11 @@
 // every group in its cells with instances inside the circle is removed and
 // added again without them. Grass that loads while the camp is up (walking
 // back to it, loading a save) is caught by a check once a second.
-// Showing: the camp's cells rebuild their grass from scratch.
+// Showing: the removed instances are kept, and on pack-up they're added
+// back to the same grass shapes they came from. Nothing is rebuilt, so it
+// works however the grass was made (vanilla, a cache, or No Grass In Objects
+// generating it). Grass in cells that unloaded meanwhile comes back whole
+// when they load again.
 //
 // The layouts below aren't in CommonLibSSE-NG. They follow No Grass In
 // Objects NG (GPL-3.0, like this plugin) and Community Shaders' grass shader.
@@ -79,22 +83,6 @@ namespace GrassHider
 			return REL::RelocateMember<ShapeData>(a_shape, 0x160);
 		}
 
-		void RemoveCellGrass(RE::BGSGrassManager* a_manager, RE::TESObjectCELL* a_cell)
-		{
-			using func_t = void (*)(RE::BGSGrassManager*, RE::TESObjectCELL*);
-			static REL::Relocation<func_t> func{ RELOCATION_ID(15207, 15375) };
-			func(a_manager, a_cell);
-		}
-
-		// Queues an AddCellGrassTask, as the game does when a cell comes into
-		// grass range. Call with the cell's grassTaskLock held.
-		void QueueCellGrass(RE::TESObjectCELL* a_cell)
-		{
-			using func_t = void (*)(RE::TESObjectCELL*);
-			static REL::Relocation<func_t> func{ RELOCATION_ID(13137, 13277) };
-			func(a_cell);
-		}
-
 		float HalfToFloat(std::uint16_t a_half)
 		{
 			const int   exponent = (a_half >> 10) & 0x1F;
@@ -129,9 +117,17 @@ namespace GrassHider
 		{
 			RE::FormID            world{ 0 };
 			std::optional<Circle> circle;
-			// Cells whose grass is still to be rebuilt after Show().
-			std::vector<std::pair<std::int32_t, std::int32_t>> rebuild;
-			RE::FormID                                         rebuildWorld{ 0 };
+			// Instances removed so far, by cell and grass shape, to add back
+			// on Show(). Holding the shape keeps its address from being reused.
+			struct Removed
+			{
+				std::int32_t                                     cellX, cellY;
+				RE::NiPointer<RE::BSMultiStreamInstanceTriShape> shape;
+				std::vector<std::uint16_t>                       instances;
+			};
+			std::vector<Removed> removed;
+			// Set while some of them wait for a busy shape after Show().
+			RE::FormID restoreWorld{ 0 };
 			// Groups already checked against the current circle.
 			std::set<std::tuple<const InstanceGroup*, const std::uint16_t*, std::uint32_t>> clean;
 			bool layoutBad{ false };
@@ -166,7 +162,7 @@ namespace GrassHider
 		void UpdateBusy()
 		{
 			const auto& state = GetState();
-			busy = state.circle.has_value() || !state.rebuild.empty();
+			busy = state.circle.has_value() || state.restoreWorld != 0;
 		}
 
 		std::vector<std::pair<std::int32_t, std::int32_t>> CellsUnder(const Circle& a_circle)
@@ -236,6 +232,7 @@ namespace GrassHider
 			const float cellMaxY = cellMinY + kCellSize + 2.0f * kCellSlack;
 
 			std::vector<std::uint16_t> kept;
+			std::vector<std::uint16_t> gone;
 			for (auto* entry : extra->grassHandles) {
 				auto* handle = reinterpret_cast<GrassHandle*>(entry);
 				auto* shape = handle ? handle->shape.get() : nullptr;
@@ -304,6 +301,7 @@ namespace GrassHider
 					const float         originY = BlockOrigin(a_cellY, floorAligned);
 
 					kept.clear();
+					gone.clear();
 					std::uint32_t removed = 0;
 					std::uint32_t strays = 0;
 					for (std::uint32_t n = 0; n < group->instanceCount; ++n) {
@@ -324,6 +322,7 @@ namespace GrassHider
 						}
 						if (a_circle.Contains(x, y, z)) {
 							++removed;
+							gone.insert(gone.end(), instance, instance + kHalvesPerInstance);
 						} else {
 							kept.insert(kept.end(), instance, instance + kHalvesPerInstance);
 						}
@@ -345,6 +344,15 @@ namespace GrassHider
 						continue;
 					}
 
+					auto stored = std::find_if(state.removed.begin(), state.removed.end(), [&](const auto& a_entry) {
+						return a_entry.cellX == a_cellX && a_entry.cellY == a_cellY && a_entry.shape.get() == shape;
+					});
+					if (stored == state.removed.end()) {
+						state.removed.push_back(State::Removed{ a_cellX, a_cellY, RE::NiPointer<RE::BSMultiStreamInstanceTriShape>(shape), {} });
+						stored = std::prev(state.removed.end());
+					}
+					stored->instances.insert(stored->instances.end(), gone.begin(), gone.end());
+
 					shape->RemoveGroup(index);
 					handle->groupIndices.erase(handle->groupIndices.begin() + i);
 					if (i < handle->groupFades.size()) {
@@ -359,15 +367,67 @@ namespace GrassHider
 			}
 		}
 
-		void Rebuild(RE::TESObjectCELL* a_cell)
+		// The cell's grass handle for a_shape, if the cell still has it.
+		GrassHandle* HandleFor(RE::TESObjectCELL* a_cell, const RE::BSMultiStreamInstanceTriShape* a_shape)
 		{
-			auto* manager = RE::BGSGrassManager::GetSingleton();
-			if (!manager) {
-				return;
+			auto* extra = a_cell ? a_cell->extraList.GetByType<RE::ExtraCellGrassData>() : nullptr;
+			if (!extra) {
+				return nullptr;
 			}
-			RemoveCellGrass(manager, a_cell);
-			RE::BSSpinLockGuard lock(a_cell->grassTaskLock);
-			QueueCellGrass(a_cell);
+			for (auto* entry : extra->grassHandles) {
+				auto* handle = reinterpret_cast<GrassHandle*>(entry);
+				if (handle && handle->shape.get() == a_shape) {
+					return handle;
+				}
+			}
+			return nullptr;
+		}
+
+		// Drops stored instances whose grass is gone (the cell unloaded, or
+		// the game rebuilt its grass): it comes back whole on its own.
+		void PruneRemoved(RE::FormID a_world)
+		{
+			auto& removed = GetState().removed;
+			std::erase_if(removed, [&](const auto& a_entry) {
+				return !HandleFor(LoadedCell(a_world, a_entry.cellX, a_entry.cellY), a_entry.shape.get());
+			});
+		}
+
+		// Adds the stored instances back where they came from.
+		void Restore(RE::FormID a_world)
+		{
+			auto&         state = GetState();
+			std::uint32_t restored = 0;
+			std::uint32_t dropped = 0;
+			std::uint32_t waiting = 0;
+			std::vector<State::Removed> later;
+			for (auto& entry : state.removed) {
+				const auto count = static_cast<std::uint32_t>(entry.instances.size() / kHalvesPerInstance);
+				auto*      shape = entry.shape.get();
+				auto*      handle = HandleFor(LoadedCell(a_world, entry.cellX, entry.cellY), shape);
+				if (!handle || count == 0) {
+					dropped += count;
+					continue;
+				}
+				// The game is adding grass to it: try again next second.
+				if (shape->GetIsAddingInstances()) {
+					waiting += count;
+					later.push_back(std::move(entry));
+					continue;
+				}
+				const auto&   data = DataOf(shape);
+				std::uint32_t chunk = data.maxInstancesPerGroup > 0 ? data.maxInstancesPerGroup : count;
+				for (std::uint32_t first = 0; first < count; first += chunk) {
+					const auto n = std::min(chunk, count - first);
+					shape->BeginAddingInstances(kHalvesPerInstance);
+					shape->AddInstances(n, entry.instances[static_cast<std::size_t>(first) * kHalvesPerInstance]);
+					shape->DoneAddingInstances(handle->groupIndices);
+				}
+				restored += count;
+			}
+			state.removed = std::move(later);
+			state.restoreWorld = state.removed.empty() ? 0 : a_world;
+			logger::info("Grass: {} instance(s) put back, {} already regrown or unloaded, {} waiting", restored, dropped, waiting);
 		}
 
 		// Runs on the main thread, once a second while there's anything to do.
@@ -379,15 +439,12 @@ namespace GrassHider
 				return;
 			}
 
-			// Cells that aren't loaded will build their grass whole when they load.
-			for (const auto& [x, y] : state.rebuild) {
-				if (auto* cell = LoadedCell(state.rebuildWorld, x, y)) {
-					Rebuild(cell);
-				}
+			if (state.restoreWorld != 0) {
+				Restore(state.restoreWorld);
 			}
-			state.rebuild.clear();
 
 			if (state.circle && !state.layoutBad) {
+				PruneRemoved(state.world);
 				Stats stats;
 				for (const auto& [x, y] : CellsUnder(*state.circle)) {
 					if (auto* cell = LoadedCell(state.world, x, y)) {
@@ -444,7 +501,8 @@ namespace GrassHider
 		auto& state = GetState();
 		state.world = 0;
 		state.circle.reset();
-		state.rebuild.clear();
+		state.removed.clear();
+		state.restoreWorld = 0;
 		state.clean.clear();
 		UpdateBusy();
 	}
@@ -501,6 +559,8 @@ namespace GrassHider
 		auto& state = GetState();
 		state.circle.reset();
 		state.clean.clear();
+		state.removed.clear();
+		state.restoreWorld = 0;
 		state.world = worldId;
 		if (!extents.empty()) {
 			// Centred on the middle of the objects' spread; near enough the
@@ -540,13 +600,13 @@ namespace GrassHider
 			return;
 		}
 		auto& state = GetState();
-		if (state.circle) {
-			state.rebuild = CellsUnder(*state.circle);
-			state.rebuildWorld = state.world;
-		}
+		const auto world = state.world;
 		state.circle.reset();
 		state.clean.clear();
 		state.world = 0;
-		Update();
+		if (!state.removed.empty()) {
+			Restore(world);
+		}
+		UpdateBusy();
 	}
 }
