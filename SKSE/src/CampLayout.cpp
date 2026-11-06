@@ -51,7 +51,7 @@ namespace CampLayout
 		constexpr float kSeatRadius = 110.0f;  // also how far in front of the player the fire goes
 		constexpr float kSmallTentDistance = 250.0f;
 		constexpr float kLargeTentDistance = 107.0f;
-		constexpr float kLargeTentOutside = 170.0f;  // with FireOutsideLargeTent: this much further from the fire
+		constexpr float kLargeTentOutside = 285.0f;  // with FireOutsideLargeTent: this much further from the fire
 		constexpr float kSmallTentHalfWidth = 85.0f;
 		constexpr float kSmallTentHalfDepth = 85.0f;
 		constexpr float kLargeTentHalfWidth = 150.0f;

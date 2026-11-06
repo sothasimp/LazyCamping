@@ -124,7 +124,7 @@ Bool Property TubInLargeTent = False Auto
 {When there's a large tent, the tub goes inside it, in place of its third and
 fourth bedrolls: the large tent then holds 2 bedrolls at most.}
 Bool Property FireOutsideLargeTent = False Auto
-{When the player's tent is a large tent, it stands 170 units further back, so
+{When the player's tent is a large tent, it stands 285 units further back, so
 the fire is outside it instead of under it.}
 Activator Property LZC_ClothesBasket Auto
 {The clothes basket's base (in the tub clutter set). Activating one takes off
