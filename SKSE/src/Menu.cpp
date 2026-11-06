@@ -39,6 +39,7 @@ namespace Menu
 			bool         placeFireSeats{ true };
 			bool         fadeOnSetUp{ false };
 			bool         ashNomadLoaded{ false };  // Ash Nomad - Bedrolls - BOS Distributed
+			bool         fireOutsideLargeTent{ false };
 		};
 
 		constexpr const char* kBedrollStyles[] = { "Vanilla", "Bedroll Alternative - Green", "Bedroll Alternative - Blue",
@@ -97,14 +98,15 @@ namespace Menu
 			auto*  campfire = object ? AutoProperty(object.get(), "PlaceCampfire") : nullptr;
 			auto*  fireSeats = object ? AutoProperty(object.get(), "PlaceFireSeats") : nullptr;
 			auto*  fade = object ? AutoProperty(object.get(), "FadeOnSetUp") : nullptr;
-			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll && merchants && perFire && mapMarker && rolled && campfire && fireSeats && fade;
+			auto*  fireOutside = object ? AutoProperty(object.get(), "FireOutsideLargeTent") : nullptr;
+			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll && merchants && perFire && mapMarker && rolled && campfire && fireSeats && fade && fireOutside;
 			if (found) {
 				auto* dataHandler = RE::TESDataHandler::GetSingleton();
 				values = { firewood->GetBool(), burnHours->GetFloat(), block->GetBool(), grass->GetBool(), light->GetBool(), tub->GetBool(),
 					tubInTent->GetBool(), slope->GetBool(), seat->GetSInt(), bedroll->GetSInt(),
 					PluginLoaded(kBedrollAltPlugin),
 					merchants->GetBool(), perFire->GetSInt(), mapMarker->GetBool(), rolled->GetBool(), campfire->GetBool(), fireSeats->GetBool(), fade->GetBool(),
-					PluginLoaded(kAshNomadBedrollsPlugin) };
+					PluginLoaded(kAshNomadBedrollsPlugin), fireOutside->GetBool() };
 			}
 
 			std::scoped_lock guard(lock);
@@ -141,6 +143,9 @@ namespace Menu
 				}
 				if (auto* fireSeats = AutoProperty(object.get(), "PlaceFireSeats")) {
 					fireSeats->SetBool(a_values.placeFireSeats);
+				}
+				if (auto* fireOutside = AutoProperty(object.get(), "FireOutsideLargeTent")) {
+					fireOutside->SetBool(a_values.fireOutsideLargeTent);
 				}
 				if (auto* fade = AutoProperty(object.get(), "FadeOnSetUp")) {
 					fade->SetBool(a_values.fadeOnSetUp);
@@ -243,6 +248,8 @@ namespace Menu
 				changed |= ImGuiMCP::Checkbox("Firepit", &values.placeCampfire);
 				ImGuiMCP::SetItemTooltip("Place the campfire with its clutter, light and cooking. Without it there's no firewood mechanic or chopping block either. Takes effect at the next camp.");
 				ImGuiMCP::BeginDisabled(!values.placeCampfire);
+				changed |= ImGuiMCP::Checkbox("Fire outside the large tent", &values.fireOutsideLargeTent);
+				ImGuiMCP::SetItemTooltip("Stand the large tent 170 units further back, so the fire is in front of it rather than under it. Takes effect at the next camp.");
 				changed |= ImGuiMCP::Checkbox("Light marker", &values.placeCampfireLight);
 				ImGuiMCP::SetItemTooltip("Place a light with the campfire. Turn off if a Light Placer config already lights it. Takes effect at the next camp.");
 				changed |= ImGuiMCP::Checkbox("Firewood mechanic", &values.firewoodMechanic);

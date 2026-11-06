@@ -51,6 +51,7 @@ namespace CampLayout
 		constexpr float kSeatRadius = 110.0f;  // also how far in front of the player the fire goes
 		constexpr float kSmallTentDistance = 250.0f;
 		constexpr float kLargeTentDistance = 107.0f;
+		constexpr float kLargeTentOutside = 170.0f;  // with FireOutsideLargeTent: this much further from the fire
 		constexpr float kSmallTentHalfWidth = 85.0f;
 		constexpr float kSmallTentHalfDepth = 85.0f;
 		constexpr float kLargeTentHalfWidth = 150.0f;
@@ -808,7 +809,9 @@ namespace CampLayout
 						tent.form = forms[0];
 					}
 					const float bearing = FanBearing(static_cast<std::int32_t>(t));
-					const float distance = tent.size == kLarge ? kLargeTentDistance : kSmallTentDistance;
+					const float distance = tent.size == kLarge ?
+					                           kLargeTentDistance + (_props.Bool("FireOutsideLargeTent", false) ? kLargeTentOutside : 0.0f) :
+					                           kSmallTentDistance;
 					tent.fwd = kSeatRadius + distance * Cos(bearing);
 					tent.side = distance * Sin(bearing);
 					tent.turn = bearing + 180.0f;
