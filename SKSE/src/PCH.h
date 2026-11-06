@@ -16,6 +16,8 @@
 #include <cmath>
 #include <filesystem>
 #include <format>
+#include <fstream>
+#include <cctype>
 #include <limits>
 #include <map>
 #include <mutex>

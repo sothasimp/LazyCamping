@@ -156,6 +156,50 @@ namespace GrassHider
 			return state;
 		}
 
+		// No Grass In Objects with both Extend-grass-distance and
+		// Only-load-from-cache on loads every cell's grass onto stand-in cells
+		// of its own, which other plugins can't reach: the real cells have no
+		// grass handles, so there's nothing here to clear.
+		bool ngioStandIns{ false };
+
+		bool NgioUsesStandIns()
+		{
+			std::ifstream file("Data/SKSE/Plugins/GrassControl.ini");
+			if (!file) {
+				return false;
+			}
+			bool extend = false;
+			bool cacheOnly = false;
+			for (std::string line; std::getline(file, line);) {
+				if (line.starts_with("\xEF\xBB\xBF")) {
+					line.erase(0, 3);
+				}
+				if (const auto comment = line.find_first_of(";#"); comment != std::string::npos) {
+					line.erase(comment);
+				}
+				const auto equals = line.find('=');
+				if (equals == std::string::npos) {
+					continue;
+				}
+				const auto trim = [](std::string a_text) {
+					const auto first = a_text.find_first_not_of(" \t\r");
+					const auto last = a_text.find_last_not_of(" \t\r");
+					a_text = first == std::string::npos ? std::string() : a_text.substr(first, last - first + 1);
+					std::ranges::transform(a_text, a_text.begin(), [](unsigned char a_c) { return static_cast<char>(std::tolower(a_c)); });
+					return a_text;
+				};
+				const auto key = trim(line.substr(0, equals));
+				const auto value = trim(line.substr(equals + 1));
+				const bool on = value == "true" || value == "1";
+				if (key == "extend-grass-distance") {
+					extend = on;
+				} else if (key == "only-load-from-cache") {
+					cacheOnly = on;
+				}
+			}
+			return extend && cacheOnly;
+		}
+
 		// Read by the polling thread; everything else is main-thread only.
 		std::atomic<bool> busy{ false };
 
@@ -455,6 +499,10 @@ namespace GrassHider
 					state.logPending = false;
 					const auto& c = *state.circle;
 					logger::info("Grass: circle at ({:.0f}, {:.0f}) radius {:.0f}, heights {:.0f} to {:.0f}", c.x, c.y, c.radius, c.minZ, c.maxZ);
+					if (ngioStandIns && stats.handles == 0) {
+						logger::warn("Grass: No Grass In Objects has Extend-grass-distance and Only-load-from-cache on, so its grass isn't in the game's cells and can't be cleared. "
+									 "Set Extend-grass-distance = false in GrassControl.ini for grass clearing.");
+					}
 					logger::info("Grass: {} loaded cell(s), {} without grass data; {} grass type(s), {} busy, {} other format (size {}); "
 								 "{} group(s), {} instance(s), {} in the circle, {} of those at the wrong height; {} removed{}",
 						stats.cells, stats.noGrassData, stats.handles, stats.busyShapes, stats.otherSize, stats.lastOtherSize, stats.groups,
@@ -512,6 +560,11 @@ namespace GrassHider
 		if (REL::Module::IsVR()) {
 			logger::info("Grass hiding isn't supported in Skyrim VR");
 			return;
+		}
+		ngioStandIns = NgioUsesStandIns();
+		if (ngioStandIns) {
+			logger::warn("No Grass In Objects has Extend-grass-distance and Only-load-from-cache on: it keeps grass on cells of its own that "
+						 "other plugins can't reach, so the camp can't clear grass. Set Extend-grass-distance = false in GrassControl.ini for grass clearing.");
 		}
 
 		std::thread([] {
