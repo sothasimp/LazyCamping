@@ -19,9 +19,12 @@ Spell Property LZC_SetUpCampPower Auto
 MiscObject[] Property LZC_SmallTentKits Auto
 {Small tent kits by colour: 0 brown, 1 blue, 2 green, 3 red, 4 white, then
 any you add (plaid, say). Every tent kit the player carries is pitched (up to
-4 tents), in this order.}
+4 tents), in this order. LazyCamping.dll reads the form list
+LZC_SmallTentKitList in the plugin instead when it has entries (an array keeps
+the value an old save first saw; a form list doesn't): keep the two in step.}
 MiscObject[] Property LZC_LargeTentKits Auto
-{Large tent kits, same colour order as LZC_SmallTentKits.}
+{Large tent kits, same colour order as LZC_SmallTentKits. Read from the form
+list LZC_LargeTentKitList instead when it has entries.}
 MiscObject Property LZC_BedrollKit Auto
 {At least one is needed to make camp; the campfire always comes with it.}
 
@@ -43,9 +46,11 @@ Bool Property PlaceChoppingBlock = True Auto
 ; World objects placed when the camp is set up
 ; ---------------------------------------------------------------------------
 Activator[] Property LZC_SmallTents Auto
-{Small tent Activators, same colour order as LZC_SmallTentKits.}
+{Small tent Activators, same colour order as LZC_SmallTentKits. Read from the
+form list LZC_SmallTentList instead when it has entries.}
 Activator[] Property LZC_LargeTents Auto
-{Large tent Activators, same colour order as LZC_SmallTents.}
+{Large tent Activators, same colour order as LZC_SmallTents. Read from the
+form list LZC_LargeTentList instead when it has entries.}
 Furniture Property LZC_BedrollPlaced Auto
 {Furniture with a sleep marker, so the player can sleep / wait in it. Can be
 the vanilla bedroll: this script needs nothing on it.}

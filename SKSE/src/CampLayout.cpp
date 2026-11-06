@@ -138,6 +138,16 @@ namespace CampLayout
 			std::vector<T*> Forms(std::string_view a_name) const
 			{
 				std::vector<T*> forms;
+				// The tent arrays have FormList copies in the plugin. The plugin
+				// is read fresh on every load, but a property array keeps the
+				// value it had when the save first ran the script, so a tent
+				// added to the plugin later would never show up in old saves.
+				if (auto* list = PluginList(a_name)) {
+					for (auto* form : list->forms) {
+						forms.push_back(form ? form->As<T>() : nullptr);
+					}
+					return forms;
+				}
 				const auto*     value = Value(a_name);
 				const auto      array = value && value->IsArray() ? value->GetArray() : nullptr;
 				if (array) {
@@ -147,6 +157,34 @@ namespace CampLayout
 					}
 				}
 				return forms;
+			}
+
+			// The FormList in the plugin that stands in for array property
+			// a_name, if there is one and it isn't empty.
+			static RE::BGSListForm* PluginList(std::string_view a_name)
+			{
+				static constexpr std::pair<std::string_view, RE::FormID> kLists[] = {
+					{ "LZC_SmallTentKits", 0xDA3 },  // LZC_SmallTentKitList
+					{ "LZC_LargeTentKits", 0xDA4 },  // LZC_LargeTentKitList
+					{ "LZC_SmallTents", 0xDA5 },     // LZC_SmallTentList
+					{ "LZC_LargeTents", 0xDA6 },     // LZC_LargeTentList
+				};
+				auto* dataHandler = RE::TESDataHandler::GetSingleton();
+				if (!dataHandler) {
+					return nullptr;
+				}
+				for (const auto& [name, id] : kLists) {
+					if (name != a_name) {
+						continue;
+					}
+					for (const auto* extension : { "esp", "esl", "esm" }) {
+						const auto plugin = std::string(kPluginPrefix) + extension;
+						if (auto* list = dataHandler->LookupForm<RE::BGSListForm>(id, plugin); list && !list->forms.empty()) {
+							return list;
+						}
+					}
+				}
+				return nullptr;
 			}
 
 			bool Bool(std::string_view a_name, bool a_default) const
