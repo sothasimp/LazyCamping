@@ -249,7 +249,7 @@ namespace Menu
 				ImGuiMCP::SetItemTooltip("Place the campfire with its clutter, light and cooking. Without it there's no firewood mechanic or chopping block either. Takes effect at the next camp.");
 				ImGuiMCP::BeginDisabled(!values.placeCampfire);
 				changed |= ImGuiMCP::Checkbox("Fire outside the large tent", &values.fireOutsideLargeTent);
-				ImGuiMCP::SetItemTooltip("Stand the large tent 285 units further back, so the fire is in front of it rather than under it. Takes effect at the next camp.");
+				ImGuiMCP::SetItemTooltip("Stand the large tent 285 units further back, so the fire is in front of it rather than under it, and the small tents beside it 265 further back. Takes effect at the next camp.");
 				changed |= ImGuiMCP::Checkbox("Light marker", &values.placeCampfireLight);
 				ImGuiMCP::SetItemTooltip("Place a light with the campfire. Turn off if a Light Placer config already lights it. Takes effect at the next camp.");
 				changed |= ImGuiMCP::Checkbox("Firewood mechanic", &values.firewoodMechanic);

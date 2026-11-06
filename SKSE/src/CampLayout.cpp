@@ -52,6 +52,7 @@ namespace CampLayout
 		constexpr float kSmallTentDistance = 250.0f;
 		constexpr float kLargeTentDistance = 107.0f;
 		constexpr float kLargeTentOutside = 285.0f;  // with FireOutsideLargeTent: this much further from the fire
+		constexpr float kSideTentOutside = 265.0f;   // and the small tents beside it this much further back too
 		constexpr float kSmallTentHalfWidth = 85.0f;
 		constexpr float kSmallTentHalfDepth = 85.0f;
 		constexpr float kLargeTentHalfWidth = 150.0f;
@@ -800,6 +801,7 @@ namespace CampLayout
 			{
 				const auto smallTents = _props.Forms<RE::TESBoundObject>("LZC_SmallTents");
 				const auto largeTents = _props.Forms<RE::TESBoundObject>("LZC_LargeTents");
+				const bool fireOutside = _props.Bool("FireOutsideLargeTent", false);
 				for (std::size_t t = 0; t < _tents.size(); ++t) {
 					auto&       tent = _tents[t];
 					const auto& forms = tent.size == kLarge ? largeTents : smallTents;
@@ -810,14 +812,14 @@ namespace CampLayout
 					}
 					const float bearing = FanBearing(static_cast<std::int32_t>(t));
 					const float distance = tent.size == kLarge ?
-					                           kLargeTentDistance + (_props.Bool("FireOutsideLargeTent", false) ? kLargeTentOutside : 0.0f) :
+					                           kLargeTentDistance + (fireOutside ? kLargeTentOutside : 0.0f) :
 					                           kSmallTentDistance;
 					tent.fwd = kSeatRadius + distance * Cos(bearing);
 					tent.side = distance * Sin(bearing);
 					tent.turn = bearing + 180.0f;
 					if (t > 0 && _tents[0].size == kLarge) {
 						const float sideSign = bearing < 0.0f ? -1.0f : 1.0f;
-						tent.fwd = kSeatRadius + kSideTentForward;
+						tent.fwd = kSeatRadius + kSideTentForward + (fireOutside ? kSideTentOutside : 0.0f);
 						tent.side = sideSign * kSideTentSide;
 						tent.turn = 180.0f + sideSign * kSideTentTurn;
 					}
