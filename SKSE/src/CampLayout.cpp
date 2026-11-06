@@ -822,6 +822,10 @@ namespace CampLayout
 						tent.fwd = kSeatRadius + kSideTentForward + (fireOutside ? kSideTentOutside : 0.0f);
 						tent.side = sideSign * kSideTentSide;
 						tent.turn = 180.0f + sideSign * kSideTentTurn;
+						if (fireOutside) {
+							// In an arc round the fire with the large tent, facing it.
+							tent.turn = std::atan2(tent.side, tent.fwd - kSeatRadius) * 180.0f / std::numbers::pi_v<float> + 180.0f;
+						}
 					}
 				}
 			}
