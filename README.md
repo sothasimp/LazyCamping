@@ -47,6 +47,8 @@ While a camp is up, the power is called **Pack Up Camp** (" Pack Up Camp"). It k
 
 With **SKSE Menu Framework** installed (optional), its Mod Control Panel gets a *Convenient Camping (Wayfarer)* page in four collapsible sections: **Camp** (aligning the camp to the slope, clearing the grass, fading to black during setup and pack-up (off by default), tent collision (on by default; off lets you walk through the tents' walls, applied straight away to a camp that's up), the map marker, the bathtub and whether it goes in the large tent), **Bedrolls** (starting them rolled up, and their style: with *Bedroll Alternative - BOS Color Variance*, its green, blue or red bedroll, or all three in turn, each touching pair in a tent matching, the bedroll kit item taking the chosen colour too, green for mixed; with *Ash Nomad - Bedrolls - BOS Distributed*, its blue, red or purple bedroll, or all three in turn; each mod's styles greyed out without it), **Fire** (the firepit, which off means no fire, fire clutter, light or cooking, and so no firewood mechanic or chopping block; the fire outside the large tent (off by default); the campfire light marker; the firewood mechanic, how long a fire burns, how many firewood lighting it takes and the wood chopping block; the fireside cushions and their colour) and **Leveled lists** (selling the kits at general goods merchants). The settings are kept in the save. Without it, change them on the quest in the Creation Kit.
 
+**Translating the menu**: its text comes from `Interface/Translations/Wayfarer - A Convenient Camping Framework_<LANGUAGE>.txt`, where `<LANGUAGE>` is the game's language (`sLanguage` in `Skyrim.ini`: `ENGLISH`, `GERMAN`, `FRENCH`, `RUSSIAN`, `CHINESE` and so on). To translate it, copy the `_ENGLISH.txt` file, rename it for your language, and translate the text after the tab on each line, keeping the `$LZC_…` key, the tab and any `%.0f`. Save it as UTF-16 LE with a BOM, like the game's own translation files (UTF-8 works for the menu too). A key missing from the file, or a language with no file, shows in English. `LazyCamping.log` says how many strings it read. The menu draws with SKSE Menu Framework's font, so a language whose letters that font lacks (Chinese, Japanese, Korean, perhaps Cyrillic) needs a font that has them. The page's name in the Mod Control Panel stays in English: it's registered before the game's language setting is read.
+
 All EditorIDs use the prefix `LZC_`.
 
 ---
@@ -312,6 +314,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
    Meshes/LazyCamping/...          (tents, seats, backpack: section 2a)
    Textures/LazyCamping/...        (the tent recolours)
    SKSE/Plugins/LazyCamping.dll
+   Interface/Translations/Wayfarer - A Convenient Camping Framework_ENGLISH.txt
    Source/Scripts/*.psc            (optional but polite)
    ```
    List SKSE and Address Library for SKSE Plugins as requirements on your mod page.
