@@ -263,7 +263,7 @@ Event OnWayfarerCampPackedUp(Form akCampCentre, Int aiFollowers)
 EndEvent
 ```
 
-To check the camp at any other time (a save loaded with the camp up, say), with `LZC_CampsiteQuestScript.psc` to compile against, still with no master: `LZC_CampsiteQuestScript.IsCampUp()` and `LZC_CampsiteQuestScript.GetCampCentre()` (None without a camp). Both are global functions that find the quest with `Game.GetFormFromFile`. Without this mod installed its script isn't there either, so check first with `Game.GetModByName("Wayfarer - A Convenient Camping Framework.esp") != 255` (otherwise the call just fails, with an error in the Papyrus log). The events need no such check: without this mod they simply never arrive.
+To check the camp at any other time (a save loaded with the camp up, say), with `LZC_CampsiteQuestScript.psc` to compile against, still with no master: `LZC_CampsiteQuestScript.IsCampUp()` and `LZC_CampsiteQuestScript.GetCampCentre()` (None without a camp). Both are global functions that find the quest with `Game.GetFormFromFile`. Without this mod installed its script isn't there either, so check first with `Game.IsPluginInstalled("Wayfarer - A Convenient Camping Framework.esp")` (not `GetModByName`, which doesn't find light plugins) (otherwise the call just fails, with an error in the Papyrus log). The events need no such check: without this mod they simply never arrive.
 
 ## 3. Build the SKSE plugin
 
