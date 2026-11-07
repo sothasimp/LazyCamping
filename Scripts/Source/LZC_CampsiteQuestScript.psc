@@ -128,8 +128,8 @@ Bool Property PlaceTub = True Auto
 Bool Property TubInLargeTent = False Auto
 {When there's a large tent, the tub goes inside it, in place of its third and
 fourth bedrolls: the large tent then holds 2 bedrolls at most.}
-Bool Property TentCollision = False Auto
-{Off (the default): the tents don't collide, so the player and followers walk through their
+Bool Property TentCollision = True Auto
+{Off: the tents don't collide, so the player and followers walk through their
 walls (SKSE menu). LazyCamping.dll applies it whenever a tent's 3D loads.}
 Bool Property FireOutsideLargeTent = False Auto
 {When the player's tent is a large tent, it stands 285 units further back, so

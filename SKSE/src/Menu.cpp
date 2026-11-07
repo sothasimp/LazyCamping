@@ -41,7 +41,7 @@ namespace Menu
 			bool         fadeOnSetUp{ false };
 			bool         ashNomadLoaded{ false };  // Ash Nomad - Bedrolls - BOS Distributed
 			bool         fireOutsideLargeTent{ false };
-			bool         tentCollision{ false };
+			bool         tentCollision{ true };
 		};
 
 		constexpr const char* kBedrollStyles[] = { "Vanilla", "Bedroll Alternative - Green", "Bedroll Alternative - Blue",
