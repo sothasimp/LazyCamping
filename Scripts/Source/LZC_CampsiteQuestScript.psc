@@ -494,6 +494,7 @@ Function SetUpCamp()
 	CampDeployed = True
 	; The leading space sorts the power to the top of the magic menu.
 	RenameForm(LZC_SetUpCampPower, " Pack Up Camp")
+	SendCampEvent("Wayfarer_CampSetUp")
 EndFunction
 
 ; The cook box over the fire opens the Cook menu, through the hidden cooking
@@ -717,6 +718,8 @@ Function FadeBackIn()
 EndFunction
 
 Function PackUpCamp()
+	; Sent first, while the camp and its followers are still there.
+	SendCampEvent("Wayfarer_CampPackedUp")
 	If FadeOnSetUp
 		FadeToBlack()
 	EndIf
@@ -756,6 +759,66 @@ Function PackUpCamp()
 
 	CampDeployed = False
 	RenameForm(LZC_SetUpCampPower, "")
+EndFunction
+
+; --- API for other mods ---------------------------------------------------
+;
+; Mod events, no master needed. Register in any script with
+;   RegisterForModEvent("Wayfarer_CampSetUp", "OnWayfarerCampSetUp")
+;   RegisterForModEvent("Wayfarer_CampPackedUp", "OnWayfarerCampPackedUp")
+; and handle them with
+;   Event OnWayfarerCampSetUp(Form akCampCentre, Int aiFollowers)
+;   Event OnWayfarerCampPackedUp(Form akCampCentre, Int aiFollowers)
+; akCampCentre is the camp's centre: the campfire, or an invisible marker in
+; its place when the firepit is turned off (cast it to ObjectReference).
+; aiFollowers is how many followers are at the camp. Re-register on every game
+; load (OnPlayerLoadGame), as with any mod event.
+;
+; Or ask at any time (with this script's source to compile against):
+;   LZC_CampsiteQuestScript.IsCampUp()
+;   LZC_CampsiteQuestScript.GetCampCentre()
+
+Function SendCampEvent(String eventName)
+	Int followerCount = 0
+	If LZC_CampFollowersQuest && LZC_CampFollowersQuest.IsRunning()
+		Actor[] campers = (LZC_CampFollowersQuest as LZC_CampFollowersScript).CampFollowers()
+		Int i = 0
+		While campers && i < campers.Length
+			If campers[i]
+				followerCount += 1
+			EndIf
+			i += 1
+		EndWhile
+	EndIf
+	Int handle = ModEvent.Create(eventName)
+	If handle
+		ModEvent.PushForm(handle, placedRefs[kCampfire])
+		ModEvent.PushInt(handle, followerCount)
+		ModEvent.Send(handle)
+	EndIf
+EndFunction
+
+LZC_CampsiteQuestScript Function Camp() Global
+	Return Game.GetFormFromFile(0x800, "Wayfarer - A Convenient Camping Framework.esp") as LZC_CampsiteQuestScript
+EndFunction
+
+; Whether the player's camp is up.
+Bool Function IsCampUp() Global
+	LZC_CampsiteQuestScript campScript = Camp()
+	Return campScript && campScript.CampDeployed
+EndFunction
+
+; The camp's centre (see above), or None when there's no camp.
+ObjectReference Function GetCampCentre() Global
+	LZC_CampsiteQuestScript campScript = Camp()
+	If !campScript || !campScript.CampDeployed
+		Return None
+	EndIf
+	Return campScript.CampCentre()
+EndFunction
+
+ObjectReference Function CampCentre()
+	Return placedRefs[kCampfire]
 EndFunction
 
 Function NotifySiteProblem(Int result)

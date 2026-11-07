@@ -236,6 +236,35 @@ For each tent, the addon has:
 
 Tents from addon kits are chosen like the plugin's own (one large tent at most, then small tents; addon tents after the plugin's colours), hold bedrolls the same way, and are packed up with the rest. `LazyCamping.log` lists each addon tent it finds (`Tent addon …`) and warns about a list that's missing its kit or tent. Addon kits can be given recipes or added to merchants by the addon itself.
 
+### 2f. For other mods: camp events
+
+Other mods can react to the camp without making this plugin a master, for example a follower mod switching its followers to a relaxed mode while the camp is up. `LZC_CampsiteQuestScript` sends two SKSE mod events:
+
+| Event | When |
+|---|---|
+| `Wayfarer_CampSetUp` | once the camp is up |
+| `Wayfarer_CampPackedUp` | as pack-up starts, while the camp and its followers are still there |
+
+Both carry the camp's centre (the campfire, or an invisible marker in its place when the firepit is off) and how many followers are at the camp:
+
+```papyrus
+Event OnPlayerLoadGame()  ; and once when your script starts: mod events need registering on every load
+	RegisterForModEvent("Wayfarer_CampSetUp", "OnWayfarerCampSetUp")
+	RegisterForModEvent("Wayfarer_CampPackedUp", "OnWayfarerCampPackedUp")
+EndEvent
+
+Event OnWayfarerCampSetUp(Form akCampCentre, Int aiFollowers)
+	ObjectReference centre = akCampCentre as ObjectReference
+	; e.g. put your followers in relax mode around centre
+EndEvent
+
+Event OnWayfarerCampPackedUp(Form akCampCentre, Int aiFollowers)
+	; e.g. back to following
+EndEvent
+```
+
+To check the camp at any other time (a save loaded with the camp up, say), with `LZC_CampsiteQuestScript.psc` to compile against, still with no master: `LZC_CampsiteQuestScript.IsCampUp()` and `LZC_CampsiteQuestScript.GetCampCentre()` (None without a camp). Both are global functions that find the quest with `Game.GetFormFromFile`, so they just return False / None when this mod isn't installed.
+
 ## 3. Build the SKSE plugin
 
 You need a Windows machine with:
