@@ -1551,7 +1551,7 @@ namespace CampLayout
 			for (std::size_t t = 0; t < static_cast<std::size_t>(kMaxTents) && kFirstTent + t < refs.size(); ++t) {
 				if (auto* tent = refs[kFirstTent + t]) {
 					newTents.push_back(tent->GetHandle());
-					if (!props.Bool("TentCollision", true)) {
+					if (!props.Bool("TentCollision", false)) {
 						RemoveCollision(tent);
 					}
 				}
@@ -1789,7 +1789,7 @@ namespace CampLayout
 	{
 		auto camp = a_ref ? CampScript() : nullptr;
 		const auto* collision = camp ? ScriptObjects::AutoProperty(camp.get(), "TentCollision") : nullptr;
-		if (!collision || !collision->IsBool() || collision->GetBool()) {
+		if (!camp || (collision && collision->IsBool() && collision->GetBool())) {
 			return;
 		}
 		const auto tents = CampTents(camp.get());
