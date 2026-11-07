@@ -1514,6 +1514,17 @@ namespace CampLayout
 			return actors;
 		}
 
+		std::vector<RE::ObjectRefHandle> newTents;  // placed by the last BuildCamp
+
+		// With TentCollision off: the tent's loaded 3D stops colliding. It
+		// collides again when its 3D next loads without this.
+		void RemoveCollision(RE::TESObjectREFR* a_tent)
+		{
+			if (auto* root = a_tent ? a_tent->Get3D() : nullptr) {
+				root->SetCollisionLayer(RE::COL_LAYER::kNonCollidable);
+			}
+		}
+
 		std::vector<RE::TESObjectREFR*> BuildCamp(RE::StaticFunctionTag*, RE::TESQuest* a_quest, std::int32_t a_partners, std::int32_t a_couples,
 			std::vector<RE::Actor*> a_followers)
 		{
@@ -1533,7 +1544,41 @@ namespace CampLayout
 				return {};
 			}
 			const Properties props(object.get());
-			return Builder(props, player, a_followers, a_partners, a_couples).Run();
+			auto refs = Builder(props, player, a_followers, a_partners, a_couples).Run();
+			// Until the script stores them in placedRefs, the new tents are
+			// known only here.
+			newTents.clear();
+			for (std::size_t t = 0; t < static_cast<std::size_t>(kMaxTents) && kFirstTent + t < refs.size(); ++t) {
+				if (auto* tent = refs[kFirstTent + t]) {
+					newTents.push_back(tent->GetHandle());
+					if (!props.Bool("TentCollision", true)) {
+						RemoveCollision(tent);
+					}
+				}
+			}
+			return refs;
+		}
+
+		// The tents the camp in a_camp has up, or that the last BuildCamp
+		// placed.
+		std::vector<RE::TESObjectREFR*> CampTents(RE::BSScript::Object* a_camp)
+		{
+			std::vector<RE::TESObjectREFR*> tents;
+			for (const auto& handle : newTents) {
+				if (auto ref = handle.get()) {
+					tents.push_back(ref.get());
+				}
+			}
+			const auto* placedValue = a_camp ? a_camp->GetVariable("placedRefs") : nullptr;
+			const auto  placed = placedValue && placedValue->IsArray() ? placedValue->GetArray() : nullptr;
+			for (std::size_t t = 0; placed && t < static_cast<std::size_t>(kMaxTents) && kFirstTent + t < placed->size(); ++t) {
+				auto* form = FormValue(&(*placed)[kFirstTent + t]);
+				auto* tent = form ? form->As<RE::TESObjectREFR>() : nullptr;
+				if (tent && std::ranges::find(tents, tent) == tents.end()) {
+					tents.push_back(tent);
+				}
+			}
+			return tents;
 		}
 
 		// Unrolls camp bedroll a_bed (0 to kMaxBedrolls - 1) if it's still
@@ -1738,6 +1783,35 @@ namespace CampLayout
 			}
 		}
 		return false;
+	}
+
+	void OnObjectLoaded(RE::TESObjectREFR* a_ref)
+	{
+		auto camp = a_ref ? CampScript() : nullptr;
+		const auto* collision = camp ? ScriptObjects::AutoProperty(camp.get(), "TentCollision") : nullptr;
+		if (!collision || !collision->IsBool() || collision->GetBool()) {
+			return;
+		}
+		const auto tents = CampTents(camp.get());
+		if (std::ranges::find(tents, a_ref) != tents.end()) {
+			RemoveCollision(a_ref);
+		}
+	}
+
+	void ApplyTentCollision(bool a_collide)
+	{
+		for (auto* tent : CampTents(CampScript().get())) {
+			if (!tent || tent->IsDisabled()) {
+				continue;
+			}
+			if (a_collide) {
+				// Loading its 3D afresh brings its collision back.
+				tent->Disable();
+				tent->Enable(false);
+			} else {
+				RemoveCollision(tent);
+			}
+		}
 	}
 
 	void Register(RE::BSScript::IVirtualMachine* a_vm)

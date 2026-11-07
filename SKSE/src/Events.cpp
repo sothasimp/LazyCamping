@@ -134,6 +134,24 @@ namespace Events
 		}
 
 		// The player sitting down, for followers to join them (and standing up).
+		class ObjectLoaded : public RE::BSTEventSink<RE::TESObjectLoadedEvent>
+		{
+		public:
+			RE::BSEventNotifyControl ProcessEvent(const RE::TESObjectLoadedEvent* a_event, RE::BSTEventSource<RE::TESObjectLoadedEvent>*) override
+			{
+				if (a_event && a_event->loaded) {
+					// Next frame, with the 3D in place.
+					const auto formID = a_event->formID;
+					SKSE::GetTaskInterface()->AddTask([formID] {
+						if (auto* ref = RE::TESForm::LookupByID<RE::TESObjectREFR>(formID)) {
+							CampLayout::OnObjectLoaded(ref);
+						}
+					});
+				}
+				return RE::BSEventNotifyControl::kContinue;
+			}
+		};
+
 		class Furniture : public RE::BSTEventSink<RE::TESFurnitureEvent>
 		{
 		public:
@@ -167,6 +185,8 @@ namespace Events
 		static SpellCast spellCast;
 		static Activate  activate;
 		static Furniture furniture;
+		static ObjectLoaded objectLoaded;
+		events->AddEventSink<RE::TESObjectLoadedEvent>(&objectLoaded);
 		events->AddEventSink<RE::TESSpellCastEvent>(&spellCast);
 		events->AddEventSink<RE::TESActivateEvent>(&activate);
 		events->AddEventSink<RE::TESFurnitureEvent>(&furniture);

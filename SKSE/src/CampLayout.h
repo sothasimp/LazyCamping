@@ -24,4 +24,12 @@ namespace CampLayout
 	// camp tent the player is in, so Frostfall counts it as shelter. Call after
 	// a game loads.
 	void SetUpCampfireTents();
+
+	// With TentCollision off, a camp tent's 3D loading (walking back to the
+	// camp, loading a save) is made non-colliding. Main thread only.
+	void OnObjectLoaded(RE::TESObjectREFR* a_ref);
+
+	// Turns the collision of the camp's tents on or off now, for the SKSE
+	// menu. Main thread only.
+	void ApplyTentCollision(bool a_collide);
 }

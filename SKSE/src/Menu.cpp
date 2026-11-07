@@ -1,6 +1,7 @@
 #include "Menu.h"
 
 #include "BedrollKit.h"
+#include "CampLayout.h"
 #include "VendorKits.h"
 #include "ScriptObjects.h"
 
@@ -40,6 +41,7 @@ namespace Menu
 			bool         fadeOnSetUp{ false };
 			bool         ashNomadLoaded{ false };  // Ash Nomad - Bedrolls - BOS Distributed
 			bool         fireOutsideLargeTent{ false };
+			bool         tentCollision{ true };
 		};
 
 		constexpr const char* kBedrollStyles[] = { "Vanilla", "Bedroll Alternative - Green", "Bedroll Alternative - Blue",
@@ -99,14 +101,15 @@ namespace Menu
 			auto*  fireSeats = object ? AutoProperty(object.get(), "PlaceFireSeats") : nullptr;
 			auto*  fade = object ? AutoProperty(object.get(), "FadeOnSetUp") : nullptr;
 			auto*  fireOutside = object ? AutoProperty(object.get(), "FireOutsideLargeTent") : nullptr;
-			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll && merchants && perFire && mapMarker && rolled && campfire && fireSeats && fade && fireOutside;
+			auto*  tentCollision = object ? AutoProperty(object.get(), "TentCollision") : nullptr;
+			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll && merchants && perFire && mapMarker && rolled && campfire && fireSeats && fade && fireOutside && tentCollision;
 			if (found) {
 				auto* dataHandler = RE::TESDataHandler::GetSingleton();
 				values = { firewood->GetBool(), burnHours->GetFloat(), block->GetBool(), grass->GetBool(), light->GetBool(), tub->GetBool(),
 					tubInTent->GetBool(), slope->GetBool(), seat->GetSInt(), bedroll->GetSInt(),
 					PluginLoaded(kBedrollAltPlugin),
 					merchants->GetBool(), perFire->GetSInt(), mapMarker->GetBool(), rolled->GetBool(), campfire->GetBool(), fireSeats->GetBool(), fade->GetBool(),
-					PluginLoaded(kAshNomadBedrollsPlugin), fireOutside->GetBool() };
+					PluginLoaded(kAshNomadBedrollsPlugin), fireOutside->GetBool(), tentCollision->GetBool() };
 			}
 
 			std::scoped_lock guard(lock);
@@ -143,6 +146,13 @@ namespace Menu
 				}
 				if (auto* fireSeats = AutoProperty(object.get(), "PlaceFireSeats")) {
 					fireSeats->SetBool(a_values.placeFireSeats);
+				}
+				if (auto* tentCollision = AutoProperty(object.get(), "TentCollision")) {
+					const bool was = tentCollision->GetBool();
+					tentCollision->SetBool(a_values.tentCollision);
+					if (was != a_values.tentCollision) {
+						CampLayout::ApplyTentCollision(a_values.tentCollision);
+					}
 				}
 				if (auto* fireOutside = AutoProperty(object.get(), "FireOutsideLargeTent")) {
 					fireOutside->SetBool(a_values.fireOutsideLargeTent);
@@ -216,6 +226,8 @@ namespace Menu
 				ImGuiMCP::SetItemTooltip("Clear the grass in a circle around the camp while it's up. Takes effect at the next camp.");
 				changed |= ImGuiMCP::Checkbox("Fade to black during setup and pack-up", &values.fadeOnSetUp);
 				ImGuiMCP::SetItemTooltip("Fade the screen to black while the camp goes up or is packed up, and back in once it's done.");
+				changed |= ImGuiMCP::Checkbox("Tent collision", &values.tentCollision);
+				ImGuiMCP::SetItemTooltip("Turn off to let you and your followers walk through the tents' walls. Applies to a camp that's already up too.");
 				changed |= ImGuiMCP::Checkbox("Map marker", &values.placeMapMarker);
 				ImGuiMCP::SetItemTooltip("Show the camp on the world map while it's up, for fast travel. Takes effect at the next camp.");
 				changed |= ImGuiMCP::Checkbox("Bathtub", &values.placeTub);
