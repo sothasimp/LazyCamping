@@ -77,7 +77,7 @@ namespace CampLayout
 		constexpr float kChoppingBlockBesideLargeTent = 170.0f;
 		constexpr float kChoppingBlockTurn = 25.0f;
 		constexpr float kBedrollHalfLength = 100.0f;
-		constexpr float kBedrollSeatTurn = 90.0f;  // the marker on each bedroll, clockwise from facing the fire/tent
+		constexpr float kBedrollSeatTurn = 180.0f;  // the marker on each bedroll, clockwise from facing the fire/tent
 		// Small tents beside the large tent, from the fire's centre (negative
 		// fwd: toward the player), the right one turned clockwise from facing
 		// the player, the left mirrored.
