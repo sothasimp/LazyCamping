@@ -78,7 +78,8 @@ namespace CampLayout
 		constexpr float kChoppingBlockTurn = 25.0f;
 		constexpr float kBedrollHalfLength = 100.0f;
 		constexpr float kBedrollSeatTurn = 180.0f;
-		constexpr float kBedrollSeatLift = 3.0f;  // and this far above the ground  // the marker on each bedroll, clockwise from facing the fire/tent
+		constexpr float kBedrollSeatLift = 3.0f;  // and this far above the ground
+		constexpr float kPlayerSeatLift = 3.0f;   // the player's cushioned fire seats too  // the marker on each bedroll, clockwise from facing the fire/tent
 		// Small tents beside the large tent, from the fire's centre (negative
 		// fwd: toward the player), the right one turned clockwise from facing
 		// the player, the left mirrored.
@@ -1063,9 +1064,15 @@ namespace CampLayout
 				}
 				const std::int32_t followerSeats = follower ? std::clamp(_bedrolls - 1, 0, kMaxFollowerSeats) : 0;
 				SetSeat(kPlayerSeat, playerSeat, 0.0f);
+				_layout.lift[kPlayerSeat] = kPlayerSeatLift;
 				const std::int32_t sideSeats = playerSeat ? std::max(followerSeats, 2) : followerSeats;
 				for (std::int32_t f = 0; f < sideSeats; ++f) {
-					SetSeat(kFirstFollowerSeat + static_cast<std::size_t>(f), f < 2 && playerSeat ? playerSeat : follower, static_cast<float>(FanPlace(f + 1)) * kSeatStep);
+					const auto slot = kFirstFollowerSeat + static_cast<std::size_t>(f);
+					const bool cushioned = f < 2 && playerSeat;
+					SetSeat(slot, cushioned ? playerSeat : follower, static_cast<float>(FanPlace(f + 1)) * kSeatStep);
+					if (cushioned) {
+						_layout.lift[slot] = kPlayerSeatLift;
+					}
 				}
 			}
 
