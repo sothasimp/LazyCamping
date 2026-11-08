@@ -264,7 +264,7 @@ Int Property kCookingStation = 37 AutoReadOnly     ; hidden, at the fire
 Int Property kTub = 38 AutoReadOnly
 Int Property kSlotCount = 39 AutoReadOnly
 
-Int Property kNativeVersion = 17 AutoReadOnly         ; LazyCamping.dll needed
+Int Property kNativeVersion = 18 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
 ; With BedrollsStartRolled: each bedroll's rolled-up bedroll (None once
@@ -286,10 +286,6 @@ Bool busy = False
 ; they're unbound and GetVersion() returns 0.
 ; ---------------------------------------------------------------------------
 Int Function GetVersion() Global Native
-; The text for asKey in the game's language, from Interface/Translations/
-; Wayfarer - A Convenient Camping Framework_<LANGUAGE>.txt, or asEnglish; any
-; {} in it becomes asArg.
-String Function Tr(String asKey, String asEnglish, String asArg = "") Global Native
 
 ; Sets up a camp in front of the player in one go: works out which tents and
 ; bedrolls go up and where everything stands from this script's properties
@@ -383,25 +379,25 @@ EndFunction
 
 Bool Function CanCampHere()
 	If PlayerRef.IsInInterior()
-		Debug.Notification(Tr("$LZC_MsgIndoors", "You can't set up camp indoors."))
+		Debug.Notification("You can't set up camp indoors.")
 		Return False
 	EndIf
 	If PlayerRef.IsInCombat()
-		Debug.Notification(Tr("$LZC_MsgCombat", "You can't set up camp during combat."))
+		Debug.Notification("You can't set up camp during combat.")
 		Return False
 	EndIf
 	If PlayerRef.IsOnMount()
-		Debug.Notification(Tr("$LZC_MsgMounted", "You must dismount to set up camp."))
+		Debug.Notification("You must dismount to set up camp.")
 		Return False
 	EndIf
 	If PlayerRef.GetSitState() != 0
-		Debug.Notification(Tr("$LZC_MsgSeated", "You can't set up camp while seated."))
+		Debug.Notification("You can't set up camp while seated.")
 		Return False
 	EndIf
 
 	Location loc = PlayerRef.GetCurrentLocation()
 	If loc && ((LocTypeCity && loc.HasKeyword(LocTypeCity)) || (LocTypeTown && loc.HasKeyword(LocTypeTown)))
-		Debug.Notification(Tr("$LZC_MsgSettlement", "You can't set up camp in a settlement."))
+		Debug.Notification("You can't set up camp in a settlement.")
 		Return False
 	EndIf
 
@@ -417,7 +413,7 @@ Bool Function HasAllKits()
 	If missing != ""
 		; Without the last ", ".
 		missing = StringUtil.Substring(missing, 0, StringUtil.GetLength(missing) - 2)
-		Debug.Notification(Tr("$LZC_MsgNeedKits", "You need {} to set up camp.", missing))
+		Debug.Notification("You need " + missing + " to set up camp.")
 		Return False
 	EndIf
 	Return True
@@ -502,7 +498,7 @@ Function SetUpCamp()
 
 	CampDeployed = True
 	; The leading space sorts the power to the top of the magic menu.
-	RenameForm(LZC_SetUpCampPower, Tr("$LZC_PackUpCampPower", " Pack Up Camp"))
+	RenameForm(LZC_SetUpCampPower, " Pack Up Camp")
 	SendCampEvent("Wayfarer_CampSetUp")
 EndFunction
 
@@ -519,7 +515,7 @@ EndFunction
 ; FirewoodPerFire firewood, for FireBurnHours.
 Function LightFire()
 	If !Firewood01 || PlayerRef.GetItemCount(Firewood01) < FirewoodPerFire
-		Debug.Notification(Tr("$LZC_MsgNeedFirewood", "You need {} firewood to light the fire.", FirewoodPerFire as String))
+		Debug.Notification("You need " + FirewoodPerFire + " firewood to light the fire.")
 		Return
 	EndIf
 	PlayerRef.RemoveItem(Firewood01, FirewoodPerFire)
@@ -683,7 +679,7 @@ EndFunction
 ; Asks "Pack up your camp?" and packs up if the player says yes.
 Function ConfirmPackUp()
 	If PlayerRef.GetSitState() != 0
-		Debug.Notification(Tr("$LZC_MsgGetUpFirst", "You must get up before packing up camp."))
+		Debug.Notification("You must get up before packing up camp.")
 		Return
 	EndIf
 	If !LZC_PackUpConfirmMsg || LZC_PackUpConfirmMsg.Show() == 0
@@ -832,14 +828,14 @@ EndFunction
 
 Function NotifySiteProblem(Int result)
 	If result == 1
-		Debug.Notification(Tr("$LZC_MsgNoGround", "There's no solid ground here to camp on."))
+		Debug.Notification("There's no solid ground here to camp on.")
 	ElseIf result == 2
-		Debug.Notification(Tr("$LZC_MsgTooSteep", "The ground here is too steep to camp on."))
+		Debug.Notification("The ground here is too steep to camp on.")
 	ElseIf result == 3
-		Debug.Notification(Tr("$LZC_MsgNoRoom", "There isn't enough flat, open ground here."))
+		Debug.Notification("There isn't enough flat, open ground here.")
 	ElseIf result == 4
-		Debug.Notification(Tr("$LZC_MsgWater", "You can't set up camp in the water."))
+		Debug.Notification("You can't set up camp in the water.")
 	Else
-		Debug.Notification(Tr("$LZC_MsgFailed", "Your camp couldn't be set up."))
+		Debug.Notification("Your camp couldn't be set up.")
 	EndIf
 EndFunction

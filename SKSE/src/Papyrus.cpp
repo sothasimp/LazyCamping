@@ -5,7 +5,6 @@
 #include "FormNames.h"
 #include "GrassHider.h"
 #include "Placement.h"
-#include "Translation.h"
 
 // Native functions, declared Global Native in LZC_CampsiteQuestScript.psc. They are registered as not callable
 // from tasklets, so the VM runs them in sync with the main thread, which is
@@ -19,7 +18,7 @@ namespace Papyrus
 	namespace
 	{
 		constexpr auto         kClass = "LZC_CampsiteQuestScript"sv;
-		constexpr std::int32_t kVersion = 17;
+		constexpr std::int32_t kVersion = 18;
 
 		constexpr RE::FormID kXMarkerHeading = 0x34;  // Skyrim.esm
 
@@ -102,15 +101,6 @@ namespace Papyrus
 			}
 
 			return (highest - lowest) > a_maxStep ? kUneven : kClear;
-		}
-
-		RE::BSFixedString Tr(RE::StaticFunctionTag*, RE::BSFixedString a_key, RE::BSFixedString a_english, RE::BSFixedString a_arg)
-		{
-			std::string text = Translation::T(a_key.c_str(), a_english.c_str());
-			if (const auto at = text.find("{}"); at != std::string::npos) {
-				text.replace(at, 2, a_arg.c_str());
-			}
-			return text;
 		}
 
 		std::int32_t GetVersion(RE::StaticFunctionTag*)
@@ -448,7 +438,6 @@ namespace Papyrus
 	bool Register(RE::BSScript::IVirtualMachine* a_vm)
 	{
 		a_vm->RegisterFunction("GetVersion"sv, kClass, GetVersion);
-		a_vm->RegisterFunction("Tr"sv, kClass, Tr);
 		a_vm->RegisterFunction("RenameForm"sv, kClass, RenameForm);
 		a_vm->RegisterFunction("PackUpRefs"sv, kClass, PackUpRefs);
 		CampLayout::Register(a_vm);
