@@ -77,7 +77,8 @@ namespace CampLayout
 		constexpr float kChoppingBlockBesideLargeTent = 170.0f;
 		constexpr float kChoppingBlockTurn = 25.0f;
 		constexpr float kBedrollHalfLength = 100.0f;
-		constexpr float kBedrollSeatTurn = 180.0f;  // the marker on each bedroll, clockwise from facing the fire/tent
+		constexpr float kBedrollSeatTurn = 180.0f;
+		constexpr float kBedrollSeatLift = 3.0f;  // and this far above the ground  // the marker on each bedroll, clockwise from facing the fire/tent
 		// Small tents beside the large tent, from the fire's centre (negative
 		// fwd: toward the player), the right one turned clockwise from facing
 		// the player, the left mirrored.
@@ -1233,6 +1234,7 @@ namespace CampLayout
 					const bool  outside = _tents.empty() || _bedGroup[b] >= static_cast<std::int32_t>(_tents.size());
 					const float turn = outside ? _ringSeatTurn[b] : _layout.turn[kFirstTent + _bedGroup[b]];
 					Set(kFirstBedrollSeat + b, seat, _layout.fwd[kFirstBedroll + b], _layout.side[kFirstBedroll + b], turn + kBedrollSeatTurn);
+					_layout.lift[kFirstBedrollSeat + b] = kBedrollSeatLift;
 				}
 			}
 
