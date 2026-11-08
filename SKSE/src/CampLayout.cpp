@@ -79,7 +79,7 @@ namespace CampLayout
 		constexpr float kBedrollHalfLength = 100.0f;
 		constexpr float kBedrollSeatTurn = 180.0f;
 		constexpr float kBedrollSeatLift = 3.0f;  // and this far above the ground
-		constexpr float kPlayerSeatLift = 3.0f;   // the player's cushioned fire seats too  // the marker on each bedroll, clockwise from facing the fire/tent
+		constexpr float kPlayerSeatLift = 8.0f;   // the player's cushioned fire seats too  // the marker on each bedroll, clockwise from facing the fire/tent
 		// Small tents beside the large tent, from the fire's centre (negative
 		// fwd: toward the player), the right one turned clockwise from facing
 		// the player, the left mirrored.
