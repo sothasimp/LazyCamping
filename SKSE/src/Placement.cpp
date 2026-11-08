@@ -23,27 +23,36 @@ namespace Placement
 		}
 
 		// Havok works in its own units; game units must be scaled.
-		const float        scale = RE::bhkWorld::GetWorldScale();
-		const RE::NiPoint3 from{ a_x, a_y, a_top };
-		const RE::NiPoint3 to{ a_x, a_y, a_top - a_length };
-
+		const float  scale = RE::bhkWorld::GetWorldScale();
+		const float  bottom = a_top - a_length;
+		float        top = a_top;
 		RE::bhkPickData pick;
-		pick.rayInput.from = RE::hkVector4(from * scale);
-		pick.rayInput.to = RE::hkVector4(to * scale);
-		// The line-of-sight layer hits terrain, statics, trees and clutter, but not water.
-		pick.rayInput.filterInfo.SetCollisionLayer(RE::COL_LAYER::kLOS);
-
-		{
-			RE::BSReadLockGuard lock(world->worldLock);
-			world->PickObject(pick);
-		}
-
-		if (!pick.rayOutput.HasHit()) {
-			return std::nullopt;
+		// Actors aren't ground: the player standing where a seat goes, or a
+		// follower nearby, would put it on their head. Cast again from just
+		// below them (a few times at most).
+		for (int tries = 0;; ++tries) {
+			pick = RE::bhkPickData();
+			pick.rayInput.from = RE::hkVector4(RE::NiPoint3{ a_x, a_y, top } * scale);
+			pick.rayInput.to = RE::hkVector4(RE::NiPoint3{ a_x, a_y, bottom } * scale);
+			// The line-of-sight layer hits terrain, statics, trees and clutter, but not water.
+			pick.rayInput.filterInfo.SetCollisionLayer(RE::COL_LAYER::kLOS);
+			{
+				RE::BSReadLockGuard lock(world->worldLock);
+				world->PickObject(pick);
+			}
+			if (!pick.rayOutput.HasHit()) {
+				return std::nullopt;
+			}
+			auto*       ref = RE::TESHavokUtilities::FindCollidableRef(*pick.rayOutput.rootCollidable);
+			const float hitZ = top - (top - bottom) * pick.rayOutput.hitFraction;
+			if (!ref || !ref->As<RE::Actor>() || tries >= 4 || hitZ - 1.0f <= bottom) {
+				break;
+			}
+			top = hitZ - 1.0f;
 		}
 
 		GroundHit hit;
-		hit.point = { a_x, a_y, a_top - a_length * pick.rayOutput.hitFraction };
+		hit.point = { a_x, a_y, top - (top - bottom) * pick.rayOutput.hitFraction };
 		hit.normal = ToNiPoint3(pick.rayOutput.normal);
 		if (hit.normal.Unitize() == 0.0f) {
 			hit.normal = { 0.0f, 0.0f, 1.0f };
