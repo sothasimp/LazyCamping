@@ -415,7 +415,9 @@ Bool Function HasAllKits()
 	EndIf
 
 	If missing != ""
-		Debug.Notification(Tr("$LZC_MsgNeedKits", "You need: {}to set up camp.", missing))
+		; Without the last ", ".
+		missing = StringUtil.Substring(missing, 0, StringUtil.GetLength(missing) - 2)
+		Debug.Notification(Tr("$LZC_MsgNeedKits", "You need {} to set up camp.", missing))
 		Return False
 	EndIf
 	Return True
