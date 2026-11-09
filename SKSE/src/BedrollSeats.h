@@ -7,10 +7,10 @@ namespace BedrollSeats
 	// Hooks furniture activation. Call from SKSEPluginLoad.
 	void Install();
 
-	// Flags the bedroll seat (LZC_BedrollSitMarker) as furniture the player
-	// can sleep in, so the game may offer Sleep while lying on it. Call once
-	// the data has loaded.
-	void AllowSleepOnSeats();
+	// While the player lies on a camp bedroll's seat, the Wait menu (T) opens
+	// as the Sleep menu instead, so they can sleep without getting up. Call
+	// once the game's UI exists (kDataLoaded).
+	void InstallSleepMenu();
 
 	// The camp's bedrolls and the seat on each (same index; pairs with a
 	// None are skipped), replacing any earlier camp's.

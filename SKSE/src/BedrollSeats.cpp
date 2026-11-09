@@ -56,6 +56,57 @@ namespace BedrollSeats
 			}
 		}
 
+		// The game's own way of opening the Sleep/Wait menu, as a bed does
+		// (a_sleep) or the Wait key does.
+		void OpenSleepWaitMenu(bool a_sleep)
+		{
+			using func_t = void (*)(bool);
+			static REL::Relocation<func_t> func{ RELOCATION_ID(51618, 52490) };
+			func(a_sleep);
+		}
+
+		bool PlayerOnCampSeat()
+		{
+			auto* player = RE::PlayerCharacter::GetSingleton();
+			const auto furniture = player ? player->GetOccupiedFurniture().get() : nullptr;
+			if (!furniture) {
+				return false;
+			}
+			const auto id = furniture->GetFormID();
+			return std::ranges::any_of(seats, [&](const auto& a_pair) { return a_pair.second == id; });
+		}
+
+		// The Wait menu opening while the player lies on a camp bedroll's seat
+		// is closed and opened again as the Sleep menu.
+		class SleepMenuRedirect : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
+		{
+		public:
+			RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent* a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>*) override
+			{
+				if (!a_event || !a_event->opening || a_event->menuName != RE::SleepWaitMenu::MENU_NAME) {
+					return RE::BSEventNotifyControl::kContinue;
+				}
+				if (reopening.exchange(false)) {
+					return RE::BSEventNotifyControl::kContinue;  // the one opened below
+				}
+				SKSE::GetTaskInterface()->AddTask([] {
+					if (!PlayerOnCampSeat()) {
+						return;
+					}
+					if (auto* queue = RE::UIMessageQueue::GetSingleton()) {
+						queue->AddMessage(RE::SleepWaitMenu::MENU_NAME, RE::UI_MESSAGE_TYPE::kHide, nullptr);
+					}
+					SKSE::GetTaskInterface()->AddTask([] {
+						reopening = true;
+						OpenSleepWaitMenu(true);
+					});
+				});
+				return RE::BSEventNotifyControl::kContinue;
+			}
+
+			static inline std::atomic<bool> reopening{ false };
+		};
+
 		// TESFurniture::Activate (vfunc 0x37): for every furniture, so pass
 		// anything that isn't the player sneak-activating a camp bedroll.
 		struct FurnitureActivate
@@ -96,17 +147,12 @@ namespace BedrollSeats
 		}).detach();
 	}
 
-	void AllowSleepOnSeats()
+	void InstallSleepMenu()
 	{
-		constexpr RE::FormID kBedrollSitMarker = 0x821;  // LZC_BedrollSitMarker
-		auto* dataHandler = RE::TESDataHandler::GetSingleton();
-		auto* seat = dataHandler ? dataHandler->LookupForm<RE::TESFurniture>(kBedrollSitMarker, "Wayfarer - A Convenient Camping Framework.esp") : nullptr;
-		if (!seat) {
-			logger::warn("Bedroll seat (LZC_BedrollSitMarker) not found; it can't be made a bed");
-			return;
+		static SleepMenuRedirect redirect;
+		if (auto* ui = RE::UI::GetSingleton()) {
+			ui->AddEventSink<RE::MenuOpenCloseEvent>(&redirect);
 		}
-		seat->furnFlags.set(RE::TESFurniture::ActiveMarker::kCanSleep);
-		logger::info("Bedroll seat {:08X} flagged Can Sleep", seat->GetFormID());
 	}
 
 	void Set(const std::vector<RE::TESObjectREFR*>& a_beds, const std::vector<RE::TESObjectREFR*>& a_seats)

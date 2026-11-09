@@ -41,7 +41,7 @@ With **Bedrolls start rolled up** on (SKSE menu, on by default), every bedroll, 
 
 **With Campfire installed** (and so **Frostfall**), looked up at run time rather than as a master: the camp's tents get Campfire's *warm* and *waterproof* tent keywords (`isCampfireTentWarm`, `isCampfireTentWaterproof`), and while a camp is up the DLL tells Campfire which camp tent the player is standing in (`_CampInternal.SetCurrentTent`), as Campfire's own tents do. Frostfall then treats the player inside one as sheltered from rain and snow and warm.
 
-**Sneaking and activating any of the camp's bedrolls** sits the player cross-legged on it (on its seat), with or without tents. Activating a bedroll without sneaking opens the usual Sleep/Wait menu. The seats themselves can only be targeted while the player sneaks: otherwise their collision is switched off, so the crosshair always finds the bedroll (followers still use the seats).
+**Sneaking and activating any of the camp's bedrolls** sits the player cross-legged on it (on its seat), with or without tents. Activating a bedroll without sneaking opens the usual Sleep/Wait menu. Lying on a bedroll's seat, the Wait key opens the Sleep menu instead, so the player can sleep without getting up. The seats themselves can only be targeted while the player sneaks: otherwise their collision is switched off, so the crosshair always finds the bedroll (followers still use the seats).
 
 While a camp is up, the power is called **Pack Up Camp** (" Pack Up Camp"). It keeps its place in favourites and the voice slot. **Casting it** asks *Pack up your camp?* and packs it up if confirmed, from anywhere, so a camp left behind never stops the player making a new one. It's the only way to pack up: activating the tents does nothing.
 
