@@ -2,6 +2,7 @@
 
 #include "BedrollKit.h"
 #include "CampLayout.h"
+#include "Translation.h"
 #include "VendorKits.h"
 #include "ScriptObjects.h"
 
@@ -44,9 +45,16 @@ namespace Menu
 			bool         tentCollision{ true };
 		};
 
-		constexpr const char* kBedrollStyles[] = { "Vanilla", "Bedroll Alternative - Green", "Bedroll Alternative - Blue",
-			"Bedroll Alternative - Red", "Bedroll Alternative - Random Color", "Ash Nomad - Blue", "Ash Nomad - Red", "Ash Nomad - Purple",
-			"Ash Nomad - Random Color" };
+		constexpr std::pair<std::string_view, const char*> kBedrollStyles[] = {
+			{ "$LZC_StyleVanilla", "Vanilla" },
+			{ "$LZC_StyleBedrollAlternativeGreen", "Bedroll Alternative - Green" },
+			{ "$LZC_StyleBedrollAlternativeBlue", "Bedroll Alternative - Blue" },
+			{ "$LZC_StyleBedrollAlternativeRed", "Bedroll Alternative - Red" },
+			{ "$LZC_StyleBedrollAlternativeRandomColor", "Bedroll Alternative - Random Color" },
+			{ "$LZC_StyleAshNomadBlue", "Ash Nomad - Blue" },
+			{ "$LZC_StyleAshNomadRed", "Ash Nomad - Red" },
+			{ "$LZC_StyleAshNomadPurple", "Ash Nomad - Purple" },
+			{ "$LZC_StyleAshNomadRandomColor", "Ash Nomad - Random Color" } };
 		constexpr auto        kBedrollAltPlugin = "Bedroll Alternative - BOS Color Variance.esp"sv;
 		constexpr auto        kAshNomadBedrollsPlugin = "Ash Nomad - Bedrolls - BOS Distributed.esp"sv;
 
@@ -60,7 +68,16 @@ namespace Menu
 		// colours have one.
 		int KitStyle(int a_style, bool a_altLoaded) { return a_altLoaded && a_style >= 1 && a_style <= 4 ? a_style : 0; }
 
-		constexpr const char* kSeatColors[] = { "Brown", "White", "Plaid - Green", "Plaid - Yellow", "Plaid - Blue" };
+		constexpr std::pair<std::string_view, const char*> kSeatColors[] = {
+			{ "$LZC_CushionBrown", "Brown" },
+			{ "$LZC_CushionWhite", "White" },
+			{ "$LZC_CushionPlaidGreen", "Plaid - Green" },
+			{ "$LZC_CushionPlaidYellow", "Plaid - Yellow" },
+			{ "$LZC_CushionPlaidBlue", "Plaid - Blue" } };
+
+		using Translation::T;
+
+		const char* Name(const std::pair<std::string_view, const char*>& a_entry) { return T(a_entry.first, a_entry.second); }
 
 		std::mutex                            lock;
 		Values                                shown;
@@ -212,80 +229,84 @@ namespace Menu
 				ready = loaded;
 			}
 			if (!ready) {
-				ImGuiMCP::TextDisabled("Load a game to change these settings.");
+				ImGuiMCP::TextDisabled(T("$LZC_LoadAGameToChange", "Load a game to change these settings."));
 				return;
 			}
 
 			bool       changed = false;
 			const auto open = ImGuiMCP::ImGuiTreeNodeFlags_DefaultOpen;
 
-			if (ImGuiMCP::CollapsingHeader("Camp", open)) {
-				changed |= ImGuiMCP::Checkbox("Align objects to ground slope", &values.alignToSlope);
-				ImGuiMCP::SetItemTooltip("Tilt the tents, bedrolls, seats, fire and clutter to match the ground. Takes effect at the next camp.");
-				changed |= ImGuiMCP::Checkbox("Clear grass around the camp", &values.hideGrassUnderCamp);
-				ImGuiMCP::SetItemTooltip("Clear the grass in a circle around the camp while it's up. Takes effect at the next camp.");
-				changed |= ImGuiMCP::Checkbox("Fade to black during setup and pack-up", &values.fadeOnSetUp);
-				ImGuiMCP::SetItemTooltip("Fade the screen to black while the camp goes up or is packed up, and back in once it's done.");
-				changed |= ImGuiMCP::Checkbox("Tent collision", &values.tentCollision);
-				ImGuiMCP::SetItemTooltip("Turn off to let you and your followers walk through the tents' walls. Applies to a camp that's already up too.");
-				changed |= ImGuiMCP::Checkbox("Map marker", &values.placeMapMarker);
-				ImGuiMCP::SetItemTooltip("Show the camp on the world map while it's up, for fast travel. Takes effect at the next camp.");
-				changed |= ImGuiMCP::Checkbox("Bathtub", &values.placeTub);
-				ImGuiMCP::SetItemTooltip("Place a bathtub of water beside the tents. Takes effect at the next camp.");
+			if (ImGuiMCP::CollapsingHeader(T("$LZC_Camp", "Camp"), open)) {
+				changed |= ImGuiMCP::Checkbox(T("$LZC_AlignObjectsToGroundSlope", "Align objects to ground slope"), &values.alignToSlope);
+				ImGuiMCP::SetItemTooltip(T("$LZC_AlignObjectsToGroundSlopeTip", "Tilt the tents, bedrolls, seats, fire and clutter to match the ground. Takes effect at the next camp."));
+				changed |= ImGuiMCP::Checkbox(T("$LZC_ClearGrassAroundTheCamp", "Clear grass around the camp"), &values.hideGrassUnderCamp);
+				ImGuiMCP::SetItemTooltip(T("$LZC_ClearGrassAroundTheCampTip", "Clear the grass in a circle around the camp while it's up. Takes effect at the next camp."));
+				changed |= ImGuiMCP::Checkbox(T("$LZC_FadeToBlackDuringSetup", "Fade to black during setup and pack-up"), &values.fadeOnSetUp);
+				ImGuiMCP::SetItemTooltip(T("$LZC_FadeToBlackDuringSetupTip", "Fade the screen to black while the camp goes up or is packed up, and back in once it's done."));
+				changed |= ImGuiMCP::Checkbox(T("$LZC_TentCollision", "Tent collision"), &values.tentCollision);
+				ImGuiMCP::SetItemTooltip(T("$LZC_TentCollisionTip", "Turn off to let you and your followers walk through the tents' walls. Applies to a camp that's already up too."));
+				changed |= ImGuiMCP::Checkbox(T("$LZC_MapMarker", "Map marker"), &values.placeMapMarker);
+				ImGuiMCP::SetItemTooltip(T("$LZC_MapMarkerTip", "Show the camp on the world map while it's up, for fast travel. Takes effect at the next camp."));
+				changed |= ImGuiMCP::Checkbox(T("$LZC_Bathtub", "Bathtub"), &values.placeTub);
+				ImGuiMCP::SetItemTooltip(T("$LZC_BathtubTip", "Place a bathtub of water beside the tents. Takes effect at the next camp."));
 				ImGuiMCP::BeginDisabled(!values.placeTub);
-				changed |= ImGuiMCP::Checkbox("Bathtub inside the large tent", &values.tubInLargeTent);
-				ImGuiMCP::SetItemTooltip("Put the bathtub inside the large tent, in place of its third and fourth bedrolls, so it holds 2 at most. Takes effect at the next camp.");
+				changed |= ImGuiMCP::Checkbox(T("$LZC_BathtubInsideTheLargeTent", "Bathtub inside the large tent"), &values.tubInLargeTent);
+				ImGuiMCP::SetItemTooltip(T("$LZC_BathtubInsideTheLargeTentTip", "Put the bathtub inside the large tent, in place of its third and fourth bedrolls, so it holds 2 at most. Takes effect at the next camp."));
 				ImGuiMCP::EndDisabled();
 			}
 
-			if (ImGuiMCP::CollapsingHeader("Bedrolls", open)) {
-				changed |= ImGuiMCP::Checkbox("Bedrolls start rolled up", &values.bedrollsStartRolled);
-				ImGuiMCP::SetItemTooltip("Each bedroll starts as a rolled-up bedroll on the ground: activate it to unroll it in its place. Followers unroll their own at bedtime. Takes effect at the next camp.");
+			if (ImGuiMCP::CollapsingHeader(T("$LZC_Bedrolls", "Bedrolls"), open)) {
+				changed |= ImGuiMCP::Checkbox(T("$LZC_BedrollsStartRolledUp", "Bedrolls start rolled up"), &values.bedrollsStartRolled);
+				ImGuiMCP::SetItemTooltip(T("$LZC_BedrollsStartRolledUpTip", "Each bedroll starts as a rolled-up bedroll on the ground: activate it to unroll it in its place. Followers unroll their own at bedtime. Takes effect at the next camp."));
 				// Each mod's styles greyed out unless it's loaded.
 				const int styleCount = static_cast<int>(std::size(kBedrollStyles));
-				if (ImGuiMCP::BeginCombo("Bedroll style", kBedrollStyles[std::clamp(values.bedrollStyle, 0, styleCount - 1)])) {
+				if (ImGuiMCP::BeginCombo(T("$LZC_BedrollStyle", "Bedroll style"), Name(kBedrollStyles[std::clamp(values.bedrollStyle, 0, styleCount - 1)]))) {
 					for (int style = 0; style < styleCount; ++style) {
 						const bool available = style == 0 || (style <= 4 ? values.bedrollAltLoaded : values.ashNomadLoaded);
-						if (ImGuiMCP::Selectable(kBedrollStyles[style], values.bedrollStyle == style, available ? 0 : ImGuiMCP::ImGuiSelectableFlags_Disabled)) {
+						if (ImGuiMCP::Selectable(Name(kBedrollStyles[style]), values.bedrollStyle == style, available ? 0 : ImGuiMCP::ImGuiSelectableFlags_Disabled)) {
 							values.bedrollStyle = style;
 							changed = true;
 						}
 					}
 					ImGuiMCP::EndCombo();
 				}
-				ImGuiMCP::SetItemTooltip("The camp's bedrolls: vanilla, or with Bedroll Alternative - BOS Color Variance or Ash Nomad - Bedrolls - BOS Distributed installed, one of its colors, or its colors in turn, pairs in a tent matching. Takes effect at the next camp.");
+				ImGuiMCP::SetItemTooltip(T("$LZC_BedrollStyleTip", "The camp's bedrolls: vanilla, or with Bedroll Alternative - BOS Color Variance or Ash Nomad - Bedrolls - BOS Distributed installed, one of its colors, or its colors in turn, pairs in a tent matching. Takes effect at the next camp."));
 			}
 
-			if (ImGuiMCP::CollapsingHeader("Fire", open)) {
-				changed |= ImGuiMCP::Checkbox("Firepit", &values.placeCampfire);
-				ImGuiMCP::SetItemTooltip("Place the campfire with its clutter, light and cooking. Without it there's no firewood mechanic or chopping block either. Takes effect at the next camp.");
+			if (ImGuiMCP::CollapsingHeader(T("$LZC_Fire", "Fire"), open)) {
+				changed |= ImGuiMCP::Checkbox(T("$LZC_Firepit", "Firepit"), &values.placeCampfire);
+				ImGuiMCP::SetItemTooltip(T("$LZC_FirepitTip", "Place the campfire with its clutter, light and cooking. Without it there's no firewood mechanic or chopping block either. Takes effect at the next camp."));
 				ImGuiMCP::BeginDisabled(!values.placeCampfire);
-				changed |= ImGuiMCP::Checkbox("Fire outside the large tent", &values.fireOutsideLargeTent);
-				ImGuiMCP::SetItemTooltip("Stand the large tent 285 units further back, so the fire is in front of it rather than under it, and the small tents beside it 265 further back, so the tents stand in an arc around the fire. Takes effect at the next camp.");
-				changed |= ImGuiMCP::Checkbox("Light marker", &values.placeCampfireLight);
-				ImGuiMCP::SetItemTooltip("Place a light with the campfire. Turn off if a Light Placer config already lights it. Takes effect at the next camp.");
-				changed |= ImGuiMCP::Checkbox("Firewood mechanic", &values.firewoodMechanic);
-				ImGuiMCP::SetItemTooltip("The fire starts out unlit: activate it with firewood to light it. Takes effect at the next camp.");
+				changed |= ImGuiMCP::Checkbox(T("$LZC_FireOutsideTheLargeTent", "Fire outside the large tent"), &values.fireOutsideLargeTent);
+				ImGuiMCP::SetItemTooltip(T("$LZC_FireOutsideTheLargeTentTip", "Stand the large tent 285 units further back, so the fire is in front of it rather than under it, and the small tents beside it 265 further back, so the tents stand in an arc around the fire. Takes effect at the next camp."));
+				changed |= ImGuiMCP::Checkbox(T("$LZC_LightMarker", "Light marker"), &values.placeCampfireLight);
+				ImGuiMCP::SetItemTooltip(T("$LZC_LightMarkerTip", "Place a light with the campfire. Turn off if a Light Placer config already lights it. Takes effect at the next camp."));
+				changed |= ImGuiMCP::Checkbox(T("$LZC_FirewoodMechanic", "Firewood mechanic"), &values.firewoodMechanic);
+				ImGuiMCP::SetItemTooltip(T("$LZC_FirewoodMechanicTip", "The fire starts out unlit: activate it with firewood to light it. Takes effect at the next camp."));
 				ImGuiMCP::BeginDisabled(!values.firewoodMechanic);
-				changed |= ImGuiMCP::SliderFloat("Fire burn time", &values.fireBurnHours, 1.0f, 24.0f, "%.0f hours");
-				ImGuiMCP::SetItemTooltip("How long a fire lit with firewood burns, in game hours. Takes effect the next time it's lit.");
-				changed |= ImGuiMCP::SliderInt("Firewood to light the fire", &values.firewoodPerFire, 1, 6);
-				ImGuiMCP::SetItemTooltip("How many firewood lighting the fire uses up.");
-				changed |= ImGuiMCP::Checkbox("Wood chopping block", &values.placeChoppingBlock);
-				ImGuiMCP::SetItemTooltip("Place a woodcutting block, for chopping firewood. Needs the firewood mechanic. Takes effect at the next camp.");
+				changed |= ImGuiMCP::SliderFloat(T("$LZC_FireBurnTime", "Fire burn time"), &values.fireBurnHours, 1.0f, 24.0f, T("$LZC_HoursFormat", "%.0f hours"));
+				ImGuiMCP::SetItemTooltip(T("$LZC_FireBurnTimeTip", "How long a fire lit with firewood burns, in game hours. Takes effect the next time it's lit."));
+				changed |= ImGuiMCP::SliderInt(T("$LZC_FirewoodToLightTheFire", "Firewood to light the fire"), &values.firewoodPerFire, 1, 6);
+				ImGuiMCP::SetItemTooltip(T("$LZC_FirewoodToLightTheFireTip", "How many firewood lighting the fire uses up."));
+				changed |= ImGuiMCP::Checkbox(T("$LZC_WoodChoppingBlock", "Wood chopping block"), &values.placeChoppingBlock);
+				ImGuiMCP::SetItemTooltip(T("$LZC_WoodChoppingBlockTip", "Place a woodcutting block, for chopping firewood. Needs the firewood mechanic. Takes effect at the next camp."));
 				ImGuiMCP::EndDisabled();
 				ImGuiMCP::EndDisabled();
-				changed |= ImGuiMCP::Checkbox("Fireside cushions", &values.placeFireSeats);
-				ImGuiMCP::SetItemTooltip("Place the seats round the fire, the player's and the followers'. The seats on the bedrolls stay either way. Takes effect at the next camp.");
+				changed |= ImGuiMCP::Checkbox(T("$LZC_FiresideCushions", "Fireside cushions"), &values.placeFireSeats);
+				ImGuiMCP::SetItemTooltip(T("$LZC_FiresideCushionsTip", "Place the seats round the fire, the player's and the followers'. The seats on the bedrolls stay either way. Takes effect at the next camp."));
 				ImGuiMCP::BeginDisabled(!values.placeFireSeats);
-				changed |= ImGuiMCP::Combo("Cushion color", &values.seatColor, kSeatColors, static_cast<int>(std::size(kSeatColors)));
-				ImGuiMCP::SetItemTooltip("The color of the fireside cushions, matching the tents. Takes effect at the next camp.");
+				std::array<const char*, std::size(kSeatColors)> seatColors{};
+				for (std::size_t c = 0; c < seatColors.size(); ++c) {
+					seatColors[c] = Name(kSeatColors[c]);
+				}
+				changed |= ImGuiMCP::Combo(T("$LZC_CushionColor", "Cushion color"), &values.seatColor, seatColors.data(), static_cast<int>(seatColors.size()));
+				ImGuiMCP::SetItemTooltip(T("$LZC_CushionColorTip", "The color of the fireside cushions, matching the tents. Takes effect at the next camp."));
 				ImGuiMCP::EndDisabled();
 			}
 
-			if (ImGuiMCP::CollapsingHeader("Leveled lists", open)) {
-				changed |= ImGuiMCP::Checkbox("Sell kits at general goods merchants", &values.kitsAtMerchants);
-				ImGuiMCP::SetItemTooltip("Merchants can stock the bedroll and tent kits. Shows at their next restock.");
+			if (ImGuiMCP::CollapsingHeader(T("$LZC_LeveledLists", "Leveled lists"), open)) {
+				changed |= ImGuiMCP::Checkbox(T("$LZC_SellKitsAtGeneralGoods", "Sell kits at general goods merchants"), &values.kitsAtMerchants);
+				ImGuiMCP::SetItemTooltip(T("$LZC_SellKitsAtGeneralGoodsTip", "Merchants can stock the bedroll and tent kits. Shows at their next restock."));
 			}
 
 			if (changed) {
