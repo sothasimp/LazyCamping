@@ -77,7 +77,7 @@ namespace CampLayout
 		constexpr float kChoppingBlockBesideLargeTent = 170.0f;
 		constexpr float kChoppingBlockTurn = 25.0f;
 		constexpr float kBedrollHalfLength = 100.0f;
-		constexpr float kBedrollSeatTurn = 180.0f;  // the marker on each bedroll, clockwise from facing the fire/tent
+		constexpr float kBedrollSeatTurn = 180.0f;  // the marker on each bedroll, clockwise from the bedroll's own facing
 		constexpr float kBedrollSeatLift = 3.0f;    // and this far above the ground
 		constexpr float kPlayerSeatLift = 8.0f;     // the player's cushioned fire seats, above the ground
 		// Small tents beside the large tent, from the fire's centre (negative
@@ -1238,9 +1238,11 @@ namespace CampLayout
 					if (!_layout.forms[kFirstBedroll + b]) {
 						continue;
 					}
-					const bool  outside = _tents.empty() || _bedGroup[b] >= static_cast<std::int32_t>(_tents.size());
-					const float turn = outside ? _ringSeatTurn[b] : _layout.turn[kFirstTent + _bedGroup[b]];
-					Set(kFirstBedrollSeat + b, seat, _layout.fwd[kFirstBedroll + b], _layout.side[kFirstBedroll + b], turn + kBedrollSeatTurn);
+					// Turned with its own bedroll, so the head is on the pillow
+					// however the bedroll lies (bedrolls in a large tent, round
+					// the fire and head to head all lie different ways).
+					Set(kFirstBedrollSeat + b, seat, _layout.fwd[kFirstBedroll + b], _layout.side[kFirstBedroll + b],
+						_layout.turn[kFirstBedroll + b] + kBedrollSeatTurn);
 					_layout.lift[kFirstBedrollSeat + b] = kBedrollSeatLift;
 				}
 			}
