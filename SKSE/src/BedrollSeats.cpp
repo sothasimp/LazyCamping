@@ -96,6 +96,19 @@ namespace BedrollSeats
 		}).detach();
 	}
 
+	void AllowSleepOnSeats()
+	{
+		constexpr RE::FormID kBedrollSitMarker = 0x821;  // LZC_BedrollSitMarker
+		auto* dataHandler = RE::TESDataHandler::GetSingleton();
+		auto* seat = dataHandler ? dataHandler->LookupForm<RE::TESFurniture>(kBedrollSitMarker, "Wayfarer - A Convenient Camping Framework.esp") : nullptr;
+		if (!seat) {
+			logger::warn("Bedroll seat (LZC_BedrollSitMarker) not found; it can't be made a bed");
+			return;
+		}
+		seat->furnFlags.set(RE::TESFurniture::ActiveMarker::kCanSleep);
+		logger::info("Bedroll seat {:08X} flagged Can Sleep", seat->GetFormID());
+	}
+
 	void Set(const std::vector<RE::TESObjectREFR*>& a_beds, const std::vector<RE::TESObjectREFR*>& a_seats)
 	{
 		seats.clear();

@@ -7,6 +7,11 @@ namespace BedrollSeats
 	// Hooks furniture activation. Call from SKSEPluginLoad.
 	void Install();
 
+	// Flags the bedroll seat (LZC_BedrollSitMarker) as furniture the player
+	// can sleep in, so the game may offer Sleep while lying on it. Call once
+	// the data has loaded.
+	void AllowSleepOnSeats();
+
 	// The camp's bedrolls and the seat on each (same index; pairs with a
 	// None are skipped), replacing any earlier camp's.
 	void Set(const std::vector<RE::TESObjectREFR*>& a_beds, const std::vector<RE::TESObjectREFR*>& a_seats);

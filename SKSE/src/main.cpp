@@ -50,6 +50,7 @@ SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
 		} else if (a_message->type == SKSE::MessagingInterface::kDataLoaded) {
 			Events::Install();
 			VendorKits::Inject();
+			BedrollSeats::AllowSleepOnSeats();
 		} else if (a_message->type == SKSE::MessagingInterface::kPostLoadGame ||
 				   a_message->type == SKSE::MessagingInterface::kNewGame) {
 			Menu::ApplyLoadedSettings();
