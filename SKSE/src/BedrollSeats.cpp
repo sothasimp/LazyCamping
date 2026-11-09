@@ -76,35 +76,24 @@ namespace BedrollSeats
 			return std::ranges::any_of(seats, [&](const auto& a_pair) { return a_pair.second == id; });
 		}
 
-		// The Wait menu opening while the player lies on a camp bedroll's seat
-		// is closed and opened again as the Sleep menu.
-		class SleepMenuRedirect : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
+		// MenuOpenHandler::ProcessButton: the Wait key, pressed while the player
+		// lies on a camp bedroll's seat, opens the Sleep menu instead (before
+		// the game opens anything, as a bed would).
+		struct WaitButton
 		{
-		public:
-			RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent* a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>*) override
+			static bool thunk(RE::MenuEventHandler* a_this, RE::ButtonEvent* a_event)
 			{
-				if (!a_event || !a_event->opening || a_event->menuName != RE::SleepWaitMenu::MENU_NAME) {
-					return RE::BSEventNotifyControl::kContinue;
-				}
-				if (reopening.exchange(false)) {
-					return RE::BSEventNotifyControl::kContinue;  // the one opened below
-				}
-				SKSE::GetTaskInterface()->AddTask([] {
-					if (!PlayerOnCampSeat()) {
-						return;
-					}
-					if (auto* queue = RE::UIMessageQueue::GetSingleton()) {
-						queue->AddMessage(RE::SleepWaitMenu::MENU_NAME, RE::UI_MESSAGE_TYPE::kHide, nullptr);
-					}
-					SKSE::GetTaskInterface()->AddTask([] {
-						reopening = true;
+				if (a_event && a_event->IsDown() && a_event->QUserEvent() == RE::UserEvents::GetSingleton()->wait) {
+					auto* ui = RE::UI::GetSingleton();
+					if (ui && ui->numPausesGame == 0 && !ui->IsMenuOpen(RE::SleepWaitMenu::MENU_NAME) && PlayerOnCampSeat()) {
 						OpenSleepWaitMenu(true);
-					});
-				});
-				return RE::BSEventNotifyControl::kContinue;
+						return true;
+					}
+				}
+				return func(a_this, a_event);
 			}
 
-			static inline std::atomic<bool> reopening{ false };
+			static inline REL::Relocation<decltype(thunk)> func;
 		};
 
 		// TESFurniture::Activate (vfunc 0x37): for every furniture, so pass
@@ -149,10 +138,8 @@ namespace BedrollSeats
 
 	void InstallSleepMenu()
 	{
-		static SleepMenuRedirect redirect;
-		if (auto* ui = RE::UI::GetSingleton()) {
-			ui->AddEventSink<RE::MenuOpenCloseEvent>(&redirect);
-		}
+		REL::Relocation<std::uintptr_t> vtable{ RE::VTABLE_MenuOpenHandler[0] };
+		WaitButton::func = vtable.write_vfunc(REL::Relocate(0x5, 0x5, 0x8), WaitButton::thunk);
 	}
 
 	void Set(const std::vector<RE::TESObjectREFR*>& a_beds, const std::vector<RE::TESObjectREFR*>& a_seats)
