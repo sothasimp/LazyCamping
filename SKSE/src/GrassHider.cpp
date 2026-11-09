@@ -148,6 +148,9 @@ namespace GrassHider
 			std::uint32_t inCircle{ 0 };       // inside the circle across the ground
 			std::uint32_t wrongHeight{ 0 };    // of those, outside its height band
 			std::uint32_t removed{ 0 };
+			std::uint32_t noData{ 0 };          // groups skipped: no CPU copy of their instances
+			std::uint32_t noDataInstances{ 0 };
+			std::uint32_t missingGroups{ 0 };   // indices with no group behind them
 		};
 
 		State& GetState()
@@ -306,6 +309,12 @@ namespace GrassHider
 					const auto* group = index < data.groups.size() ? data.groups[index] : nullptr;
 					const auto* instances = group && group->vertexBuffer ? group->vertexBuffer->data : nullptr;
 					const auto  key = std::make_tuple(group, instances, group ? group->instanceCount : 0);
+					if (!group) {
+						++a_stats.missingGroups;
+					} else if (!instances && group->instanceCount > 0 && !state.clean.contains(key)) {
+						++a_stats.noData;
+						a_stats.noDataInstances += group->instanceCount;
+					}
 					if (!instances || group->instanceCount == 0 || state.clean.contains(key)) {
 						++i;
 						continue;
@@ -507,6 +516,8 @@ namespace GrassHider
 								 "{} group(s), {} instance(s), {} in the circle, {} of those at the wrong height; {} removed{}",
 						stats.cells, stats.noGrassData, stats.handles, stats.busyShapes, stats.otherSize, stats.lastOtherSize, stats.groups,
 						stats.instances, stats.inCircle, stats.wrongHeight, stats.removed, state.layoutBad ? "; stopped: unexpected layout" : "");
+					logger::info("Grass: skipped {} group(s) ({} instance(s)) with no CPU copy of their instances, {} missing group(s)",
+						stats.noData, stats.noDataInstances, stats.missingGroups);
 				}
 			}
 			UpdateBusy();
