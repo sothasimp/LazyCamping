@@ -10,6 +10,43 @@ namespace BedrollSeats
 		// Bedroll -> its seat. Main thread only.
 		std::map<RE::FormID, RE::FormID> seats;
 
+		// Each seat's own collision layer, seen before it was hidden.
+		std::map<RE::FormID, RE::COL_LAYER> seatLayers;
+		std::atomic<bool>                   anySeats{ false };
+
+		// The seats can only be targeted (and so activated by the player
+		// directly) while the player sneaks: otherwise their collision is off,
+		// and the crosshair finds the bedroll under them. Followers' AI uses
+		// them either way. Checked a few times a second, which also catches a
+		// seat's 3D loading again.
+		void UpdateSeatTargets()
+		{
+			auto* player = RE::PlayerCharacter::GetSingleton();
+			if (!player) {
+				return;
+			}
+			const bool sneaking = player->IsSneaking();
+			for (const auto& [bed, seatID] : seats) {
+				auto* seat = RE::TESForm::LookupByID<RE::TESObjectREFR>(seatID);
+				auto* root = seat ? seat->Get3D() : nullptr;
+				if (!root) {
+					continue;
+				}
+				const auto layer = root->GetCollisionLayer();
+				if (layer != RE::COL_LAYER::kNonCollidable && layer != RE::COL_LAYER::kUnidentified) {
+					seatLayers[seatID] = layer;
+				}
+				const auto own = seatLayers.find(seatID);
+				if (own == seatLayers.end()) {
+					continue;  // no collision of its own to switch
+				}
+				const auto wanted = sneaking ? own->second : RE::COL_LAYER::kNonCollidable;
+				if (layer != wanted) {
+					root->SetCollisionLayer(wanted);
+				}
+			}
+		}
+
 		void Sit(RE::FormID a_seat)
 		{
 			auto* seat = RE::TESForm::LookupByID<RE::TESObjectREFR>(a_seat);
@@ -46,6 +83,17 @@ namespace BedrollSeats
 	{
 		REL::Relocation<std::uintptr_t> vtable{ RE::VTABLE_TESFurniture[0] };
 		FurnitureActivate::func = vtable.write_vfunc(0x37, FurnitureActivate::thunk);
+
+		std::thread([] {
+			for (;;) {
+				std::this_thread::sleep_for(250ms);
+				if (anySeats) {
+					if (auto* tasks = SKSE::GetTaskInterface()) {
+						tasks->AddTask(UpdateSeatTargets);
+					}
+				}
+			}
+		}).detach();
 	}
 
 	void Set(const std::vector<RE::TESObjectREFR*>& a_beds, const std::vector<RE::TESObjectREFR*>& a_seats)
@@ -56,11 +104,16 @@ namespace BedrollSeats
 				seats[a_beds[i]->GetFormID()] = a_seats[i]->GetFormID();
 			}
 		}
+		seatLayers.clear();
+		anySeats = !seats.empty();
+		UpdateSeatTargets();
 	}
 
 	void Clear()
 	{
 		seats.clear();
+		seatLayers.clear();
+		anySeats = false;
 	}
 
 	void Save(SKSE::SerializationInterface* a_intfc)
@@ -94,11 +147,14 @@ namespace BedrollSeats
 				seats[bed] = seat;
 			}
 		}
+		anySeats = !seats.empty();
 		return true;
 	}
 
 	void Revert()
 	{
 		seats.clear();
+		seatLayers.clear();
+		anySeats = false;
 	}
 }
