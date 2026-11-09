@@ -2,7 +2,7 @@
 
 A camping mod for Skyrim Special Edition.
 
-The mod adds a **Set Up Camp** Lesser Power, named " Set Up Camp" with a leading space so it sorts to the top of the magic menu. When the player has at least one **Bedroll** in their inventory, casting the power builds a camp in front of the player, always with a campfire. Tent kits are optional. The kits are **reusable**: setting up camp doesn't take them from the inventory. The mod requires **SKSE**, **Address Library for SKSE Plugins**, and its own `LazyCamping.dll`. The camp includes:
+The mod adds a **Set Up Camp** Lesser Power, named " Set Up Camp" with a leading space so it sorts to the top of the magic menu. When the player has at least one **Bedroll** in their inventory, casting the power builds a camp in front of the player, always with a campfire. Tent kits are optional. The kits are **reusable**: while the camp is up, the kits it was set up from (each tent's, and a bedroll kit per bedroll, followers' first) are out of their owners' inventories, and packing up gives them all back. The mod requires **SKSE**, **Address Library for SKSE Plugins**, and its own `LazyCamping.dll`. The camp includes:
 
 - a burning campfire with flickering light. **Activating it opens the Cook menu** (no animation, as there's no pot to stir).
   - with the optional **firewood mechanic** (`FirewoodMechanic`), the fire starts out as an unlit firepit. Activating it with `Firewood01` in the inventory lights it, burning 2 (`FirewoodPerFire`, 1 to 6 on the SKSE menu); it burns for 6 game hours (`FireBurnHours`), then goes out and can be lit again. A woodcutting block stands beside the outermost tent (or along the bedroll fan without tents) for chopping more.

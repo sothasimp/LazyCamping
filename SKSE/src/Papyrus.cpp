@@ -1,6 +1,7 @@
 #include "Papyrus.h"
 
 #include "BedrollSeats.h"
+#include "CampKits.h"
 #include "CampLayout.h"
 #include "FormNames.h"
 #include "GrassHider.h"
@@ -395,6 +396,7 @@ namespace Papyrus
 		{
 			GrassHider::Show();
 			BedrollSeats::Clear();
+			CampKits::ReturnAll();
 			for (auto* ref : a_disable) {
 				if (ref) {
 					ref->Disable();

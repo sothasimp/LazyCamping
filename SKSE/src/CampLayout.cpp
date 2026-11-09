@@ -1,5 +1,7 @@
 #include "CampLayout.h"
 
+#include "CampKits.h"
+
 #include "BedrollSeats.h"
 #include "GrassHider.h"
 #include "Papyrus.h"
@@ -503,6 +505,7 @@ namespace CampLayout
 				RollUp(refs, owners);
 				built.owners = owners;
 				Report(refs);
+				PutAwayKits();
 				return refs;
 			}
 
@@ -527,6 +530,50 @@ namespace CampLayout
 					}
 				}
 				return -1;
+			}
+
+			// a_count of a_kit out of follower a_follower's own inventory, then the
+			// stores a follower framework keeps for them. Returns how many.
+			std::int32_t TakeFromFollower(std::size_t a_follower, RE::TESBoundObject* a_kit, std::int32_t a_count)
+			{
+				auto* follower = a_follower < _followers.size() ? _followers[a_follower] : nullptr;
+				if (!follower) {
+					return 0;
+				}
+				std::int32_t took = CampKits::Take(follower, a_kit, a_count);
+				for (auto* store : FollowerStores(follower)) {
+					if (took < a_count) {
+						took += CampKits::Take(store, a_kit, a_count - took);
+					}
+				}
+				return took;
+			}
+
+			// The kits the camp was set up from leave their owners' inventories
+			// until it's packed up: each tent's kit from whoever's it was, and a
+			// bedroll kit for each bedroll, followers' first.
+			void PutAwayKits()
+			{
+				for (const auto& tent : _tents) {
+					const auto type = static_cast<std::size_t>(tent.color);
+					auto*      kitForm = type < _tentTypes.size() ? _tentTypes[type].kit : nullptr;
+					auto*      kit = kitForm ? kitForm->As<RE::TESBoundObject>() : nullptr;
+					if (!kit) {
+						continue;
+					}
+					if (tent.owner < 0 || TakeFromFollower(static_cast<std::size_t>(tent.owner), kit, 1) < 1) {
+						CampKits::Take(_player, kit, 1);
+					}
+				}
+				auto* bedrollForm = _props.Form<RE::TESForm>("LZC_BedrollKit");
+				auto* bedroll = bedrollForm ? bedrollForm->As<RE::TESBoundObject>() : nullptr;
+				std::int32_t left = bedroll ? _bedrolls : 0;
+				for (std::size_t f = 0; f < _followers.size() && left > 0; ++f) {
+					left -= TakeFromFollower(f, bedroll, left);
+				}
+				if (left > 0) {
+					CampKits::Take(_player, bedroll, left);
+				}
 			}
 
 			// The kits each camper carries, to the log.
