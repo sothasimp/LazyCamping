@@ -165,6 +165,44 @@ namespace GrassHider
 		// grass handles, so there's nothing here to clear.
 		bool ngioStandIns{ false };
 
+		// Community Shaders / Open Shaders (CommunityShaders.dll) with its Grass
+		// Optimizations feature on draws grass from its own copy of the grass
+		// data, which the camp's changes don't reach. Read from its saved
+		// settings; true only when the feature is on and not disabled at boot.
+		bool ShaderGrassOptimizationsOn()
+		{
+			if (!GetModuleHandleW(L"CommunityShaders.dll")) {
+				return false;
+			}
+			std::string text;
+			for (const auto* name : { "Data/SKSE/Plugins/CommunityShaders/SettingsUser.json", "Data/SKSE/Plugins/CommunityShaders/SettingsDefault.json" }) {
+				std::ifstream file(name, std::ios::binary);
+				if (file) {
+					text.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+					break;
+				}
+			}
+			if (text.empty()) {
+				return false;
+			}
+			// The value after `"a_key":` within the object that starts at a_from.
+			const auto valueAfter = [&](std::size_t a_from, std::string_view a_key) -> std::string_view {
+				const auto end = text.find('}', a_from);
+				const auto at = text.find(std::string("\"") + std::string(a_key) + "\":", a_from);
+				if (at == std::string::npos || (end != std::string::npos && at > end)) {
+					return {};
+				}
+				auto value = std::string_view(text).substr(at + a_key.size() + 3);
+				value.remove_prefix(std::min(value.find_first_not_of(" \t\r\n"), value.size()));
+				return value.substr(0, value.find_first_of(",}\r\n"));
+			};
+			const auto feature = text.find("\"Grass Optimizations\":");
+			const auto boot = text.find("\"Disable at Boot\":");
+			const bool enabled = feature != std::string::npos && valueAfter(feature, "Enabled").starts_with("true");
+			const bool disabledAtBoot = boot != std::string::npos && valueAfter(boot, "GrassOptimizations").starts_with("true");
+			return enabled && !disabledAtBoot;
+		}
+
 		bool NgioUsesStandIns()
 		{
 			std::ifstream file("Data/SKSE/Plugins/GrassControl.ini");
@@ -508,6 +546,10 @@ namespace GrassHider
 					state.logPending = false;
 					const auto& c = *state.circle;
 					logger::info("Grass: circle at ({:.0f}, {:.0f}) radius {:.0f}, heights {:.0f} to {:.0f}", c.x, c.y, c.radius, c.minZ, c.maxZ);
+					if (ShaderGrassOptimizationsOn()) {
+						logger::warn("Grass: Community Shaders / Open Shaders has Grass Optimizations on. It draws grass from its own copy, so the "
+									 "cleared grass may still show. Turn Grass Optimizations off in its menu for grass clearing.");
+					}
 					if (ngioStandIns && stats.handles == 0) {
 						logger::warn("Grass: No Grass In Objects has Extend-grass-distance and Only-load-from-cache on, so its grass isn't in the game's cells and can't be cleared. "
 									 "Set Extend-grass-distance = false in GrassControl.ini for grass clearing.");
