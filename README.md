@@ -275,13 +275,13 @@ To check the camp at any other time (a save loaded with the camp up, say), with 
 
 How it works: Campfire's trees only work around a reference running its `CampCampfire` script, so the addon places an invisible stand-in there whose script, `LZC_CampfireSkillsProxy`, extends `CampCampfire` but places none of a campfire's pieces and counts as lit. Wayfarer sends `Wayfarer_FireSneakActivated` when the fire is sneak-activated (and, once an addon sets `FireSneakHandled`, doesn't open Cook then). The stand-in goes when the next one is placed or the camp is packed up.
 
-Scripts: `Addons/Campfire/Scripts/Source/` (`LZC_CampfireSkillsProxy.psc`, `LZC_CampfireAddonPlayerScript.psc`). They compile against Campfire's script sources (they come with Campfire) and Wayfarer's `LZC_CampsiteQuestScript.psc`.
+Scripts: `Addons/Campfire/Scripts/Source/` (`LZC_CampfireSkillsProxy.psc`, `LZC_CampfireAddonPlayerScript.psc`). Compiling against Campfire's real sources would need their whole chain of dependencies (SkyUI's SDK, Chesko's `CommonArrayHelper` and `FallbackEventEmitter`, Frostfall, Devious Devices…), so they compile against small **stubs** in `Addons/Campfire/Scripts/Stubs/` instead: `CampCampfire`, `CampPerkNodeController` and `_Camp_PerkNavController`, declaring only the members the addon uses. In game Campfire's real scripts run. Never compile or ship the stubs. Run `Addons/Campfire/Scripts/Compile.bat` (set `SKYRIM` in it to your game folder first): it calls the Papyrus compiler with the stubs first on the import path, then Wayfarer's and the game's sources in `Data\Source\Scripts` (where `LZC_CampsiteQuestScript.psc` and SKSE's sources must be), and writes the `.pex` files to `Data\Scripts`.
 
 In the Creation Kit, with `Campfire.esm` and Wayfarer loaded and the new plugin active:
 
 1. **Activator** `LZC_CampfireSkillsProxyActivator`: model `Markers\XMarker.nif` (invisible in game), no name. Scripts tab: add `LZC_CampfireSkillsProxy`, then *Properties > Auto-Fill All* (they're Campfire's forms, found by name). If any stay empty, that's fine as long as `_Camp_LastSelectedSkill`, `_Camp_PerkNavControllerAct`, `_Camp_PerkNodeControllerCount`, `_Camp_PerkSystemEnterExplosion01`, `_Camp_UISkillsPerkEnter` and `PlayerRef` are filled.
 2. **Quest** `LZC_CampfireAddonQuest`: *Start Game Enabled*, *Run Once* off. Quest Aliases: a Reference Alias `Player`, *Specific Reference* `PlayerRef` (Cell: any, `PlayerRef`). On the alias, add `LZC_CampfireAddonPlayerScript`, fill `LZC_CampfireSkillsProxyActivator`, `_Camp_DeadwoodLog` and `_Camp_DeadwoodBranch` (Auto-Fill), and optionally list more wood in `OtherFirewood`.
-3. Save, then compile both scripts (*Gameplay > Papyrus Script Manager*), recompiling Wayfarer's `LZC_CampsiteQuestScript` too.
+3. Compile the two scripts with `Compile.bat` (not the CK's script manager, which can't use the stubs); do this before step 1 so the CK can show the scripts' properties. Recompile Wayfarer's `LZC_CampsiteQuestScript` in the CK as usual.
 4. Package the esp and `Scripts/LZC_CampfireSkillsProxy.pex`, `Scripts/LZC_CampfireAddonPlayerScript.pex`.
 
 ## 3. Build the SKSE plugin
