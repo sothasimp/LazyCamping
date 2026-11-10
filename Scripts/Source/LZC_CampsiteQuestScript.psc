@@ -38,6 +38,7 @@ out. A chopping block stands by the tents. Off: the fire is always lit.}
 Float Property FireBurnHours = 6.0 Auto
 {How long a fire lit with firewood burns, in game hours.}
 Int Property FirewoodPerFire = 2 Auto
+{How many firewood lighting the fire burns (SKSE menu: 1 to 6).}
 Furniture Property LZC_FireLightingMarker Auto
 {Optional (after Usable Campfires): furniture the player crouches at to strike
 stones when lighting the fire with firewood. Without it the fire lights at
@@ -46,7 +47,6 @@ ImpactDataSet Property LZC_FireLightingSparks Auto
 {Optional: the sparks of each strike.}
 Activator Property LZC_FireLightingSmoke Auto
 {Optional: the smoke that rises as the fire catches.}
-{How many firewood lighting the fire burns (SKSE menu: 1 to 6).}
 Bool Property PlaceChoppingBlock = True Auto
 {With FirewoodMechanic, place LZC_ChoppingBlock beside the tents.}
 
