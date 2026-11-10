@@ -254,6 +254,9 @@ Keyword Property LocTypeTown Auto
 ; State
 ; ---------------------------------------------------------------------------
 Bool Property CampDeployed = False Auto Hidden
+Bool Property FireSneakHandled = False Auto Hidden
+{Set by an addon that does something with Wayfarer_FireSneakActivated (the
+Campfire addon's skill trees): sneak-activating the fire then doesn't cook.}
 
 ; Slots in placedRefs.
 Int Property kCampfire = 0 AutoReadOnly
@@ -373,6 +376,14 @@ Function OnCampObjectActivated(ObjectReference akRef, ObjectReference akActionRe
 	If akRef == LZC_TubTrigger
 		Return
 	ElseIf akRef == LZC_CookBox
+		; Sneaking: for addons (Wayfarer_FireSneakActivated). Cooks as usual
+		; unless one has claimed it.
+		If PlayerRef.IsSneaking()
+			SendFireSneakEvent()
+			If FireSneakHandled
+				Return
+			EndIf
+		EndIf
 		Cook()
 	ElseIf akRef == placedRefs[kFirepit]
 		LightFire()
@@ -778,6 +789,8 @@ EndFunction
 ; and handle them with
 ;   Event OnWayfarerCampSetUp(Form akCampCentre, Int aiFollowers)
 ;   Event OnWayfarerCampPackedUp(Form akCampCentre, Int aiFollowers)
+; Also Wayfarer_FireSneakActivated (Form akCampCentre), when the player
+; sneak-activates the fire; set FireSneakHandled to stop it cooking too.
 ; akCampCentre is the camp's centre: the campfire, or an invisible marker in
 ; its place when the firepit is turned off (cast it to ObjectReference).
 ; aiFollowers is how many followers are at the camp. Re-register on every game
@@ -786,6 +799,14 @@ EndFunction
 ; Or ask at any time (with this script's source to compile against):
 ;   LZC_CampsiteQuestScript.IsCampUp()
 ;   LZC_CampsiteQuestScript.GetCampCentre()
+
+Function SendFireSneakEvent()
+	Int handle = ModEvent.Create("Wayfarer_FireSneakActivated")
+	If handle
+		ModEvent.PushForm(handle, placedRefs[kCampfire])
+		ModEvent.Send(handle)
+	EndIf
+EndFunction
 
 Function SendCampEvent(String eventName)
 	Int followerCount = 0
