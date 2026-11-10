@@ -254,6 +254,8 @@ Keyword Property LocTypeTown Auto
 ; State
 ; ---------------------------------------------------------------------------
 Bool Property CampDeployed = False Auto Hidden
+Form[] extraFirewood  ; other firewood from addons (AddFirewood)
+Int extraFirewoodCount = 0
 Bool Property FireSneakHandled = False Auto Hidden
 {Set by an addon that does something with Wayfarer_FireSneakActivated (the
 Campfire addon's skill trees): sneak-activating the fire then doesn't cook.}
@@ -529,11 +531,29 @@ EndFunction
 ; Activating the camp's unlit firepit lights the fire, burning
 ; FirewoodPerFire firewood, for FireBurnHours.
 Function LightFire()
-	If !Firewood01 || PlayerRef.GetItemCount(Firewood01) < FirewoodPerFire
+	; Vanilla firewood, then any other wood an addon has added, one for one.
+	Int have = 0
+	If Firewood01
+		have = PlayerRef.GetItemCount(Firewood01)
+	EndIf
+	Int i = 0
+	While i < extraFirewoodCount
+		have += PlayerRef.GetItemCount(extraFirewood[i])
+		i += 1
+	EndWhile
+	If have < FirewoodPerFire
 		Debug.Notification(Tr("$LZC_MsgNeedFirewood", "You need {} firewood to light the fire.", FirewoodPerFire as String))
 		Return
 	EndIf
-	PlayerRef.RemoveItem(Firewood01, FirewoodPerFire)
+	Int left = FirewoodPerFire
+	If Firewood01
+		left -= TakeWood(Firewood01, left)
+	EndIf
+	i = 0
+	While i < extraFirewoodCount && left > 0
+		left -= TakeWood(extraFirewood[i], left)
+		i += 1
+	EndWhile
 	SetFireLit(True)
 	RegisterForSingleUpdateGameTime(FireBurnHours)
 EndFunction
@@ -541,6 +561,35 @@ EndFunction
 ; A clothes basket takes off whatever is worn in every armour slot (30-61),
 ; each piece once even if it covers several slots; the next activation puts
 ; it back on, if the player still has it.
+; Removes up to aiMax of akWood from the player; returns how many.
+Int Function TakeWood(Form akWood, Int aiMax)
+	Int n = PlayerRef.GetItemCount(akWood)
+	If n > aiMax
+		n = aiMax
+	EndIf
+	If n > 0
+		PlayerRef.RemoveItem(akWood, n)
+	EndIf
+	Return n
+EndFunction
+
+; For addons: akWood also counts as firewood for lighting the camp fire (one
+; for one with vanilla firewood). Call on every game load; adding the same
+; wood twice does nothing.
+Function AddFirewood(Form akWood)
+	If !akWood || akWood == Firewood01
+		Return
+	EndIf
+	If !extraFirewood
+		extraFirewood = new Form[32]
+	EndIf
+	If extraFirewood.Find(akWood) >= 0 || extraFirewoodCount >= extraFirewood.Length
+		Return
+	EndIf
+	extraFirewood[extraFirewoodCount] = akWood
+	extraFirewoodCount += 1
+EndFunction
+
 Function ChangeClothes()
 	Int i = 0
 	If undressed

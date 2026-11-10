@@ -269,7 +269,7 @@ To check the camp at any other time (a save loaded with the camp up, say), with 
 
 ### 2g. Campfire addon: skill trees at the camp fire
 
-`Wayfarer - Campfire Addon.esp` (masters `Campfire.esm` and `Wayfarer - A Convenient Camping Framework.esp`) lets the player open Campfire's skill trees by **sneak-activating the camp fire**, as with "Skills" on a Campfire campfire. Next/Prev reach every tree registered with Campfire (Frostfall's too). Perk points are spent as usual; Camping skill progress is still earned through Campfire's own fires, not this one.
+`Wayfarer - Campfire Addon.esp` (masters `Campfire.esm` and `Wayfarer - A Convenient Camping Framework.esp`) lets the player open Campfire's skill trees by **sneak-activating the camp fire**, as with "Skills" on a Campfire campfire. Next/Prev reach every tree registered with Campfire (Frostfall's and Skills of the Wild's too). With the firewood mechanic on, Campfire's **dead wood** (`_Camp_DeadwoodLog`) also lights the camp fire, one for one with firewood, and so does anything in the player alias script's `OtherFirewood` array (Campfire's `_Camp_DeadwoodBranch`, other mods' wood); vanilla firewood is used first. Other addons can do the same with `LZC_CampsiteQuestScript.AddFirewood()`, called on every game load. Perk points are spent as usual; Camping skill progress is still earned through Campfire's own fires, not this one.
 
 How it works: Campfire's trees only work around a reference running its `CampCampfire` script, so the addon places an invisible stand-in there whose script, `LZC_CampfireSkillsProxy`, extends `CampCampfire` but places none of a campfire's pieces and counts as lit. Wayfarer sends `Wayfarer_FireSneakActivated` when the fire is sneak-activated (and, once an addon sets `FireSneakHandled`, doesn't open Cook then). The stand-in goes when the next one is placed or the camp is packed up.
 
@@ -278,7 +278,7 @@ Scripts: `Addons/Campfire/Scripts/Source/` (`LZC_CampfireSkillsProxy.psc`, `LZC_
 In the Creation Kit, with `Campfire.esm` and Wayfarer loaded and the new plugin active:
 
 1. **Activator** `LZC_CampfireSkillsProxyActivator`: model `Markers\XMarker.nif` (invisible in game), no name. Scripts tab: add `LZC_CampfireSkillsProxy`, then *Properties > Auto-Fill All* (they're Campfire's forms, found by name). If any stay empty, that's fine as long as `_Camp_LastSelectedSkill`, `_Camp_PerkNavControllerAct`, `_Camp_PerkNodeControllerCount`, `_Camp_PerkSystemEnterExplosion01`, `_Camp_UISkillsPerkEnter` and `PlayerRef` are filled.
-2. **Quest** `LZC_CampfireAddonQuest`: *Start Game Enabled*, *Run Once* off. Quest Aliases: a Reference Alias `Player`, *Specific Reference* `PlayerRef` (Cell: any, `PlayerRef`). On the alias, add `LZC_CampfireAddonPlayerScript` and fill `LZC_CampfireSkillsProxyActivator`.
+2. **Quest** `LZC_CampfireAddonQuest`: *Start Game Enabled*, *Run Once* off. Quest Aliases: a Reference Alias `Player`, *Specific Reference* `PlayerRef` (Cell: any, `PlayerRef`). On the alias, add `LZC_CampfireAddonPlayerScript`, fill `LZC_CampfireSkillsProxyActivator` and `_Camp_DeadwoodLog` (Auto-Fill), and optionally list more wood in `OtherFirewood`.
 3. Save, then compile both scripts (*Gameplay > Papyrus Script Manager*), recompiling Wayfarer's `LZC_CampsiteQuestScript` too.
 4. Package the esp and `Scripts/LZC_CampfireSkillsProxy.pex`, `Scripts/LZC_CampfireAddonPlayerScript.pex`.
 
