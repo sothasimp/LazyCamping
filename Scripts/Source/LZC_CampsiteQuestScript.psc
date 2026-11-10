@@ -38,6 +38,14 @@ out. A chopping block stands by the tents. Off: the fire is always lit.}
 Float Property FireBurnHours = 6.0 Auto
 {How long a fire lit with firewood burns, in game hours.}
 Int Property FirewoodPerFire = 2 Auto
+Furniture Property LZC_FireLightingMarker Auto
+{Optional (after Usable Campfires): furniture the player crouches at to strike
+stones when lighting the fire with firewood. Without it the fire lights at
+once.}
+ImpactDataSet Property LZC_FireLightingSparks Auto
+{Optional: the sparks of each strike.}
+Activator Property LZC_FireLightingSmoke Auto
+{Optional: the smoke that rises as the fire catches.}
 {How many firewood lighting the fire burns (SKSE menu: 1 to 6).}
 Bool Property PlaceChoppingBlock = True Auto
 {With FirewoodMechanic, place LZC_ChoppingBlock beside the tents.}
@@ -255,6 +263,9 @@ Keyword Property LocTypeTown Auto
 ; ---------------------------------------------------------------------------
 Bool Property CampDeployed = False Auto Hidden
 Form[] extraFirewood  ; other firewood from addons (AddFirewood)
+Bool lightingFire = False
+ObjectReference strikeSeat
+ObjectReference strikeSmoke
 Int extraFirewoodCount = 0
 Bool Property FireSneakHandled = False Auto Hidden
 {Set by an addon that does something with Wayfarer_FireSneakActivated (the
@@ -545,6 +556,18 @@ Function LightFire()
 		Debug.Notification(Tr("$LZC_MsgNeedFirewood", "You need {} firewood to light the fire.", FirewoodPerFire as String))
 		Return
 	EndIf
+	; Striking the stones first, if the lighting records are set.
+	If lightingFire
+		Return
+	EndIf
+	If LZC_FireLightingMarker
+		lightingFire = True
+		Bool struck = StrikeStones(placedRefs[kFirepit])
+		lightingFire = False
+		If !struck
+			Return
+		EndIf
+	EndIf
 	Int left = FirewoodPerFire
 	If Firewood01
 		left -= TakeWood(Firewood01, left)
@@ -556,6 +579,78 @@ Function LightFire()
 	EndWhile
 	SetFireLit(True)
 	RegisterForSingleUpdateGameTime(FireBurnHours)
+	FinishStriking()
+EndFunction
+
+; Lighting the fire by striking stones, after Usable Campfires (by its kind
+; permission): the player crouches at the firepit (LZC_FireLightingMarker), a
+; spray of sparks comes each second for three seconds (LZC_FireLightingSparks),
+; smoke rises (LZC_FireLightingSmoke), and after four seconds the fire lights.
+; Combat or the player not getting into position stops it, and nothing is
+; used up. Returns whether the fire should light; FinishStriking() then lets
+; the player up.
+Bool Function StrikeStones(ObjectReference akFire)
+	If !akFire
+		Return True
+	EndIf
+	strikeSeat = akFire.PlaceAtMe(LZC_FireLightingMarker)
+	Utility.Wait(0.2)
+	strikeSeat.Activate(PlayerRef)
+	Int tries = 0
+	While !strikeSeat.IsFurnitureInUse() && tries < 10
+		tries += 1
+		Utility.Wait(0.2)
+	EndWhile
+	If !strikeSeat.IsFurnitureInUse()
+		FinishStriking()
+		Return False
+	EndIf
+	Game.DisablePlayerControls(True, True, True, False, True, False, False, False)
+	ObjectReference sparks = akFire.PlaceAtMe(Game.GetFormFromFile(0x3B, "Skyrim.esm"))  ; XMarker
+	Int second = 1
+	While second <= 4
+		Utility.Wait(1.0)
+		If PlayerRef.GetCombatState() != 0
+			If sparks
+				sparks.Delete()
+			EndIf
+			FinishStriking()
+			Return False
+		EndIf
+		If second <= 3 && sparks && LZC_FireLightingSparks
+			sparks.PlayImpactEffect(LZC_FireLightingSparks)
+		EndIf
+		If second == 2 && LZC_FireLightingSmoke
+			strikeSmoke = akFire.PlaceAtMe(LZC_FireLightingSmoke)
+			strikeSmoke.SetAngle(akFire.GetAngleX(), akFire.GetAngleY(), akFire.GetAngleZ())
+		EndIf
+		second += 1
+	EndWhile
+	If sparks
+		sparks.Delete()
+	EndIf
+	Return True
+EndFunction
+
+; Lets the player up from striking the stones and clears the smoke once it
+; has had time to drift off.
+Function FinishStriking()
+	If !strikeSeat
+		Return
+	EndIf
+	Game.EnablePlayerControls()
+	ObjectReference seat = strikeSeat
+	ObjectReference smoke = strikeSmoke
+	strikeSeat = None
+	strikeSmoke = None
+	seat.Activate(PlayerRef)
+	Utility.Wait(3.5)
+	seat.Disable()
+	seat.Delete()
+	If smoke
+		smoke.Disable(True)
+		smoke.Delete()
+	EndIf
 EndFunction
 
 ; A clothes basket takes off whatever is worn in every armour slot (30-61),
