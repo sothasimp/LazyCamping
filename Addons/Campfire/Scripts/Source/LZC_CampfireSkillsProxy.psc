@@ -11,7 +11,14 @@ Auto-Fill All (they're Campfire's own forms).}
 Event OnInit()
 EndEvent
 
+; Once the trees are closed (Campfire's controllers clear these when they
+; go), the stand-in goes too.
 Event OnUpdate()
+	If !myPerkNodeController && !myPerkNavController
+		TakeDown()
+	Else
+		RegisterForSingleUpdate(3.0)
+	EndIf
 EndEvent
 
 Event OnActivate(ObjectReference akActionRef)
@@ -36,10 +43,12 @@ EndEvent
 Function OpenTrees()
 	campfire_stage = 2
 	EnterTreeSystem(_Camp_LastSelectedSkill.GetValueInt())
+	RegisterForSingleUpdate(5.0)
 EndFunction
 
 ; Closes the trees and removes the stand-in.
 Function TakeDown()
+	UnregisterForUpdate()
 	If myPerkNodeController
 		(myPerkNodeController as CampPerkNodeController).TakeDown()
 	EndIf

@@ -28,6 +28,7 @@ Event OnPlayerLoadGame()
 EndEvent
 
 Function Register()
+	ListAsCampfire()
 	RegisterForModEvent("Wayfarer_FireSneakActivated", "OnFireSneakActivated")
 	RegisterForModEvent("Wayfarer_CampPackedUp", "OnCampPackedUp")
 	; Sneak-activating the fire opens the trees rather than cooking.
@@ -50,6 +51,7 @@ Event OnFireSneakActivated(Form akCampCentre)
 	If !fire || !LZC_CampfireSkillsProxyActivator
 		Return
 	EndIf
+	ListAsCampfire()
 	RemoveProxy()
 	proxy = fire.PlaceAtMe(LZC_CampfireSkillsProxyActivator) as LZC_CampfireSkillsProxy
 	If proxy
@@ -60,6 +62,16 @@ EndEvent
 Event OnCampPackedUp(Form akCampCentre, Int aiFollowers)
 	RemoveProxy()
 EndEvent
+
+; Campfire's tree pieces remove themselves unless a campfire from its list of
+; campfires (_Camp_CampfireCampfires) is within 100 units: the stand-in's
+; activator goes on that list.
+Function ListAsCampfire()
+	FormList campfires = Game.GetFormFromFile(0x06BBE8, "Campfire.esm") as FormList
+	If campfires && LZC_CampfireSkillsProxyActivator && !campfires.HasForm(LZC_CampfireSkillsProxyActivator)
+		campfires.AddForm(LZC_CampfireSkillsProxyActivator)
+	EndIf
+EndFunction
 
 Function RemoveProxy()
 	If proxy
