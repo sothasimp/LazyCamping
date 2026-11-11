@@ -262,6 +262,8 @@ Keyword Property LocTypeTown Auto
 ; State
 ; ---------------------------------------------------------------------------
 Bool Property CampDeployed = False Auto Hidden
+ObjectReference Property CampCookBox Auto Hidden
+{This camp's cook box, a copy of LZC_CookBox placed with the camp.}
 Form[] extraFirewood  ; other firewood from addons (AddFirewood)
 Bool lightingFire = False
 ObjectReference strikeSeat
@@ -280,7 +282,7 @@ Int Property kCookingStation = 37 AutoReadOnly     ; hidden, at the fire
 Int Property kTub = 38 AutoReadOnly
 Int Property kSlotCount = 39 AutoReadOnly
 
-Int Property kNativeVersion = 19 AutoReadOnly         ; LazyCamping.dll needed
+Int Property kNativeVersion = 20 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
 ; With BedrollsStartRolled: each bedroll's rolled-up bedroll (None once
@@ -302,6 +304,7 @@ Bool busy = False
 ; they're unbound and GetVersion() returns 0.
 ; ---------------------------------------------------------------------------
 Int Function GetVersion() Global Native
+ObjectReference Function GetCookBox() Global Native
 ; The text for asKey in the game's language, from Interface/Translations/
 ; Wayfarer - A Convenient Camping Framework_<LANGUAGE>.txt, or asEnglish; any
 ; {} in it becomes asArg.
@@ -388,7 +391,10 @@ Function OnCampObjectActivated(ObjectReference akRef, ObjectReference akActionRe
 	EndIf
 	If akRef == LZC_TubTrigger
 		Return
-	ElseIf akRef == LZC_CookBox
+	ElseIf LZC_CampStorage && akRef != LZC_CampStorage && akRef.GetBaseObject() == LZC_CampStorage.GetBaseObject()
+		; The camp's backpack opens the storage, which stays in the holding cell.
+		LZC_CampStorage.Activate(PlayerRef)
+	ElseIf akRef == CampCookBox
 		; Sneaking: for addons (Wayfarer_FireSneakActivated). Cooks as usual
 		; unless one has claimed it.
 		If PlayerRef.IsSneaking()
@@ -510,6 +516,7 @@ Function SetUpCamp()
 		Return
 	EndIf
 	RolledKits = GetRolledKits()
+	CampCookBox = GetCookBox()
 	PlacedOwners = GetPlacedOwners()
 	; The cloth sound plays as the camp appears.
 	If LZC_UnpackSound
@@ -820,8 +827,8 @@ Function SetFireLit(Bool lit)
 			fireLight.Enable()
 		EndIf
 		firepit.Disable()
-		If LZC_CookBox
-			LZC_CookBox.Enable()
+		If CampCookBox
+			CampCookBox.Enable()
 		EndIf
 	Else
 		firepit.Enable()
@@ -829,8 +836,8 @@ Function SetFireLit(Bool lit)
 		If fireLight
 			fireLight.Disable()
 		EndIf
-		If LZC_CookBox
-			LZC_CookBox.Disable()
+		If CampCookBox
+			CampCookBox.Disable()
 		EndIf
 	EndIf
 EndFunction
@@ -915,6 +922,7 @@ Function PackUpCamp()
 	EndIf
 	RolledKits = None
 	PlacedOwners = None
+	CampCookBox = None
 	Int i = 0
 	While i < placedRefs.Length
 		placedRefs[i] = None

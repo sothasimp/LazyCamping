@@ -116,6 +116,7 @@ namespace CampLayout
 			std::vector<std::int32_t>       bedOrders;
 			std::vector<RE::TESObjectREFR*> tubSeats;
 			std::vector<RE::TESObjectREFR*> rolledKits;  // by bedroll, None once unrolled (or never rolled)
+			RE::TESObjectREFR*              cookBox{ nullptr };
 			std::vector<std::int32_t>       owners;      // by returned reference: the layout slot it belongs to
 		};
 		Built built;
@@ -1353,10 +1354,8 @@ namespace CampLayout
 				}
 			}
 
-			// Moves one of the persistent pieces from the holding cell (or the last
-			// camp) to a_target, disabled first and enabled after, so it loads
-			// afresh there, collision and all: otherwise it can keep its old
-			// collision and can't be activated at the camp.
+			// Moves a persistent piece to a_target, disabled first and enabled
+			// after, so it loads afresh there.
 			static void MoveFresh(RE::TESObjectREFR* a_ref, RE::TESObjectREFR* a_target, std::string_view a_what)
 			{
 				a_ref->Disable();
@@ -1368,16 +1367,49 @@ namespace CampLayout
 					cell ? cell->GetFormID() : 0, a_ref->IsDisabled() ? ", still disabled" : "");
 			}
 
+			// A new reference of a_base where a_target stands, turned like it.
+			static RE::TESObjectREFR* PlaceFresh(RE::TESBoundObject* a_base, RE::TESObjectREFR* a_target, std::string_view a_what)
+			{
+				if (!a_base || !a_target) {
+					return nullptr;
+				}
+				const auto placed = a_target->PlaceObjectAtMe(a_base, false);
+				auto*      ref = placed.get();
+				if (ref) {
+					ref->SetAngle(a_target->GetAngle());
+					const auto pos = ref->GetPosition();
+					logger::info("Placed a {} ({:08X}) at ({:.0f}, {:.0f}, {:.0f})", a_what, ref->GetFormID(), pos.x, pos.y, pos.z);
+				}
+				return ref;
+			}
+
 			// The pieces that move to the camp rather than being placed.
 			void Settle(std::vector<RE::TESObjectREFR*>& a_refs) const
 			{
 				auto* campfire = a_refs[kCampfire];
 
-				// The cook box goes over the fire, enabled only while it's lit.
-				auto* cookBox = _props.Bool("PlaceCampfire", true) ? _props.Form<RE::TESObjectREFR>("LZC_CookBox") : nullptr;
-				if (cookBox && campfire) {
-					MoveFresh(cookBox, campfire, "cook box");
+				// The cook box over the fire, enabled only while it's lit. If its
+				// base (LZC_CookActivator) has a model (an invisible collision
+				// box), a new one is placed with each camp; otherwise the one
+				// persistent box, whose clickable box is set on the reference
+				// itself, moves here. (Moving it has left it impossible to
+				// activate on some setups.)
+				auto*              cookBoxRef = _props.Bool("PlaceCampfire", true) ? _props.Form<RE::TESObjectREFR>("LZC_CookBox") : nullptr;
+				RE::TESObjectREFR* cookBox = nullptr;
+				if (cookBoxRef && campfire) {
+					auto*       base = cookBoxRef->GetBaseObject();
+					const auto* model = base ? base->As<RE::TESModel>() : nullptr;
+					if (model && model->GetModel() && *model->GetModel()) {
+						cookBox = PlaceFresh(base, campfire, "cook box");
+						if (cookBox) {
+							a_refs.push_back(cookBox);  // deleted with the camp
+						}
+					} else {
+						MoveFresh(cookBoxRef, campfire, "cook box");
+						cookBox = cookBoxRef;
+					}
 				}
+				built.cookBox = cookBox;
 				// With the firewood mechanic the fire starts unlit: the firepit shows.
 				if (a_refs[kFirepit]) {
 					a_refs[kFirepit]->Enable(false);
@@ -1392,11 +1424,18 @@ namespace CampLayout
 				std::vector<RE::TESObjectREFR*> seats(a_refs.begin() + kFirstBedrollSeat, a_refs.begin() + kFirstBedrollSeat + kMaxBedrolls);
 				BedrollSeats::Set(beds, seats);
 
-				// The storage backpack moves onto the spot marked for it, which goes.
-				auto* storage = _props.Form<RE::TESObjectREFR>("LZC_CampStorage");
+				// A new backpack on the spot marked for it, which goes. It's a copy
+				// of LZC_CampStorage that opens LZC_CampStorage itself, which stays
+				// in the holding cell with the things in it (see the camp script).
+				auto*              storageRef = _props.Form<RE::TESObjectREFR>("LZC_CampStorage");
+				RE::TESObjectREFR* storage = nullptr;
 				if (auto* spot = a_refs[kSlotCount]) {
-					if (storage) {
-						MoveFresh(storage, spot, "storage");
+					if (storageRef) {
+						storage = PlaceFresh(storageRef->GetBaseObject(), spot, "storage backpack");
+						if (storage) {
+							storage->SetActivationBlocked(true);  // its own (empty) inventory never opens
+							a_refs.push_back(storage);
+						}
 					}
 					spot->Disable();
 					spot->SetDelete(true);
@@ -1708,6 +1747,7 @@ namespace CampLayout
 		std::int32_t GetBuildStatus(RE::StaticFunctionTag*) { return built.status; }
 		std::vector<RE::TESObjectREFR*> GetRolledKits(RE::StaticFunctionTag*) { return built.rolledKits; }
 		std::vector<std::int32_t>       GetPlacedOwners(RE::StaticFunctionTag*) { return built.owners; }
+		RE::TESObjectREFR*              GetCookBox(RE::StaticFunctionTag*) { return built.cookBox; }
 		std::vector<RE::TESObjectREFR*> GetFireSeats(RE::StaticFunctionTag*) { return built.fireSeats; }
 		std::vector<std::int32_t>       GetFirePlaces(RE::StaticFunctionTag*) { return built.firePlaces; }
 		std::vector<RE::TESObjectREFR*> GetCampBeds(RE::StaticFunctionTag*) { return built.beds; }
@@ -1888,6 +1928,7 @@ namespace CampLayout
 		a_vm->RegisterFunction("GetTubSeats"sv, kClass, GetTubSeats);
 		a_vm->RegisterFunction("GetRolledKits"sv, kClass, GetRolledKits);
 		a_vm->RegisterFunction("GetPlacedOwners"sv, kClass, GetPlacedOwners);
+		a_vm->RegisterFunction("GetCookBox"sv, kClass, GetCookBox);
 		a_vm->RegisterFunction("UnrollBeds"sv, kClass, UnrollBeds);
 	}
 }
