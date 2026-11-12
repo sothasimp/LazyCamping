@@ -123,8 +123,8 @@ once it's done (SKSE menu).}
 Bool Property PlaceFireSeats = True Auto
 {Place the seats round the fire, the player's and the followers' (SKSE menu).}
 Int Property CampfireLightLevel = 2 Auto
-{With PlaceCampfireLight, how bright the light is: 1 dim, 2 bright (SKSE
-menu, where "Off (Light Placer)" turns PlaceCampfireLight off).}
+{With PlaceCampfireLight, how bright the light is: 1 dim, 3 medium, 2 bright
+(SKSE menu, where "Off (Light Placer)" turns PlaceCampfireLight off).}
 Bool Property PlaceCampfireLight = True Auto
 {Place LZC_CampfireLight. Turn off if a Light Placer config already gives the
 campfire its own light.}

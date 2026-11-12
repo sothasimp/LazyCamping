@@ -43,7 +43,7 @@ namespace Menu
 			bool         ashNomadLoaded{ false };  // Ash Nomad - Bedrolls - BOS Distributed
 			bool         fireOutsideLargeTent{ false };
 			bool         tentCollision{ true };
-			int          lightLevel{ 2 };  // 0 off (Light Placer), 1 dim, 2 bright
+			int          lightLevel{ 3 };  // the slider: 0 off (Light Placer), 1 dim, 2 medium, 3 bright
 			bool         lightShadows{ false };
 		};
 
@@ -69,6 +69,11 @@ namespace Menu
 		// The style the bedroll kit's texture follows: only Bedroll Alternative's
 		// colours have one.
 		int KitStyle(int a_style, bool a_altLoaded) { return a_altLoaded && a_style >= 1 && a_style <= 4 ? a_style : 0; }
+
+		// CampfireLightLevel keeps 1 dim and 2 bright (as before medium was
+		// added) and 3 medium; the slider runs off, dim, medium, bright.
+		int SliderLevel(bool a_on, int a_stored) { return !a_on ? 0 : a_stored == 1 ? 1 : a_stored == 3 ? 2 : 3; }
+		int StoredLevel(int a_slider) { return a_slider == 1 ? 1 : a_slider == 2 ? 3 : 2; }
 
 		constexpr std::pair<std::string_view, const char*> kSeatColors[] = {
 			{ "$LZC_CushionBrown", "Brown" },
@@ -131,7 +136,7 @@ namespace Menu
 					PluginLoaded(kBedrollAltPlugin),
 					merchants->GetBool(), perFire->GetSInt(), mapMarker->GetBool(), rolled->GetBool(), campfire->GetBool(), fireSeats->GetBool(), fade->GetBool(),
 					PluginLoaded(kAshNomadBedrollsPlugin), fireOutside->GetBool(), tentCollision->GetBool(),
-					light->GetBool() ? std::clamp(lightLevel->GetSInt(), 1, 2) : 0, lightShadows->GetBool() };
+					SliderLevel(light->GetBool(), lightLevel->GetSInt()), lightShadows->GetBool() };
 			}
 
 			std::scoped_lock guard(lock);
@@ -167,7 +172,7 @@ namespace Menu
 					lightShadows->SetBool(a_values.lightShadows);
 				}
 				if (auto* lightLevel = AutoProperty(object.get(), "CampfireLightLevel"); lightLevel && a_values.lightLevel > 0) {
-					lightLevel->SetSInt(a_values.lightLevel);
+					lightLevel->SetSInt(StoredLevel(a_values.lightLevel));
 				}
 				if (auto* campfire = AutoProperty(object.get(), "PlaceCampfire")) {
 					campfire->SetBool(a_values.placeCampfire);
@@ -291,10 +296,11 @@ namespace Menu
 				changed |= ImGuiMCP::Checkbox(T("$LZC_FireOutsideTheLargeTent", "Fire outside the large tent"), &values.fireOutsideLargeTent);
 				ImGuiMCP::SetItemTooltip(T("$LZC_FireOutsideTheLargeTentTip", "Stand the large tent 285 units further back, so the fire is in front of it rather than under it, and the small tents beside it 265 further back, so the tents stand in an arc around the fire. Takes effect at the next camp."));
 				{
-					const char* levels[] = { T("$LZC_LightOff", "Off (Light Placer)"), T("$LZC_LightDim", "Dim"), T("$LZC_LightBright", "Bright") };
-					values.lightLevel = std::clamp(values.lightLevel, 0, 2);
-					changed |= ImGuiMCP::SliderInt(T("$LZC_CampfireLight", "Campfire light"), &values.lightLevel, 0, 2, levels[values.lightLevel]);
-					ImGuiMCP::SetItemTooltip(T("$LZC_CampfireLightTip", "The light placed with the campfire: off (when a Light Placer config already lights it), dim or bright. Takes effect at the next camp."));
+					const char* levels[] = { T("$LZC_LightOff", "Off (Light Placer)"), T("$LZC_LightDim", "Dim"), T("$LZC_LightMedium", "Medium"),
+						T("$LZC_LightBright", "Bright") };
+					values.lightLevel = std::clamp(values.lightLevel, 0, 3);
+					changed |= ImGuiMCP::SliderInt(T("$LZC_CampfireLight", "Campfire light"), &values.lightLevel, 0, 3, levels[values.lightLevel]);
+					ImGuiMCP::SetItemTooltip(T("$LZC_CampfireLightTip", "The light placed with the campfire: off (when a Light Placer config already lights it), dim, medium or bright. Takes effect at the next camp."));
 					ImGuiMCP::BeginDisabled(values.lightLevel == 0);
 					changed |= ImGuiMCP::Checkbox(T("$LZC_CampfireLightShadows", "Firelight casts shadows"), &values.lightShadows);
 					ImGuiMCP::SetItemTooltip(T("$LZC_CampfireLightShadowsTip", "The campfire light casts shadows. Costs some performance. Takes effect at the next camp."));
