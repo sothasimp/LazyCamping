@@ -945,7 +945,9 @@ namespace CampLayout
 				}
 				_layout.clutterSet[kCampfire] = fireSet;
 				if (_props.Bool("PlaceCampfireLight", true)) {
-					Set(kLight, _props.Form<RE::TESForm>("LZC_CampfireLight"), kSeatRadius, 0.0f, 0.0f);
+					// "Dim" (CampfireLightLevel 1) uses LZC_CampfireLightDim, if set.
+					auto* dim = _props.Int("CampfireLightLevel", 2) == 1 ? _props.Form<RE::TESForm>("LZC_CampfireLightDim") : nullptr;
+					Set(kLight, dim ? dim : _props.Form<RE::TESForm>("LZC_CampfireLight"), kSeatRadius, 0.0f, 0.0f);
 				}
 				_layout.fwd[kLight] = kSeatRadius;
 				_layout.lift[kLight] = kLightHeight;
@@ -1411,19 +1413,6 @@ namespace CampLayout
 					}
 				}
 				built.cookBox = cookBox;
-				// "Dim" (CampfireLightLevel 1): the light's fade offset turns its
-				// brightness down, and its 3D is reloaded to take it up.
-				if (auto* light = a_refs[kLight]; light && _props.Int("CampfireLightLevel", 2) == 1) {
-					const auto* base = light->GetBaseObject() ? light->GetBaseObject()->As<RE::TESObjectLIGH>() : nullptr;
-					if (base) {
-						auto* extra = new RE::ExtraLightData();
-						extra->data.fade = -base->fade * kDimLightFade;
-						light->extraList.Add(extra);
-						light->Disable();
-						light->Enable(false);
-					}
-				}
-
 				// With the firewood mechanic the fire starts unlit: the firepit shows.
 				if (a_refs[kFirepit]) {
 					a_refs[kFirepit]->Enable(false);
