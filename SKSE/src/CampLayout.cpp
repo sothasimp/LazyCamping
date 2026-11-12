@@ -1415,6 +1415,11 @@ namespace CampLayout
 					}
 				}
 				built.cookBox = cookBox;
+				if (auto* station = a_refs[kCookingStation]) {
+					logger::info("Cooking station {:08X} at the fire{}", station->GetFormID(), station->IsDisabled() ? " (disabled)" : "");
+				} else if (cookBox) {
+					logger::warn("No cooking station placed (LZC_CookingStation not set?): the cook box won't open the Cook menu");
+				}
 				// "Dim" and "Medium" (CampfireLightLevel 1 and 3; 2 is bright): the
 				// light's fade offset turns its brightness down, and its 3D is
 				// reloaded to take it up.

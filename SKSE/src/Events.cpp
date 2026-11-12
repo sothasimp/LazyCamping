@@ -63,6 +63,7 @@ namespace Events
 				if (a_event && a_event->objectActivated && a_event->actionRef && a_event->actionRef->IsPlayerRef() &&
 					FromPlugin(a_event->objectActivated->GetBaseObject())) {
 					RE::TESObjectREFR* target = a_event->objectActivated.get();
+					logger::info("Activated {:08X} (base {:08X})", target->GetFormID(), target->GetBaseObject() ? target->GetBaseObject()->GetFormID() : 0);
 					// A rolled-up bedroll unrolls where its bedroll was laid out.
 					if (CampLayout::UnrollKit(target)) {
 						return RE::BSEventNotifyControl::kContinue;

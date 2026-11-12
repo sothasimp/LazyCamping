@@ -547,7 +547,10 @@ EndFunction
 Function Cook()
 	ObjectReference station = placedRefs[kCookingStation]
 	If station
+		Debug.Trace("Wayfarer: cooking at " + station + ", enabled " + station.IsEnabled() + ", 3D " + station.Is3DLoaded())
 		station.Activate(PlayerRef)
+	Else
+		Debug.Trace("Wayfarer: no cooking station to cook at")
 	EndIf
 EndFunction
 
