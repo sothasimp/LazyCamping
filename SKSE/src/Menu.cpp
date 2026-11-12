@@ -43,6 +43,7 @@ namespace Menu
 			bool         ashNomadLoaded{ false };  // Ash Nomad - Bedrolls - BOS Distributed
 			bool         fireOutsideLargeTent{ false };
 			bool         tentCollision{ true };
+			int          lightLevel{ 2 };  // 0 off (Light Placer), 1 dim, 2 bright
 		};
 
 		constexpr std::pair<std::string_view, const char*> kBedrollStyles[] = {
@@ -119,14 +120,16 @@ namespace Menu
 			auto*  fade = object ? AutoProperty(object.get(), "FadeOnSetUp") : nullptr;
 			auto*  fireOutside = object ? AutoProperty(object.get(), "FireOutsideLargeTent") : nullptr;
 			auto*  tentCollision = object ? AutoProperty(object.get(), "TentCollision") : nullptr;
-			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll && merchants && perFire && mapMarker && rolled && campfire && fireSeats && fade && fireOutside && tentCollision;
+			auto*  lightLevel = object ? AutoProperty(object.get(), "CampfireLightLevel") : nullptr;
+			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll && merchants && perFire && mapMarker && rolled && campfire && fireSeats && fade && fireOutside && tentCollision && lightLevel;
 			if (found) {
 				auto* dataHandler = RE::TESDataHandler::GetSingleton();
 				values = { firewood->GetBool(), burnHours->GetFloat(), block->GetBool(), grass->GetBool(), light->GetBool(), tub->GetBool(),
 					tubInTent->GetBool(), slope->GetBool(), seat->GetSInt(), bedroll->GetSInt(),
 					PluginLoaded(kBedrollAltPlugin),
 					merchants->GetBool(), perFire->GetSInt(), mapMarker->GetBool(), rolled->GetBool(), campfire->GetBool(), fireSeats->GetBool(), fade->GetBool(),
-					PluginLoaded(kAshNomadBedrollsPlugin), fireOutside->GetBool(), tentCollision->GetBool() };
+					PluginLoaded(kAshNomadBedrollsPlugin), fireOutside->GetBool(), tentCollision->GetBool(),
+					light->GetBool() ? std::clamp(lightLevel->GetSInt(), 1, 2) : 0 };
 			}
 
 			std::scoped_lock guard(lock);
@@ -156,7 +159,10 @@ namespace Menu
 					grass->SetBool(a_values.hideGrassUnderCamp);
 				}
 				if (auto* light = AutoProperty(object.get(), "PlaceCampfireLight")) {
-					light->SetBool(a_values.placeCampfireLight);
+					light->SetBool(a_values.lightLevel > 0);
+				}
+				if (auto* lightLevel = AutoProperty(object.get(), "CampfireLightLevel"); lightLevel && a_values.lightLevel > 0) {
+					lightLevel->SetSInt(a_values.lightLevel);
 				}
 				if (auto* campfire = AutoProperty(object.get(), "PlaceCampfire")) {
 					campfire->SetBool(a_values.placeCampfire);
@@ -279,8 +285,12 @@ namespace Menu
 				ImGuiMCP::BeginDisabled(!values.placeCampfire);
 				changed |= ImGuiMCP::Checkbox(T("$LZC_FireOutsideTheLargeTent", "Fire outside the large tent"), &values.fireOutsideLargeTent);
 				ImGuiMCP::SetItemTooltip(T("$LZC_FireOutsideTheLargeTentTip", "Stand the large tent 285 units further back, so the fire is in front of it rather than under it, and the small tents beside it 265 further back, so the tents stand in an arc around the fire. Takes effect at the next camp."));
-				changed |= ImGuiMCP::Checkbox(T("$LZC_LightMarker", "Light marker"), &values.placeCampfireLight);
-				ImGuiMCP::SetItemTooltip(T("$LZC_LightMarkerTip", "Place a light with the campfire. Turn off if a Light Placer config already lights it. Takes effect at the next camp."));
+				{
+					const char* levels[] = { T("$LZC_LightOff", "Off (Light Placer)"), T("$LZC_LightDim", "Dim"), T("$LZC_LightBright", "Bright") };
+					values.lightLevel = std::clamp(values.lightLevel, 0, 2);
+					changed |= ImGuiMCP::SliderInt(T("$LZC_CampfireLight", "Campfire light"), &values.lightLevel, 0, 2, levels[values.lightLevel]);
+					ImGuiMCP::SetItemTooltip(T("$LZC_CampfireLightTip", "The light placed with the campfire: off (when a Light Placer config already lights it), dim or bright. Takes effect at the next camp."));
+				}
 				changed |= ImGuiMCP::Checkbox(T("$LZC_FirewoodMechanic", "Firewood mechanic"), &values.firewoodMechanic);
 				ImGuiMCP::SetItemTooltip(T("$LZC_FirewoodMechanicTip", "The fire starts out unlit: activate it with firewood to light it. Takes effect at the next camp."));
 				ImGuiMCP::BeginDisabled(!values.firewoodMechanic);
