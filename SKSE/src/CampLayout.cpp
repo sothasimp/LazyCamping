@@ -98,8 +98,7 @@ namespace CampLayout
 		constexpr float kMaxTilt = 10.0f;   // most an object tilts with the ground
 		constexpr float kMaxStep = 48.0f;   // most the ground under a tent may vary
 		constexpr float kTubMaxTilt = 6.0f;  // the tub tilts less than the rest
-		constexpr float kRolledDrop = 10.0f;
-		constexpr float kDimLightFade = 0.5f;  // "Dim" campfire light: this much of the light's brightness taken off  // a rolled-up bedroll starts this far above its bedroll
+		constexpr float kRolledDrop = 10.0f;  // a rolled-up bedroll starts this far above its bedroll
 
 		inline float Cos(float a_degrees) { return std::cos(a_degrees * std::numbers::pi_v<float> / 180.0f); }
 		inline float Sin(float a_degrees) { return std::sin(a_degrees * std::numbers::pi_v<float> / 180.0f); }
