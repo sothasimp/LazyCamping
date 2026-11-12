@@ -101,9 +101,6 @@ a box primitive with Player Activation ticked, base LZC_CookActivator
 It moves onto the fire while the fire is lit, so looking
 at the fire shows "Cook".}
 Light Property LZC_CampfireLight Auto
-Light Property LZC_CampfireLightDim Auto
-{The light for "Dim" (CampfireLightLevel 1): DefaultCandleLight01NS. Without
-it, Dim gives the bright light.}
 {Optional. Flickering firelight placed above the campfire.}
 Bool Property PlaceCampfire = True Auto
 {Place the campfire, its clutter, light and cooking (SKSE menu). Without it,
