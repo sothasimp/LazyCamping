@@ -1433,8 +1433,7 @@ namespace CampLayout
 					if (storageRef) {
 						storage = PlaceFresh(storageRef->GetBaseObject(), spot, "storage backpack");
 						if (storage) {
-							storage->SetActivationBlocked(true);  // its own (empty) inventory never opens
-							a_refs.push_back(storage);
+							a_refs.push_back(storage);  // opens the real storage: see Events.cpp
 						}
 					}
 					spot->Disable();

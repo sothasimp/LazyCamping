@@ -391,9 +391,6 @@ Function OnCampObjectActivated(ObjectReference akRef, ObjectReference akActionRe
 	EndIf
 	If akRef == LZC_TubTrigger
 		Return
-	ElseIf LZC_CampStorage && akRef != LZC_CampStorage && akRef.GetBaseObject() == LZC_CampStorage.GetBaseObject()
-		; The camp's backpack opens the storage, which stays in the holding cell.
-		LZC_CampStorage.Activate(PlayerRef)
 	ElseIf akRef == CampCookBox
 		; Sneaking: for addons (Wayfarer_FireSneakActivated). Cooks as usual
 		; unless one has claimed it.

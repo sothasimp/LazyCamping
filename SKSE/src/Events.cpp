@@ -74,6 +74,39 @@ namespace Events
 			}
 		};
 
+		// TESObjectCONT::Activate (vfunc 0x37): the player activating one of the
+		// camp's backpacks (a copy of LZC_CampStorage, placed with the camp)
+		// opens LZC_CampStorage itself, which stays in the holding cell with
+		// the things in it. Anything else passes.
+		struct StorageActivate
+		{
+			static bool thunk(RE::TESObjectCONT* a_this, RE::TESObjectREFR* a_target, RE::TESObjectREFR* a_activator,
+				std::uint8_t a_arg3, RE::TESBoundObject* a_object, std::int32_t a_count)
+			{
+				auto* player = RE::PlayerCharacter::GetSingleton();
+				if (a_target && a_activator && a_activator == player && FromPlugin(a_target->GetBaseObject())) {
+					auto        camp = CampScript();
+					const auto* value = camp ? ScriptObjects::AutoProperty(camp.get(), "LZC_CampStorage") : nullptr;
+					auto*       form = value ? ScriptObjects::FormValue(value) : nullptr;
+					auto*       storage = form ? form->As<RE::TESObjectREFR>() : nullptr;
+					if (storage && storage != a_target && storage->GetBaseObject() == a_target->GetBaseObject()) {
+						const auto handle = storage->GetHandle();
+						SKSE::GetTaskInterface()->AddTask([handle] {
+							auto ref = handle.get();
+							auto* player = RE::PlayerCharacter::GetSingleton();
+							if (ref && player) {
+								ref->ActivateRef(player, 0, nullptr, 1, false);
+							}
+						});
+						return true;
+					}
+				}
+				return func(a_this, a_target, a_activator, a_arg3, a_object, a_count);
+			}
+
+			static inline REL::Relocation<decltype(thunk)> func;
+		};
+
 		// The camp's seats: furniture from this plugin, or any furniture in the
 		// tub's clutter set (whose seats may be vanilla furniture).
 		bool IsCampSeat(const RE::TESBoundObject* a_base)
@@ -182,6 +215,8 @@ namespace Events
 			return;
 		}
 		SeatCamera::Install();
+		REL::Relocation<std::uintptr_t> containerVtable{ RE::VTABLE_TESObjectCONT[0] };
+		StorageActivate::func = containerVtable.write_vfunc(0x37, StorageActivate::thunk);
 		static SpellCast spellCast;
 		static Activate  activate;
 		static Furniture furniture;
