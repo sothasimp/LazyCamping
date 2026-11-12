@@ -928,10 +928,7 @@ namespace CampLayout
 					Set(kCampfire, RE::TESForm::LookupByID(kXMarker), kSeatRadius, 0.0f, 0.0f);
 					return;
 				}
-				// LZC_CampfireActivator, if set: the burning fire as an activator,
-				// so looking at it shows Cook (no cook box then).
-				auto* fireActivator = _props.Form<RE::TESForm>("LZC_CampfireActivator");
-				Set(kCampfire, fireActivator ? fireActivator : _props.Form<RE::TESForm>("LZC_CampfirePlaced"), kSeatRadius, 0.0f, 0.0f);
+				Set(kCampfire, _props.Form<RE::TESForm>("LZC_CampfirePlaced"), kSeatRadius, 0.0f, 0.0f);
 				// One of the two fire clutter sets, at random, if there's a second.
 				std::int32_t fireSet = 1;
 				if (_props.Form<RE::TESObjectREFR>("LZC_FireClutterAnchor2") && !_props.Forms<RE::TESObjectREFR>("LZC_FireClutter2").empty()) {
@@ -1404,9 +1401,7 @@ namespace CampLayout
 				// activate on some setups.)
 				auto*              cookBoxRef = _props.Bool("PlaceCampfire", true) ? _props.Form<RE::TESObjectREFR>("LZC_CookBox") : nullptr;
 				RE::TESObjectREFR* cookBox = nullptr;
-				if (campfire && campfire->GetBaseObject() && campfire->GetBaseObject()->Is(RE::FormType::Activator)) {
-					cookBox = campfire;  // the fire itself is the activator: activating it cooks
-				} else if (cookBoxRef && campfire) {
+				if (cookBoxRef && campfire) {
 					auto*       base = cookBoxRef->GetBaseObject();
 					const auto* model = base ? base->As<RE::TESModel>() : nullptr;
 					if (model && model->GetModel() && *model->GetModel()) {
@@ -1872,21 +1867,6 @@ namespace CampLayout
 						}
 					}
 				}
-			}
-			// The fire as an activator (LZC_CampfireActivator) goes on every form
-			// list the vanilla campfire it replaces is on, so Campfire and
-			// Frostfall count it as a fire and a heat source just the same.
-			auto* vanillaFire = props.Form<RE::TESForm>("LZC_CampfirePlaced");
-			auto* fireActivator = props.Form<RE::TESForm>("LZC_CampfireActivator");
-			if (vanillaFire && fireActivator) {
-				std::uint32_t added = 0;
-				for (auto* list : dataHandler->GetFormArray<RE::BGSListForm>()) {
-					if (list && list->HasForm(vanillaFire) && !list->HasForm(fireActivator)) {
-						list->AddForm(fireActivator);
-						++added;
-					}
-				}
-				logger::info("Campfire: the fire activator added to {} form list(s) alongside the vanilla campfire", added);
 			}
 		}
 		campfireTent = {};
