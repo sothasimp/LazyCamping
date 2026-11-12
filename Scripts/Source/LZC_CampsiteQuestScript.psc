@@ -100,6 +100,10 @@ ObjectReference Property LZC_CookBox Auto
 a box primitive with Player Activation ticked, base LZC_CookActivator
 It moves onto the fire while the fire is lit, so looking
 at the fire shows "Cook".}
+Activator Property LZC_CampfireActivator Auto
+{Optional. The burning campfire as an Activator (the vanilla campfire's model,
+named Campfire, activate text Cook): placed in place of LZC_CampfirePlaced, so
+looking at the fire shows Cook and no cook box is needed.}
 Light Property LZC_CampfireLight Auto
 {Optional. Flickering firelight placed above the campfire.}
 Light Property LZC_CampfireLightShadow Auto
