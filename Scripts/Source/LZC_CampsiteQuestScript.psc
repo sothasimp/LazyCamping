@@ -101,12 +101,12 @@ a box primitive with Player Activation ticked, base LZC_CookActivator
 It moves onto the fire while the fire is lit, so looking
 at the fire shows "Cook".}
 Light Property LZC_CampfireLight Auto
+{Optional. Flickering firelight placed above the campfire.}
 Light Property LZC_CampfireLightShadow Auto
 {Optional: LZC_CampfireLight's twin that casts shadows (a copy of it with Type
 Shadow Omnidirectional), used with CampfireLightShadows.}
 Bool Property CampfireLightShadows = False Auto
 {The campfire light casts shadows, using LZC_CampfireLightShadow (SKSE menu).}
-{Optional. Flickering firelight placed above the campfire.}
 Bool Property PlaceCampfire = True Auto
 {Place the campfire, its clutter, light and cooking (SKSE menu). Without it,
 an invisible marker stands in the fire's place, and the firewood mechanic
