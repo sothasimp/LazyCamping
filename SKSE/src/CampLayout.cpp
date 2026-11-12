@@ -945,7 +945,10 @@ namespace CampLayout
 				}
 				_layout.clutterSet[kCampfire] = fireSet;
 				if (_props.Bool("PlaceCampfireLight", true)) {
-					Set(kLight, _props.Form<RE::TESForm>("LZC_CampfireLight"), kSeatRadius, 0.0f, 0.0f);
+					// With CampfireLightShadows, LZC_CampfireLightShadow (a copy of
+					// the light that casts shadows), if set.
+					auto* shadowed = _props.Bool("CampfireLightShadows", false) ? _props.Form<RE::TESForm>("LZC_CampfireLightShadow") : nullptr;
+					Set(kLight, shadowed ? shadowed : _props.Form<RE::TESForm>("LZC_CampfireLight"), kSeatRadius, 0.0f, 0.0f);
 				}
 				_layout.fwd[kLight] = kSeatRadius;
 				_layout.lift[kLight] = kLightHeight;
