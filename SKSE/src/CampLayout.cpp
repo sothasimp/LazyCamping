@@ -1401,7 +1401,27 @@ namespace CampLayout
 				// activate on some setups.)
 				auto*              cookBoxRef = _props.Bool("PlaceCampfire", true) ? _props.Form<RE::TESObjectREFR>("LZC_CookBox") : nullptr;
 				RE::TESObjectREFR* cookBox = nullptr;
-				if (cookBoxRef && campfire) {
+				// A cook box in the fire's clutter set (a copy of LZC_CookBox's
+				// base among the clutter placed with the camp, the nearest to the
+				// fire) is used as it is: placed and sized where it can be
+				// reached, above the fire's own collision, say.
+				if (cookBoxRef && campfire && cookBoxRef->GetBaseObject()) {
+					float nearest = std::numeric_limits<float>::max();
+					for (std::size_t i = kSlotCount + 1; i < a_refs.size(); ++i) {
+						auto* ref = a_refs[i];
+						if (ref && ref->GetBaseObject() == cookBoxRef->GetBaseObject()) {
+							const float distance = ref->GetPosition().GetDistance(campfire->GetPosition());
+							if (distance < nearest) {
+								nearest = distance;
+								cookBox = ref;
+							}
+						}
+					}
+					if (cookBox) {
+						logger::info("Cook box from the fire's clutter set ({:08X})", cookBox->GetFormID());
+					}
+				}
+				if (!cookBox && cookBoxRef && campfire) {
 					auto*       base = cookBoxRef->GetBaseObject();
 					const auto* model = base ? base->As<RE::TESModel>() : nullptr;
 					if (model && model->GetModel() && *model->GetModel()) {
