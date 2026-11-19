@@ -5,6 +5,7 @@
 #include "Translation.h"
 #include "VendorKits.h"
 #include "ScriptObjects.h"
+#include "Settings.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -75,7 +76,6 @@ namespace Menu
 		// CampfireLightLevel keeps 1 dim and 2 bright (as before medium was
 		// added) and 3 medium; the slider runs off, dim, medium, bright.
 		int SliderLevel(bool a_on, int a_stored) { return !a_on ? 0 : a_stored == 1 ? 1 : a_stored == 3 ? 2 : 3; }
-		int StoredLevel(int a_slider) { return a_slider == 1 ? 1 : a_slider == 2 ? 3 : 2; }
 
 		constexpr std::pair<std::string_view, const char*> kSeatColors[] = {
 			{ "$LZC_CushionBrown", "Brown" },
@@ -182,7 +182,7 @@ namespace Menu
 					lightShadows->SetBool(a_values.lightShadows);
 				}
 				if (auto* lightLevel = AutoProperty(object.get(), "CampfireLightLevel"); lightLevel && a_values.lightLevel > 0) {
-					lightLevel->SetSInt(StoredLevel(a_values.lightLevel));
+					lightLevel->SetSInt(Settings::StoredLightLevel(a_values.lightLevel));
 				}
 				if (auto* campfire = AutoProperty(object.get(), "PlaceCampfire")) {
 					campfire->SetBool(a_values.placeCampfire);

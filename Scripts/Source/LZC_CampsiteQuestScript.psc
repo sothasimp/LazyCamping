@@ -318,7 +318,7 @@ Int Property kCookingStation = 37 AutoReadOnly     ; hidden, at the fire
 Int Property kTub = 38 AutoReadOnly
 Int Property kSlotCount = 39 AutoReadOnly
 
-Int Property kNativeVersion = 22 AutoReadOnly         ; LazyCamping.dll needed
+Int Property kNativeVersion = 23 AutoReadOnly         ; LazyCamping.dll needed
 
 ObjectReference[] placedRefs
 ; With BedrollsStartRolled: each bedroll's rolled-up bedroll (None once
@@ -340,6 +340,8 @@ Bool busy = False
 ; they're unbound and GetVersion() returns 0.
 ; ---------------------------------------------------------------------------
 Int Function GetVersion() Global Native
+; Applies the INI defaults only when this quest initializes, before its settings are saved.
+Function InitializeDefaults(Quest campQuest) Global Native
 ObjectReference Function GetCookBox() Global Native
 ObjectReference[] Function GetFireClutter() Global Native
 ; Leaves the stews out of the next Cook menu at akStation (no cooking pot).
@@ -385,6 +387,9 @@ Function PackUpRefs(ObjectReference[] akDelete, ObjectReference[] akDisable, Obj
 Function RenameForm(Form akForm, String name) Global Native
 
 Event OnInit()
+	If GetVersion() >= 23
+		InitializeDefaults(Self)
+	EndIf
 	PlayerRef.AddSpell(LZC_SetUpCampPower, False)
 EndEvent
 

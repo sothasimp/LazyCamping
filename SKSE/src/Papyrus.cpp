@@ -7,6 +7,7 @@
 #include "FormNames.h"
 #include "GrassHider.h"
 #include "Placement.h"
+#include "Settings.h"
 #include "Translation.h"
 
 // Native functions, declared Global Native in LZC_CampsiteQuestScript.psc. They are registered as not callable
@@ -21,7 +22,7 @@ namespace Papyrus
 	namespace
 	{
 		constexpr auto         kClass = "LZC_CampsiteQuestScript"sv;
-		constexpr std::int32_t kVersion = 22;
+		constexpr std::int32_t kVersion = 23;
 
 		constexpr RE::FormID kXMarkerHeading = 0x34;  // Skyrim.esm
 
@@ -124,6 +125,12 @@ namespace Papyrus
 		std::int32_t GetVersion(RE::StaticFunctionTag*)
 		{
 			return kVersion;
+		}
+
+		// Normal native dispatch keeps quest property writes on the game thread.
+		void InitializeDefaults(RE::StaticFunctionTag*, RE::TESQuest* a_quest)
+		{
+			Settings::ApplyDefaults(a_quest);
 		}
 
 		// Scales a reference the way Papyrus's SetScale does: the reference's
@@ -469,6 +476,7 @@ namespace Papyrus
 
 	bool Register(RE::BSScript::IVirtualMachine* a_vm)
 	{
+		a_vm->RegisterFunction("InitializeDefaults"sv, kClass, InitializeDefaults);
 		a_vm->RegisterFunction("GetVersion"sv, kClass, GetVersion);
 		a_vm->RegisterFunction("BeginCampCooking"sv, kClass, BeginCampCooking);
 		a_vm->RegisterFunction("Tr"sv, kClass, Tr);
