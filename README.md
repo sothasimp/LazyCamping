@@ -201,6 +201,14 @@ The follower quest's `CampRadius` setting (default 1024, in the follower quest's
 
 ### 2c. Settings on the quest scripts
 
+Players can set all 22 SKSE Menu Framework defaults in `Data/SKSE/Plugins/LazyCamping.ini`, even without the menu framework installed. The included file matches the original defaults and documents every option. Booleans accept `true`/`false` or `1`/`0`; numbered choices and numeric ranges are listed in the comments. Comments belong on separate lines.
+
+The campsite quest reads the INI in `OnInit`, before granting the camping power. This applies both to new characters and to first installing Wayfarer into an existing playthrough. Each character then keeps its settings in Skyrim's save through the existing Papyrus quest properties. Menu changes update those properties and never write to the INI. Loading an existing Wayfarer character, including after upgrading the mod, preserves its saved settings.
+
+Edit the INI before starting the next character or first installing Wayfarer for that character. It is read afresh during initialization, so restarting Skyrim is unnecessary. With MO2, edit the winning copy under `SKSE/Plugins`. Missing files or keys retain the original quest defaults; invalid values are logged and ignored. Bedroll styles from an absent optional mod fall back to vanilla bedrolls. Preferences for a disabled feature are retained, for example `TubInLargeTent` while `PlaceTub` is off.
+
+The INI's `CampfireLight` follows the menu: `0` off, `1` dim, `2` medium, `3` bright. The DLL translates this into `PlaceCampfireLight` and the older `CampfireLightLevel` numbering. Other INI keys use the quest property names.
+
 The number and true/false settings on `LZC_CampsiteQuestScript` and `LZC_CampFollowersScript` start at the defaults written in the scripts. These include `AlignToSlope`, `HideGrassUnderCamp`, `PlaceCampfire`, `PlaceFireSeats`, `FadeOnSetUp`, `PlaceCampfireLight`, `PlaceMapMarker`, `BedrollsStartRolled`, the tent capacities, `FirewoodMechanic`, `FireBurnHours`, `PlaceChoppingBlock`, `PlaceTub`, `TubInLargeTent`, `FireOutsideLargeTent`, `TentCollision` and `CampRadius`. Change them on the quests' Scripts tab in the Creation Kit; each is described in a comment next to it in the `.psc` file. The camp's layout distances (seat ring, tent distances and sizes, bedroll spacing, where the tub stands and how it turns, the light's height) and the ground limits (steepest ground allowed, 30°; most an object tilts, 10°, or 6° for the tub; how uneven a tent's footprint may be, 48) are fixed constants in `SKSE/src/CampLayout.cpp`: change them there and rebuild the DLL.
 
 ### 2d. How players get the kits
@@ -303,6 +311,13 @@ xmake config -m release
 xmake
 ```
 
+The distribution folder also contains `SKSE/Plugins/LazyCamping.ini`. To run the settings parser tests without Skyrim:
+
+```powershell
+xmake build settings-tests
+xmake run settings-tests
+```
+
 (If you already cloned without `--recursive`, run `git submodule update --init` first. CommonLibSSE-NG, alandtse's maintained fork, is pinned as a submodule in `SKSE/lib/commonlibsse-ng`, at a release tag.)
 
 The full Visual Studio IDE isn't required. The free **Build Tools for Visual Studio**, with only the *Desktop development with C++* workload selected, are enough.
@@ -323,6 +338,8 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
 
 ## 4. Compile scripts and package
 
+Update the DLL and the compiled campsite script together. INI initialization requires native API version 23 in the DLL and the matching `LZC_CampsiteQuestScript.pex`. The GitHub build artifact contains the DLL and INI; the campsite script must also be recompiled for a release.
+
 1. In the CK, compile the three scripts, `LZC_CampsiteQuestScript`, `LZC_CampFollowersScript` and `LZC_TubTriggerScript` (*Gameplay > Papyrus Script Manager*). The quest script's native functions compile without the DLL; they're only bound at runtime.
 2. `Wayfarer - A Convenient Camping Framework.esp` adds only new records, so it can be flagged as ESL, but first its FormIDs must be compacted into the light plugin range (up to `0xFFF`): in xEdit, right-click it, *Compact FormIDs for ESL*, then set the ESL flag (or *File > Compact Active File Form IDs* in the Creation Kit). Compacting renumbers its records, which breaks saves made with it. The DLL finds every form through the quest scripts' properties (the bedroll kit's texture sets are `LZC_BedrollTextureGreen`, `LZC_BedrollTextureBlue` and `LZC_BedrollTextureRed`), so nothing in it needs changing.
 3. Package these files:
@@ -334,6 +351,7 @@ The plugin uses Address Library, so the same DLL works on SE (1.5.97), AE (1.6.x
    Meshes/LazyCamping/...          (tents, seats, backpack: section 2a)
    Textures/LazyCamping/...        (the tent recolours)
    SKSE/Plugins/LazyCamping.dll
+   SKSE/Plugins/LazyCamping.ini
    Interface/Translations/Wayfarer - A Convenient Camping Framework_ENGLISH.txt
    Source/Scripts/*.psc            (optional but polite)
    ```

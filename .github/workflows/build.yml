@@ -43,6 +43,14 @@ jobs:
           XMAKE_PKG_INSTALLDIR: ${{ runner.temp }}/xmake-packages
         run: xmake build -y -v
 
+      - name: Test settings values
+        env:
+          XMAKE_PKG_INSTALLDIR: ${{ runner.temp }}/xmake-packages
+        run: |
+          xmake build -y settings-tests
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          xmake run settings-tests
+
       - name: Upload plugin
         uses: actions/upload-artifact@v7
         with:

@@ -13,8 +13,11 @@ set_license("GPL-3.0")
 set_languages("c++23")
 set_warnings("allextra")
 
+add_requires("simpleini v4.25")
+
 target("LazyCamping")
     add_deps("commonlibsse-ng")
+    add_packages("simpleini")
 
     add_rules("commonlibsse-ng.plugin", {
         name = "LazyCamping",
@@ -37,7 +40,14 @@ target("LazyCamping")
         local out = path.join(os.projectdir(), "dist", "SKSE", "Plugins")
         os.mkdir(out)
         os.cp(target:targetfile(), out)
+        os.cp(path.join(os.projectdir(), "Plugins", "LazyCamping.ini"), out)
         if os.isfile(target:symbolfile()) then
             os.cp(target:symbolfile(), out)
         end
     end)
+
+-- Validate INI values without loading Skyrim or the SKSE plugin.
+target("settings-tests")
+    set_kind("binary")
+    set_default(false)
+    add_files("tests/SettingsValues.cpp")
