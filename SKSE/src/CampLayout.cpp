@@ -1862,6 +1862,7 @@ namespace CampLayout
 		std::vector<RE::ObjectRefHandle> lastPlaced;  // everything the last BuildCamp placed
 
 		void                                      RefreshLanterns();
+		void                                      GlueRolledKits();
 		RE::BSTSmartPointer<RE::BSScript::Object> CampScript();
 
 		// With TentCollision off: the tent's loaded 3D stops colliding. It
@@ -1904,6 +1905,9 @@ namespace CampLayout
 					std::this_thread::sleep_for(delay);
 					SKSE::GetTaskInterface()->AddTask(RefreshLanterns);
 				}
+				// The rolled-up bedrolls drop and settle, then are glued in place.
+				std::this_thread::sleep_for(1000ms);
+				SKSE::GetTaskInterface()->AddTask(GlueRolledKits);
 			}).detach();
 			// Until the script stores them in placedRefs, the new tents are
 			// known only here.
@@ -1959,6 +1963,45 @@ namespace CampLayout
 				}
 			}
 			return refs;
+		}
+
+		// A rolled-up bedroll, once settled, can't be kicked about any more:
+		// its physics are made fixed (keyframed).
+		void Glue(RE::TESObjectREFR* a_kit)
+		{
+			if (auto* root = a_kit ? a_kit->Get3D() : nullptr) {
+				root->SetMotionType(RE::hkpMotion::MotionType::kKeyframed, true, false, true);
+			}
+		}
+
+		// The camp's rolled-up bedrolls: the script's RolledKits, or those the
+		// last BuildCamp placed before the script has them.
+		std::vector<RE::TESObjectREFR*> RolledKits(RE::BSScript::Object* a_camp)
+		{
+			std::vector<RE::TESObjectREFR*> kits;
+			const auto* value = a_camp ? ScriptObjects::AutoProperty(a_camp, "RolledKits") : nullptr;
+			const auto  array = value && value->IsArray() ? value->GetArray() : nullptr;
+			for (std::size_t i = 0; array && i < array->size(); ++i) {
+				auto* form = FormValue(&(*array)[i]);
+				if (auto* kit = form ? form->As<RE::TESObjectREFR>() : nullptr) {
+					kits.push_back(kit);
+				}
+			}
+			if (kits.empty()) {
+				for (auto* kit : built.rolledKits) {
+					if (kit) {
+						kits.push_back(kit);
+					}
+				}
+			}
+			return kits;
+		}
+
+		void GlueRolledKits()
+		{
+			for (auto* kit : RolledKits(CampScript().get())) {
+				Glue(kit);
+			}
 		}
 
 		// Shows each of the camp's lanterns as its light says (lit or not).
@@ -2234,6 +2277,15 @@ namespace CampLayout
 	void OnObjectLoaded(RE::TESObjectREFR* a_ref)
 	{
 		auto camp = a_ref ? CampScript() : nullptr;
+		// A rolled-up bedroll loading again (back at the camp, a save loaded)
+		// stays glued where it settled.
+		if (camp) {
+			const auto kits = RolledKits(camp.get());
+			if (std::ranges::find(kits, a_ref) != kits.end()) {
+				Glue(a_ref);
+				return;
+			}
+		}
 		// A lantern's model loading: show the one that matches its light.
 		if (camp) {
 			const Properties props(camp.get());
