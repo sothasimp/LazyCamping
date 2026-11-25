@@ -8,6 +8,7 @@
 #include "GrassHider.h"
 #include "Placement.h"
 #include "Settings.h"
+#include "ShrubHider.h"
 #include "Translation.h"
 
 // Native functions, declared Global Native in LZC_CampsiteQuestScript.psc. They are registered as not callable
@@ -422,6 +423,7 @@ namespace Papyrus
 			RE::TESObjectREFR* a_storage, RE::TESObjectREFR* a_storageHome)
 		{
 			GrassHider::Show();
+			ShrubHider::Show();
 			BedrollSeats::Clear();
 			CampKits::ReturnAll();
 			for (auto* ref : a_disable) {

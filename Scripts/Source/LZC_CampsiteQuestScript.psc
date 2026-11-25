@@ -118,6 +118,9 @@ Keyword Property LZC_TentLanternKeyword Auto
 {Optional. Marks the tents' lanterns (activators in the tent clutter sets,
 Wayfarer's or an addon's): each starts unlit, and activating it switches the
 Light nearest it (within 100 units, also in the set) on and off.}
+Bool Property ClearShrubs = True Auto
+{Hide the shrubs and plants (small trees and flora; not persistent ones) in the
+camp's way while it's up (SKSE menu).}
 Bool Property PlaceTentLanterns = True Auto
 {The tents' lanterns (SKSE menu). Off: they and their lights are left out.}
 Keyword Property LZC_TentLanternLitKeyword Auto

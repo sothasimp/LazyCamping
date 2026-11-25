@@ -68,6 +68,7 @@ namespace Settings
 			constexpr std::pair<const char*, const char*> boolSettings[] = {
 				{ "Camp", "AlignToSlope" },
 				{ "Camp", "HideGrassUnderCamp" },
+				{ "Camp", "ClearShrubs" },
 				{ "Camp", "FadeOnSetUp" },
 				{ "Camp", "TentCollision" },
 				{ "Camp", "PlaceTentLanterns" },

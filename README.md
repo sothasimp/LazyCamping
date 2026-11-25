@@ -360,6 +360,7 @@ Update the DLL and the compiled campsite script together. INI initialization req
 ## 5. Known limitations and ideas
 
 - **Testing the tilt**: the slope math matches the game's `EulerAnglesToAxesZXY` rotation, and I checked it numerically. It still needs an in-game check on a hillside. If objects lean the wrong way, set `AlignToSlope` to false while you report or fix it; ground snapping and the site checks don't depend on it.
+- **Hiding shrubs** (`ClearShrubs`, SKSE menu *Clear shrubs around the camp*, on by default): shrubs and plants are placed objects, not grass, so `ShrubHider.cpp` disables those inside the camp's circle while it's up: small trees (bushes, under 300 units tall) and flora (harvest state kept), never persistent references (quest and scripted objects, as a rule). They're kept in the SKSE co-save and enabled again on pack-up.
 - **Hiding grass**: Skyrim builds a cell's grass when the cell loads, so grass doesn't move aside for objects placed later. `GrassHider.cpp` edits the grass that's already loaded:
   - it puts a circle around the placed objects (by their bounds), finds the grass instances inside it, then removes their group and adds it back without them. Grass well above or below the camp, such as on a cliff top, stays.
   - grass from *No Grass In Objects*' cache ends up in the same groups, so this works with it

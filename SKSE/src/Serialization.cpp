@@ -4,6 +4,7 @@
 #include "CampKits.h"
 #include "FormNames.h"
 #include "GrassHider.h"
+#include "ShrubHider.h"
 
 namespace Serialization
 {
@@ -17,6 +18,7 @@ namespace Serialization
 			FormNames::Save(a_intfc);
 			BedrollSeats::Save(a_intfc);
 			CampKits::Save(a_intfc);
+			ShrubHider::Save(a_intfc);
 		}
 
 		void OnRevert(SKSE::SerializationInterface*)
@@ -25,6 +27,7 @@ namespace Serialization
 			FormNames::Revert();
 			BedrollSeats::Revert();
 			CampKits::Revert();
+			ShrubHider::Revert();
 		}
 
 		void OnLoad(SKSE::SerializationInterface* a_intfc)
@@ -34,7 +37,8 @@ namespace Serialization
 			std::uint32_t length = 0;
 			while (a_intfc->GetNextRecordInfo(type, version, length)) {
 				if (!GrassHider::Load(a_intfc, type, version) && !FormNames::Load(a_intfc, type, version) &&
-					!BedrollSeats::Load(a_intfc, type, version) && !CampKits::Load(a_intfc, type, version)) {
+					!BedrollSeats::Load(a_intfc, type, version) && !CampKits::Load(a_intfc, type, version) &&
+					!ShrubHider::Load(a_intfc, type, version)) {
 					logger::warn("Unknown co-save record {:08X}", type);
 				}
 			}

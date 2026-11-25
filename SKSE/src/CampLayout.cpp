@@ -2,6 +2,7 @@
 
 #include "CampKits.h"
 #include "PluginProperties.h"
+#include "ShrubHider.h"
 
 #include "BedrollSeats.h"
 #include "GrassHider.h"
@@ -1691,6 +1692,11 @@ namespace CampLayout
 					GrassHider::Hide(refs);
 				} else {
 					logger::info("Grass: not cleared, \"Clear grass around the camp\" (HideGrassUnderCamp) is off");
+				}
+				if (_props.Bool("ClearShrubs", true)) {
+					auto refs = a_refs;
+					refs[kSlotCount] = storage;
+					ShrubHider::Hide(refs);
 				}
 
 				if (auto* tub = a_refs[kTub]) {

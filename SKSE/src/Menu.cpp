@@ -48,6 +48,7 @@ namespace Menu
 			bool         lightShadows{ false };
 			bool         placeCookpot{ false };
 			bool         placeLanterns{ true };
+			bool         clearShrubs{ true };
 		};
 
 		constexpr std::pair<std::string_view, const char*> kBedrollStyles[] = {
@@ -132,7 +133,8 @@ namespace Menu
 			auto*  lightShadows = object ? AutoProperty(object.get(), "CampfireLightShadows") : nullptr;
 			auto*  cookpot = object ? AutoProperty(object.get(), "PlaceCookpot") : nullptr;
 			auto*  lanterns = object ? AutoProperty(object.get(), "PlaceTentLanterns") : nullptr;
-			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll && merchants && perFire && mapMarker && rolled && campfire && fireSeats && fade && fireOutside && tentCollision && lightLevel && lightShadows && cookpot && lanterns;
+			auto*  shrubs = object ? AutoProperty(object.get(), "ClearShrubs") : nullptr;
+			const bool found = firewood && burnHours && block && grass && light && tub && tubInTent && slope && seat && bedroll && merchants && perFire && mapMarker && rolled && campfire && fireSeats && fade && fireOutside && tentCollision && lightLevel && lightShadows && cookpot && lanterns && shrubs;
 			if (found) {
 				auto* dataHandler = RE::TESDataHandler::GetSingleton();
 				values = { firewood->GetBool(), burnHours->GetFloat(), block->GetBool(), grass->GetBool(), light->GetBool(), tub->GetBool(),
@@ -140,7 +142,7 @@ namespace Menu
 					PluginLoaded(kBedrollAltPlugin),
 					merchants->GetBool(), perFire->GetSInt(), mapMarker->GetBool(), rolled->GetBool(), campfire->GetBool(), fireSeats->GetBool(), fade->GetBool(),
 					PluginLoaded(kAshNomadBedrollsPlugin), fireOutside->GetBool(), tentCollision->GetBool(),
-					SliderLevel(light->GetBool(), lightLevel->GetSInt()), lightShadows->GetBool(), cookpot->GetBool(), lanterns->GetBool() };
+					SliderLevel(light->GetBool(), lightLevel->GetSInt()), lightShadows->GetBool(), cookpot->GetBool(), lanterns->GetBool(), shrubs->GetBool() };
 			}
 
 			std::scoped_lock guard(lock);
@@ -171,6 +173,9 @@ namespace Menu
 				}
 				if (auto* light = AutoProperty(object.get(), "PlaceCampfireLight")) {
 					light->SetBool(a_values.lightLevel > 0);
+				}
+				if (auto* shrubs = AutoProperty(object.get(), "ClearShrubs")) {
+					shrubs->SetBool(a_values.clearShrubs);
 				}
 				if (auto* lanterns = AutoProperty(object.get(), "PlaceTentLanterns")) {
 					lanterns->SetBool(a_values.placeLanterns);
@@ -267,6 +272,8 @@ namespace Menu
 				ImGuiMCP::SetItemTooltip(T("$LZC_AlignObjectsToGroundSlopeTip", "Tilt the tents, bedrolls, seats, fire and clutter to match the ground. Takes effect at the next camp."));
 				changed |= ImGuiMCP::Checkbox(T("$LZC_ClearGrassAroundTheCamp", "Clear grass around the camp"), &values.hideGrassUnderCamp);
 				ImGuiMCP::SetItemTooltip(T("$LZC_ClearGrassAroundTheCampTip", "Clear the grass in a circle around the camp while it's up. Takes effect at the next camp."));
+				changed |= ImGuiMCP::Checkbox(T("$LZC_ClearShrubs", "Clear shrubs around the camp"), &values.clearShrubs);
+				ImGuiMCP::SetItemTooltip(T("$LZC_ClearShrubsTip", "Hide the shrubs and plants in the camp's way while it's up, and bring them back on pack-up. Takes effect at the next camp."));
 				changed |= ImGuiMCP::Checkbox(T("$LZC_FadeToBlackDuringSetup", "Fade to black during setup and pack-up"), &values.fadeOnSetUp);
 				ImGuiMCP::SetItemTooltip(T("$LZC_FadeToBlackDuringSetupTip", "Fade the screen to black while the camp goes up or is packed up, and back in once it's done."));
 				changed |= ImGuiMCP::Checkbox(T("$LZC_TentCollision", "Tent collision"), &values.tentCollision);
