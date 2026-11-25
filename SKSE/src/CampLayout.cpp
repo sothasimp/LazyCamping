@@ -64,7 +64,7 @@ namespace CampLayout
 		constexpr float kPairedBedrollSpacing = 60.0f;  // between the two of a pair in a tent
 		constexpr float kBedrollSpacing = 214.0f;       // from one pair to the next
 		constexpr float kLargeTentBedrollBack = 60.0f;
-		constexpr float kLargeTentPairsIn = 20.0f;  // a large tent's pairs this much nearer its middle
+		constexpr float kLargeTentPairsIn = 10.0f;  // a large tent's pairs this much nearer its middle
 		constexpr float kBedrollRingRadius = 190.0f;  // without tents
 		constexpr float kBedrollRingYaw = 90.0f;
 		constexpr float kTubHalfWidth = 110.0f;
