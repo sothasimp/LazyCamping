@@ -64,6 +64,7 @@ namespace CampLayout
 		constexpr float kPairedBedrollSpacing = 60.0f;  // between the two of a pair in a tent
 		constexpr float kBedrollSpacing = 214.0f;       // from one pair to the next
 		constexpr float kLargeTentBedrollBack = 60.0f;
+		constexpr float kLargeTentPairsIn = 20.0f;  // a large tent's pairs this much nearer its middle
 		constexpr float kBedrollRingRadius = 190.0f;  // without tents
 		constexpr float kBedrollRingYaw = 90.0f;
 		constexpr float kTubHalfWidth = 110.0f;
@@ -464,9 +465,11 @@ namespace CampLayout
 
 		// Where bedroll `index` lies across a tent's row: in touching pairs,
 		// with kBedrollSpacing between pairs.
-		float RowPosition(std::int32_t a_index)
+		// (a_pullIn: how much nearer the middle each pair stands; it narrows
+		// the gap between pairs by twice that.)
+		float RowPosition(std::int32_t a_index, float a_pullIn = 0.0f)
 		{
-			return static_cast<float>(a_index / 2) * (kPairedBedrollSpacing + kBedrollSpacing) +
+			return static_cast<float>(a_index / 2) * (kPairedBedrollSpacing + kBedrollSpacing - 2.0f * a_pullIn) +
 			       static_cast<float>(a_index % 2) * kPairedBedrollSpacing;
 		}
 
@@ -1302,7 +1305,8 @@ namespace CampLayout
 			{
 				const std::int32_t rowLength = a_tent.size == kLarge ? _props.Int("LargeTentCapacity", 4) : a_tent.beds;
 				const float        back = a_tent.size == kLarge ? kLargeTentBedrollBack : 0.0f;
-				const float        offset = RowPosition(rowLength - 1) / 2.0f - RowPosition(a_index);
+				const float        pullIn = a_tent.size == kLarge ? kLargeTentPairsIn : 0.0f;
+				const float        offset = RowPosition(rowLength - 1, pullIn) / 2.0f - RowPosition(a_index, pullIn);
 				// An addon tent can bring its own bedrolls, taken in turn by color
 				// step (the two of a touching pair matching).
 				const auto   type = static_cast<std::size_t>(a_tent.color);
