@@ -296,7 +296,7 @@ In the Creation Kit, with `Campfire.esm` and Wayfarer loaded and the new plugin 
 4. Package the esp and `Scripts/LZC_CampfireSkillsProxy.pex`, `Scripts/LZC_CampfireAddonPlayerScript.pex`.
 
 
-**Campfire 2026's ESL build** renumbers all of Campfire.esm's records (its `esl/map_campfire.json`). LazyCamping.dll and the addon's scripts look Campfire's records up by either numbering, but the addon's **esp** points at them through its masters, so it needs an ESL version, its Campfire references remapped with that map: ship both (an installer choice, Regular or ESL, as Campfire 2026 does), under the same file name.
+**Campfire 2026's ESL build** renumbers all of Campfire.esm's records (its `esl/map_campfire.json`). LazyCamping.dll and the addon's scripts look Campfire's records up by either numbering, but the addon's **esp** points at them through its masters, so it needs an ESL version, its Campfire references remapped with that map: ship both (an installer choice, Regular or ESL, as Campfire 2026 does), under the same file name. The ESL version is in `Addons/Campfire/ESL Campfire/`; after changing the addon's esp, make it again with `python tools/remap_campfire_esl.py <addon.esp> <out.esp> <Campfire 2026's esl/map_campfire.json>`, which rewrites the Campfire record numbers in record headers and script properties and reports anything not in the map.
 ## 3. Build the SKSE plugin
 
 You need a Windows machine with:
