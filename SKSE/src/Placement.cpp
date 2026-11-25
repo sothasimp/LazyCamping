@@ -43,9 +43,15 @@ namespace Placement
 			if (!pick.rayOutput.HasHit()) {
 				return std::nullopt;
 			}
-			auto*       ref = RE::TESHavokUtilities::FindCollidableRef(*pick.rayOutput.rootCollidable);
+			// An actor: by its reference, or by its collision layer (a
+			// character's movement capsule may not lead back to it).
+			const auto* collidable = pick.rayOutput.rootCollidable;
+			const auto  layer = collidable->GetCollisionLayer();
+			auto*       ref = RE::TESHavokUtilities::FindCollidableRef(*collidable);
+			const bool  actor = (ref && ref->As<RE::Actor>()) || layer == RE::COL_LAYER::kCharController ||
+			                   layer == RE::COL_LAYER::kBiped || layer == RE::COL_LAYER::kBipedNoCC || layer == RE::COL_LAYER::kDeadBip;
 			const float hitZ = top - (top - bottom) * pick.rayOutput.hitFraction;
-			if (!ref || !ref->As<RE::Actor>() || tries >= 4 || hitZ - 1.0f <= bottom) {
+			if (!actor || tries >= 4 || hitZ - 1.0f <= bottom) {
 				break;
 			}
 			top = hitZ - 1.0f;
