@@ -68,6 +68,10 @@ EndEvent
 ; activator goes on that list.
 Function ListAsCampfire()
 	FormList campfires = Game.GetFormFromFile(0x06BBE8, "Campfire.esm") as FormList
+	If !campfires
+		; Campfire 2026's ESL build renumbers its records.
+		campfires = Game.GetFormFromFile(0x000DC5, "Campfire.esm") as FormList
+	EndIf
 	If campfires && LZC_CampfireSkillsProxyActivator && !campfires.HasForm(LZC_CampfireSkillsProxyActivator)
 		campfires.AddForm(LZC_CampfireSkillsProxyActivator)
 	EndIf

@@ -2076,6 +2076,10 @@ namespace CampLayout
 		constexpr auto       kCampfirePlugin = "Campfire.esm"sv;
 		constexpr RE::FormID kTentWaterproof = 0x03AB3A;  // isCampfireTentWaterproof
 		constexpr RE::FormID kTentWarm = 0x03AB3B;        // isCampfireTentWarm
+		// The same in Campfire 2026's ESL build, whose records are renumbered
+		// (its esl/map_campfire.json).
+		constexpr RE::FormID kTentWaterproofEsl = 0x000B1B;
+		constexpr RE::FormID kTentWarmEsl = 0x000B1C;
 
 		RE::ObjectRefHandle campfireTent;  // the camp tent last reported to Campfire as the player's
 
@@ -2141,8 +2145,12 @@ namespace CampLayout
 		}
 		// Campfire's warm and waterproof tent keywords on the camp's tents.
 		auto  camp = CampScript();
-		auto* warm = dataHandler->LookupForm<RE::BGSKeyword>(kTentWarm, kCampfirePlugin);
-		auto* waterproof = dataHandler->LookupForm<RE::BGSKeyword>(kTentWaterproof, kCampfirePlugin);
+		const bool esl = dataHandler->LookupLoadedLightModByName(kCampfirePlugin) != nullptr;
+		auto*      warm = dataHandler->LookupForm<RE::BGSKeyword>(esl ? kTentWarmEsl : kTentWarm, kCampfirePlugin);
+		auto*      waterproof = dataHandler->LookupForm<RE::BGSKeyword>(esl ? kTentWaterproofEsl : kTentWaterproof, kCampfirePlugin);
+		if (!warm || !waterproof) {
+			logger::warn("Campfire: its tent keywords weren't found ({} build); tents won't count as Campfire shelter", esl ? "ESL" : "regular");
+		}
 		if (camp) {
 			const Properties props(camp.get());
 			for (const auto* list : { "LZC_SmallTents", "LZC_LargeTents" }) {
