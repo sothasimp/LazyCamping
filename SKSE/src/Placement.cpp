@@ -59,6 +59,11 @@ namespace Placement
 
 		GroundHit hit;
 		hit.point = { a_x, a_y, top - (top - bottom) * pick.rayOutput.hitFraction };
+		hit.layer = static_cast<std::uint32_t>(pick.rayOutput.rootCollidable->GetCollisionLayer());
+		if (auto* hitRef = RE::TESHavokUtilities::FindCollidableRef(*pick.rayOutput.rootCollidable)) {
+			hit.ref = hitRef->GetFormID();
+			hit.base = hitRef->GetBaseObject() ? hitRef->GetBaseObject()->GetFormID() : 0;
+		}
 		hit.normal = ToNiPoint3(pick.rayOutput.normal);
 		if (hit.normal.Unitize() == 0.0f) {
 			hit.normal = { 0.0f, 0.0f, 1.0f };

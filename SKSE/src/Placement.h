@@ -6,6 +6,9 @@ namespace Placement
 	{
 		RE::NiPoint3 point;
 		RE::NiPoint3 normal;  // unit length, pointing away from the surface
+		RE::FormID   ref{ 0 };    // the reference hit, if any (0: the landscape)
+		RE::FormID   base{ 0 };   // its base object
+		std::uint32_t layer{ 0 };  // the collision layer hit
 	};
 
 	// Casts a ray straight down from (x, y, top) for `length` units against

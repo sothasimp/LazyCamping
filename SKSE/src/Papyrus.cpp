@@ -211,6 +211,14 @@ namespace Papyrus
 			RE::NiMatrix3 frame = Placement::MatrixFromAngles({ 0.0f, 0.0f, a_yaw });
 			if (const auto hit = GroundAt(a_origin, a_ref.position.x, a_ref.position.y)) {
 				a_ref.position.z = hit->point.z;
+				// Anything but the landscape under it, or ground well above where
+				// the player stood: say what, to find floating objects.
+				const float above = hit->point.z - a_origin->GetPositionZ();
+				if (hit->ref != 0 || above > 40.0f) {
+					logger::info("Ground under {:08X} at ({:.0f}, {:.0f}): {:.0f} above the caster, on {} (ref {:08X}, base {:08X}, layer {})",
+						a_ref.base ? a_ref.base->GetFormID() : 0, a_ref.position.x, a_ref.position.y, above,
+						hit->ref ? "an object" : "the landscape", hit->ref, hit->base, hit->layer);
+				}
 				if (a_alignToSlope) {
 					const RE::NiPoint3 normal = FootprintNormal(a_origin, a_ref.base, hit->point, a_yaw, hit->normal);
 					frame = Placement::MatrixFromAngles(
