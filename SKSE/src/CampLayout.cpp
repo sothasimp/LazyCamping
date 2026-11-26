@@ -826,7 +826,8 @@ namespace CampLayout
 					RE::TESForm*        anchorBase = nullptr;
 					std::vector<RE::TESForm*> bedrolls;
 					std::int32_t              bedrollStyle = 0;
-					std::vector<float>        rowFloats;  // Float globals: row shift, then extra pull-in
+					float                     rowIn = 0.0f;  // a Float global: its pairs this much more in
+					bool                      hasRowIn = false;
 					std::vector<RE::TESObjectREFR*> items;
 					for (std::size_t i = 1; i < forms.size(); ++i) {
 						auto* form = forms[i];
@@ -852,7 +853,8 @@ namespace CampLayout
 							bedrolls.push_back(form);
 						} else if (auto* global = form->As<RE::TESGlobal>()) {
 							if (global->type.get() == RE::TESGlobal::Type::kFloat) {
-								rowFloats.push_back(global->value);
+								rowIn = global->value;
+								hasRowIn = true;
 							} else {
 								bedrollStyle = static_cast<std::int32_t>(global->value);
 							}
@@ -876,9 +878,6 @@ namespace CampLayout
 						continue;
 					}
 					const std::int32_t clutterSet = anchor ? nextSet++ : 0;
-					const bool         hasRow = !rowFloats.empty();
-					const float        rowShift = hasRow ? rowFloats[0] : 0.0f;
-					const float        rowIn = rowFloats.size() > 1 ? rowFloats[1] : 0.0f;
 					for (auto& kind : kinds) {
 						// A tent already added (by another list) is updated, not
 						// added again: a patch can give an addon's tents a bedroll,
@@ -891,8 +890,7 @@ namespace CampLayout
 							if (bedrollStyle != 0) {
 								same->bedrollStyle = bedrollStyle;
 							}
-							if (hasRow) {
-								same->rowShift = rowShift;
+							if (hasRowIn) {
 								same->rowIn = rowIn;
 							}
 							if (anchor) {
@@ -905,13 +903,12 @@ namespace CampLayout
 						}
 						kind.bedrolls = bedrolls;
 						kind.bedrollStyle = bedrollStyle;
-						kind.rowShift = rowShift;
 						kind.rowIn = rowIn;
 						kind.anchor = anchor;
 						kind.items = items;
 						kind.clutterSet = clutterSet;
-						logger::info("Tent addon {:08X}: {} tent {:08X}, kit {:08X}, {} clutter item(s), bedroll row shifted {} left, {} further in", list->GetFormID(),
-							size == kLarge ? "large" : "small", kind.tent->GetFormID(), kind.kit->GetFormID(), kind.items.size(), rowShift, rowIn);
+						logger::info("Tent addon {:08X}: {} tent {:08X}, kit {:08X}, {} clutter item(s), pairs {} further in", list->GetFormID(),
+							size == kLarge ? "large" : "small", kind.tent->GetFormID(), kind.kit->GetFormID(), kind.items.size(), rowIn);
 						_tentTypes.push_back(std::move(kind));
 					}
 				}
@@ -1321,9 +1318,9 @@ namespace CampLayout
 				const float        back = a_tent.size == kLarge ? kLargeTentBedrollBack : 0.0f;
 				const auto         type = static_cast<std::size_t>(a_tent.color);
 				const auto*        kind = type < _tentTypes.size() ? &_tentTypes[type] : nullptr;
-				// An addon tent design can move its row sideways and its pairs in.
+				// An addon tent design can pull its pairs further in (the row stays centred).
 				const float pullIn = (a_tent.size == kLarge ? kLargeTentPairsIn : 0.0f) + (kind ? kind->rowIn : 0.0f);
-				const float offset = RowPosition(rowLength - 1, pullIn) / 2.0f - RowPosition(a_index, pullIn) + (kind ? kind->rowShift : 0.0f);
+				const float offset = RowPosition(rowLength - 1, pullIn) / 2.0f - RowPosition(a_index, pullIn);
 				// An addon tent can bring its own bedrolls, taken in turn by color
 				// step (the two of a touching pair matching).
 				const auto*  own = kind && !kind->bedrolls.empty() ? &kind->bedrolls : nullptr;
@@ -1840,8 +1837,7 @@ namespace CampLayout
 				std::int32_t                    clutterSet{ 0 };  // its set number, or 0 for the plugin's
 				std::vector<RE::TESForm*>       bedrolls;  // an addon tent's own bedrolls, taken in turn, if any
 				std::int32_t                    bedrollStyle{ 0 };  // or its own bedroll style (as BedrollStyle), if not 0
-				float                           rowShift{ 0.0f };   // its bedroll row moved this far left (as seen from the fire)
-				float                           rowIn{ 0.0f };      // and its pairs this much more towards the middle
+				float                           rowIn{ 0.0f };      // its bedroll pairs this much more towards the middle
 			};
 			std::vector<TentType>                             _tentTypes;
 			RE::TESObjectREFR::InventoryCountMap              _counts;  // the player's and the followers' together
